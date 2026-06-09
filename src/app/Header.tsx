@@ -16,7 +16,13 @@ export function Header() {
       animate="show"
     >
       <MotionLink to="/map" className="app-header__brand" variants={fadeUpItem}>
-        <img src="/db-logo.svg" alt="" className="app-header__logo" width={44} height={44} />
+        <img
+          src={`${import.meta.env.BASE_URL}db-logo.svg`}
+          alt=""
+          className="app-header__logo"
+          width={44}
+          height={44}
+        />
         <span className="app-header__titles">
           <span className="app-header__name">Diamond Bar</span>
           <span className="app-header__sub">High School</span>

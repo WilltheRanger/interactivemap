@@ -9,12 +9,16 @@ const queryClient = new QueryClient({
   },
 });
 
+// '/' in dev, '/interactivemap/' on GitHub Pages — strip the trailing slash for the router basename.
+const baseUrl = import.meta.env.BASE_URL;
+const basename = baseUrl === '/' ? undefined : baseUrl.replace(/\/$/, '');
+
 export default function App() {
   return (
     // reducedMotion="user" honors the OS "Reduce Motion" setting automatically.
     <MotionConfig reducedMotion="user">
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
+        <BrowserRouter basename={basename}>
           <AppRoutes />
         </BrowserRouter>
       </QueryClientProvider>
