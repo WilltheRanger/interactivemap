@@ -1,19 +1,28 @@
+import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { LayoutGrid, User } from 'lucide-react';
 import { LinkButton } from '../components/LinkButton';
+import { fadeUpItem, staggerContainer } from '../lib/motion';
 import './Header.css';
+
+const MotionLink = motion.create(Link);
 
 export function Header() {
   return (
-    <header className="app-header">
-      <Link to="/map" className="app-header__brand">
+    <motion.header
+      className="app-header"
+      variants={staggerContainer}
+      initial="hidden"
+      animate="show"
+    >
+      <MotionLink to="/map" className="app-header__brand" variants={fadeUpItem}>
         <img src="/db-logo.svg" alt="" className="app-header__logo" width={44} height={44} />
         <span className="app-header__titles">
           <span className="app-header__name">Diamond Bar</span>
           <span className="app-header__sub">High School</span>
         </span>
-      </Link>
-      <div className="app-header__actions">
+      </MotionLink>
+      <motion.div className="app-header__actions" variants={fadeUpItem}>
         <LinkButton
           to="/set-classes"
           tracked
@@ -25,7 +34,7 @@ export function Header() {
         <LinkButton to="/account" tracked aria-label="Account" icon={<User size={18} />}>
           <span className="app-header__action-label">Account</span>
         </LinkButton>
-      </div>
-    </header>
+      </motion.div>
+    </motion.header>
   );
 }

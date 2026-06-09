@@ -13,12 +13,9 @@
   align-items: flex-start;
   gap: var(--space-3);
 }
-.map-screen__top .search {
+.map-screen__search {
   flex: 1;
   min-width: 0;
-}
-.map-screen__top .map-controls {
-  flex: 0 0 auto;
 }
 
 .map-screen__canvas {
