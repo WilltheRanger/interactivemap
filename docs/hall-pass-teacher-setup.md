@@ -4,7 +4,9 @@ This sets up a QR that students scan to log a hall pass straight into **your own
 form, no submit. Each scan appends a row: **time, student email, reason**. The Wayfinder app stores
 nothing; all data lives in your Sheet, in your school Google account.
 
-> One-time setup, ~5 minutes. You'll need to be signed into your **@wvusd.org** (staff) account.
+> One-time setup, ~5 minutes. **Do this on a staff `@wvusd.org` account** — district policy usually
+> blocks **student** accounts from publishing Apps Script web apps, so a student account will fail at
+> the Deploy step.
 
 ## 1. Make the Sheet
 1. Create a new Google Sheet (e.g. "Period 3 Hall Pass Log").
@@ -16,20 +18,23 @@ nothing; all data lives in your Sheet, in your school Google account.
 
 ```javascript
 function doGet(e) {
-  var reason = (e && e.parameter && e.parameter.reason) ? String(e.parameter.reason) : '';
-  var email = Session.getActiveUser().getEmail(); // the scanning student (same Workspace)
+  var p = (e && e.parameter) || {};
+  var reason = p.reason ? String(p.reason) : '';
+  // The Wayfinder app passes the signed-in student (?student=…). Fall back to the Workspace identity
+  // only if the link is ever opened directly.
+  var student = p.student ? String(p.student) : Session.getActiveUser().getEmail();
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
 
   // Optional: ignore an accidental double-scan within 60s from the same student.
   var last = sheet.getLastRow();
   if (last > 1) {
-    var prev = sheet.getRange(last, 1, 1, 2).getValues()[0]; // [time, email]
-    if (prev[1] === email && (new Date() - new Date(prev[0])) < 60 * 1000) {
+    var prev = sheet.getRange(last, 1, 1, 2).getValues()[0]; // [time, student]
+    if (prev[1] === student && (new Date() - new Date(prev[0])) < 60 * 1000) {
       return HtmlService.createHtmlOutput('<p>Already logged. You can close this.</p>');
     }
   }
 
-  sheet.appendRow([new Date(), email, reason]);
+  sheet.appendRow([new Date(), student, reason]);
   return HtmlService.createHtmlOutput('<p>Logged ✓ You can close this tab.</p>');
 }
 ```
@@ -49,9 +54,11 @@ function doGet(e) {
 - That's it. When a student picks a reason in the app and scans, a row appears in your Sheet.
 
 ## Notes
-- **Identity:** `getActiveUser().getEmail()` returns the student's email only because they're signed
-  into their **@stu.wvusd.org** account in the same Workspace (the app's Google sign-in ensures this).
-  A student signed into a personal Google account would log blank/own email — expected.
+- **Identity:** the Wayfinder app passes the signed-in student in the URL (`?student=…`), so logging
+  doesn't depend on Apps Script reading the email across the `stu.wvusd.org` / `wvusd.org` domains
+  (`getActiveUser().getEmail()` is only a direct-open fallback). Because the app supplies the name, a
+  student could in principle edit the URL to log a different name — acceptable for a hall pass, same as
+  a paper sign-out sheet.
 - **Privacy:** the data is a student record. Keep the Sheet private to you, and decide a retention
   period (e.g. clear it each semester). Loop in your supervisor before using it with students.
 - **Limits:** a QR can be photographed, so this can't *prove* physical presence; the 60-second dedupe

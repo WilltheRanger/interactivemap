@@ -41,11 +41,17 @@ describe('buildHallPassUrl', () => {
     expect(buildHallPassUrl(base, 'Bathroom')).toBe(`${base}?reason=Bathroom`);
   });
 
+  it('appends the signed-in student id when given', () => {
+    expect(buildHallPassUrl(base, 'Bathroom', 'jdoe@stu.wvusd.org')).toBe(
+      `${base}?reason=Bathroom&student=jdoe%40stu.wvusd.org`,
+    );
+  });
+
   it('url-encodes the reason', () => {
     expect(buildHallPassUrl(base, 'Front Office')).toBe(`${base}?reason=Front+Office`);
   });
 
-  it('omits the param when no reason is given', () => {
+  it('omits params when not given', () => {
     expect(buildHallPassUrl(base, '')).toBe(base);
   });
 
