@@ -3,6 +3,8 @@
  * read from the image; nudge any hex if you have exact values. Components reference ONLY these vars.
  */
 :root {
+  color-scheme: light;
+
   /* Brand */
   --color-primary: #582c83; /* Diamond Bar purple — header title, nav active, icons */
   --color-primary-weak: #efeaf6; /* tint for hovers / subtle fills */
@@ -57,4 +59,35 @@
   --header-height: 64px;
   --nav-height: 64px;
   --content-max: 480px;
+}
+
+/*
+ * Dark theme. `data-theme="dark"` is set on <html> by lib/theme.ts (and the inline no-flash script in
+ * index.html). Only the color tokens + elevation change; spacing/radius/type are shared. The brand
+ * purple is lightened (it's only ever a foreground — text/icons), gold accents are kept, and surfaces
+ * go to near-black.
+ */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  /* Brand */
+  --color-primary: #c3a3e6; /* lightened purple for contrast on dark surfaces */
+  --color-primary-weak: #2c2440; /* muted dark-purple fill for hovers / tints */
+  --color-accent: #f4b41a;
+  --color-accent-strong: #f0c040;
+  --color-on-primary: #1b1430; /* dark text on the lightened purple */
+  --color-on-accent: #ffffff;
+
+  /* Neutrals */
+  --color-bg: #14151a;
+  --color-surface: #1e2027;
+  --color-text: #f2f3f5;
+  --color-text-muted: #9aa0ab;
+  --color-border: #31343f;
+  --color-border-subtle: #2a2c35;
+  --color-error: #f08a7e;
+
+  /* Elevation — black shadows read on dark surfaces where the light ones vanish. */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.45);
+  --shadow-2: 0 4px 16px rgba(0, 0, 0, 0.5);
 }
