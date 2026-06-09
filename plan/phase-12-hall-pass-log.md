@@ -29,29 +29,37 @@ confirms the app retains no log data.
 - **Done when:** tests cover allowed `/exec` endpoints, reject `/dev`/other Google surfaces/look-alikes/junk, and verify reason encoding + null-on-invalid. **(8 tests passing.)**
 - **Depends on:** —
 
-### 12.2 — Reason picker *(UI — gated on mockup B)*
+### 12.2 — Reason picker ✅ *(UI — built; restyle when mockup B lands)*
 - **Scope:** Student picks a reason from `HALL_PASS_REASONS` before scanning.
-- **Files:** `src/features/log/ReasonPicker.tsx`.
-- **Deliverable:** Reason selection per the mockup; selected reason held for the scan step.
-- **Done when:** a reason can be chosen and is passed to the scanner; matches the mockup.
-- **Depends on:** 12.1, mockup B, 04 primitives.
+- **Files:** `src/features/log/ReasonPicker.tsx`, `src/features/log/LogScreen.css`.
+- **Deliverable:** One-tap reason list (tap a reason → straight to the scanner), styled with the
+  current design tokens. Built ahead of mockup B; revisit styling once the owner's mockup arrives.
+- **Done when:** a reason can be chosen and is passed to the scanner. ✅
+- **Depends on:** 12.1, 04 primitives.
 
-### 12.3 — QR scanner *(UI — gated on mockup B)*
+### 12.3 — QR scanner ✅ *(UI — built; restyle when mockup B lands)*
 - **Scope:** Camera scanner that decodes a QR, builds the URL via 12.1, and opens it.
-- **Files:** `src/features/log/QrScanner.tsx`.
-- **Deliverable:** Native `BarcodeDetector` where available + a JS fallback (e.g. `@zxing/browser` —
-  **new dep, flag before adding**). On scan: `buildHallPassUrl(scanned, reason, signedInStudent)` (the
-  student comes from the Phase-09 sign-in) → if `null` show the invalid-QR state, else open the URL.
-  States: requesting-camera, scanning, invalid-QR, permission-denied.
-- **Done when:** a valid teacher QR opens the logger (row appears in the Sheet); a disallowed QR shows
-  invalid; denied camera shows a clear message.
-- **Depends on:** 12.1, 12.2, mockup B, 04 primitives, 09 (signed-in student id).
+- **Files:** `src/features/log/QrScanner.tsx`, `src/types/barcode-detector.d.ts`,
+  `src/features/log/LogScreen.css`.
+- **Deliverable:** `getUserMedia` rear camera + native `BarcodeDetector` fast path with a **jsQR**
+  fallback (chosen over `@zxing/browser`; **lazy-imported** so it's a separate chunk, off the path for
+  browsers with the native API). On scan: `buildHallPassUrl(scanned, reason, student?)` → if `null`
+  the invalid-QR state, else a **confirm** step whose button opens the logger in a new tab (user
+  gesture, so it isn't pop-up-blocked; same-tab fallback if it is). States: starting, scanning,
+  permission-denied, unsupported, error, invalid-QR, confirm, done.
+- **Done when:** a valid teacher QR opens the logger; a disallowed QR shows invalid; denied/unsupported
+  camera shows a clear message + retry. ✅
+- **Deferred:** the `student=` param waits on Phase 09 sign-in; until then the teacher's Apps Script
+  captures the same-Workspace email itself. Real-device camera test pending (needs https + a phone).
+- **Depends on:** 12.1, 12.2, 04 primitives; 09 for the signed-in student id (deferred).
 
-### 12.4 — Log entry point *(UI — gated on mockup B)*
-- **Scope:** The "Log" affordance in the app per the mockup (4th nav item or a button) → reason picker → scanner.
-- **Files:** `src/app/router.tsx`, `src/features/log/LogScreen.tsx`, nav.
-- **Done when:** Log is reachable and matches the mockup; nav still works at 375px.
-- **Depends on:** 12.2, 12.3, mockup B, 01.5.
+### 12.4 — Log entry point ✅ *(built)*
+- **Scope:** The "Log" affordance → reason picker → scanner.
+- **Files:** `src/app/router.tsx` (`/log`), `src/app/BottomNav.tsx` (Log nav item),
+  `src/features/log/LogScreen.tsx` (orchestrates reason → scan → confirm → done).
+- **Done when:** Log is reachable from the bottom nav and runs the full flow; nav works at 375px. ✅
+  Final styling revisits mockup B.
+- **Depends on:** 12.2, 12.3.
 
 ### 12.5 — Teacher setup guide ✅ *(docs — done)*
 - **Scope:** Guide for a teacher to deploy their own Apps Script logger + QR.
