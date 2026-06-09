@@ -64,4 +64,20 @@ follow the DESIGN.md checklist, and ask before inventing any screen or state not
 - Building IDs in the map file MUST match the keys in the `rooms` table, or joins break.
 
 ## Commands
-<!-- Fill in once the project is scaffolded: dev server, build, lint, test -->
+- `npm run dev` — start the Vite dev server (mobile-first; test at ~375px).
+- `npm run build` — type-check (`tsc -b`) + production build to `dist/`.
+- `npm run preview` — serve the production build locally.
+- `npm run lint` — ESLint (flat config, TS + react-hooks).
+- `npm run format` / `npm run format:check` — Prettier write / verify.
+
+Env: copy `.env.example` → `.env` and set `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` (anon key only;
+read-only via RLS). Tests: not set up yet (added with the data/time layers in Phases 02–03).
+
+## Source layout (`src/`)
+- `app/` — root `App` + `router` (the Phase-09 `RequireAuth` seam wraps the routes here).
+- `components/` — reusable UI primitives (Phase 04, from the mockup).
+- `features/{schedule,map,locker}/` — screen logic per feature.
+- `lib/` — non-UI modules (`config`, later `supabase`, `personalStore`, `timeEngine`).
+- `data/` — reference-data hooks + static data (map meta, optional bell schedule).
+- `types/` — shared types (generated DB rows + personal-data shapes).
+- `styles/` — `tokens.css` (placeholder until Phase 04), `global.css`, `app.css`.

@@ -1,0 +1,45 @@
+/* App shell layout: scrollable content above a fixed bottom nav. Token-only values. */
+.app-main {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--space-4);
+  padding-bottom: calc(var(--nav-height) + var(--space-6));
+  min-height: 100%;
+}
+
+.app-screen h1 {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--space-2);
+}
+
+.app-screen p {
+  color: var(--color-text-muted);
+}
+
+.app-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--nav-height);
+  display: flex;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.app-nav a {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap-target);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.app-nav a[aria-current='page'] {
+  color: var(--color-primary);
+}
