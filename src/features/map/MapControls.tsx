@@ -8,8 +8,11 @@ interface MapControlsProps {
 }
 
 /**
- * The stacked Level / Period card from the mockup. Static for now; Phase 05 wires Level to the map's
- * level toggle and Phase 07 wires Period to the (passive) schedule highlight selector.
+ * The stacked Level / Period card from the mockup. Static for now; both become interactive selectors:
+ * - **Level**: switches the map between floors (downstairs/upstairs) — Phase 05 multi-level toggle
+ *   (filters building shapes by `buildings.level`).
+ * - **Period**: picks a period from the student's saved schedule; that period's class is highlighted
+ *   on the map (passive, tap-driven — no live clock) — Phase 07.
  */
 export function MapControls({ level, period }: MapControlsProps) {
   return (
