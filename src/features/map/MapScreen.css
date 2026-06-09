@@ -1,0 +1,34 @@
+.map-screen {
+  position: relative;
+  height: 100%;
+}
+
+.map-screen__top {
+  position: absolute;
+  z-index: 2;
+  top: var(--space-4);
+  left: var(--space-4);
+  right: var(--space-4);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+.map-screen__top .search {
+  flex: 1;
+  min-width: 0;
+}
+.map-screen__top .map-controls {
+  flex: 0 0 auto;
+}
+
+.map-screen__canvas {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg);
+}
+.map-screen__placeholder {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}

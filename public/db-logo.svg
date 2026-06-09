@@ -1,0 +1,8 @@
+<!-- PLACEHOLDER logo. Replace this file with the real Diamond Bar "DB" logo (keep the filename
+     public/db-logo.svg, or send the PNG/SVG and I'll swap the reference). -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img"
+     aria-label="Diamond Bar High School (placeholder logo)">
+  <rect width="48" height="48" rx="10" fill="#582c83" />
+  <text x="24" y="32" text-anchor="middle" font-family="Poppins, system-ui, sans-serif"
+        font-size="22" font-weight="700" fill="#f4b41a">DB</text>
+</svg>

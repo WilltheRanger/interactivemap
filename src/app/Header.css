@@ -1,0 +1,54 @@
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  height: var(--header-height);
+  padding: 0 var(--space-4);
+  background: var(--color-surface);
+  border-bottom: 2px solid var(--color-accent);
+}
+
+.app-header__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-right: auto;
+  min-width: 0;
+}
+.app-header__logo {
+  display: block;
+  flex: 0 0 auto;
+  border-radius: var(--radius-sm);
+}
+.app-header__titles {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  min-width: 0;
+}
+.app-header__name {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+}
+.app-header__sub {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.app-header__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 0 0 auto;
+}
+
+@media (max-width: 420px) {
+  .app-header__action-label {
+    /* aria-label keeps the accessible name; collapse to icon-only to fit narrow phones. */
+    display: none;
+  }
+  .app-header__name {
+    font-size: var(--font-size-md);
+  }
+}

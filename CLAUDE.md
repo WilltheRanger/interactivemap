@@ -79,7 +79,9 @@ read-only via RLS).
 ## Source layout (`src/`)
 - `app/` — root `App` + `router` (the Phase-09 `RequireAuth` seam wraps the routes here).
 - `components/` — reusable UI primitives (Phase 04, from the mockup).
-- `features/{schedule,map,locker}/` — screen logic per feature.
+- `features/{map,find,locker,schedule,log,account}/` — screen logic per feature. Per the mockup the
+  bottom nav is **Map / Find / Lockers / Log**; **Set Classes** (schedule entry) + **Account** live in
+  the header.
 - `lib/` — non-UI modules (`config`, later `supabase`, `personalStore`, `timeEngine`).
 - `data/` — reference-data hooks + static data (map meta, optional bell schedule).
 - `types/` — shared types (generated DB rows + personal-data shapes).
