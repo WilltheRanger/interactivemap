@@ -44,6 +44,11 @@
   background: var(--color-primary-weak);
 }
 
+.btn--danger {
+  background: var(--color-error);
+  color: var(--color-on-error);
+}
+
 .btn--tracked {
   text-transform: uppercase;
   letter-spacing: 0.05em;
