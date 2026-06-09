@@ -1,39 +1,54 @@
 # Phase 00 — Decisions & intake register
 
-**Goal:** Resolve the 7 open decisions and stand up a living data-intake register, so the
+**Goal:** Codify the 7 (now-resolved) decisions and stand up a living data-intake register, so the
 school-dependent assets (the real critical path per planning §Risks) are requested first.
 Output is docs — no app code yet.
 
-**Phase complete when:** all 7 decisions are recorded (answer or explicit "deferred"),
-`DATA-INTAKE.md` lists every real asset with required fields + owner + status, the interaction
-reference is captured in-repo, and the Supabase project ref + secrets approach are agreed.
+**Phase complete when:** `DECISIONS.md` records all 7 decisions + tooling choices, `DATA-INTAKE.md`
+lists every real asset with required fields + owner + status, the interaction reference is captured
+in-repo, and the Supabase project ref + secrets approach are agreed.
 
 ---
 
-### 00.1 — DECISIONS.md 🚩 (asks me)
-- **Scope:** Record answers to the 7 open decisions from `dbhs-wayfinder-planning.md` §Open decisions, plus the 3 flagged tooling decisions from `PLAN.md`.
+### 00.1 — DECISIONS.md
+- **Scope:** Write the resolved decisions to a committed record.
 - **Files:** `DECISIONS.md`.
-- **Deliverable:** A table — Decision · Chosen answer · Date · Build impact — covering: (1) passive vs active schedule view, (2) map format (SVG vs PNG), (3) multi-level?, (4) master-schedule access vs teacher→room directory, (5) auth (recommend none), (6) web/PWA confirm (not native), (7) yearly maintenance owner; **plus** TypeScript?, data-fetching lib?, deploy host?.
-- **Done when:** every row has an answer or an explicit "deferred — revisit by Phase NN"; no blank rows.
-- **Depends on:** my input.
+- **Deliverable / content (decided):**
+  1. **Schedule view = passive** — tap a period → class/room/teacher; no live now/next. (Optional static "current period" label deferred, off by default.)
+  2. **Map = SVG** (named building shapes, ids = `buildings.id`, grouped by `level`).
+  3. **Multi-level = yes** (`level` field + map toggle).
+  4. **Master schedule = yes, pickers data source only**; resolution stays teacher/room.
+  5. **Auth = Google sign-in, access-gate only, restricted to `@stu.wvusd.org`**; personal data stays on-device, never tied to the Google identity; gating also keeps campus map/360° photos non-public.
+  6. **Platform = PWA for v1**; native iOS out of scope (separate future project).
+  7. **Maintenance owner = DBHS** (record a specific role/person).
+  - **Tooling:** TypeScript; TanStack Query; deploy host TBD in Phase 10.
+- **Done when:** every row above is in `DECISIONS.md` with a date; deferred items marked "deferred — revisit by Phase NN".
+- **Depends on:** — (answers already gathered).
 
 ### 00.2 — DATA-INTAKE.md register 🚩
-- **Scope:** One checklist row per real asset the build needs, with the exact fields to collect (per CLAUDE.md §Data intake), an owner, and a status.
+- **Scope:** One checklist row per real asset, with the exact fields to collect (per CLAUDE.md §Data intake), an owner, and a status (`requested / received / loaded`).
 - **Files:** `DATA-INTAKE.md`.
-- **Deliverable:** Rows for: mockup/tokens (B); campus map asset + format + building→id map (C); room→teacher directory + building coords (D); bell schedule + day types (E); per locker **section** {number_start, number_end, building, map_coord, panorama, optional per-locker yaw/pitch} (F); panorama image files (F); real-data cutover sign-off (G). Each row: required fields · owner · status (`requested / received / loaded`) · the phase it unblocks.
-- **Done when:** every checkpoint A–G appears with its required-fields spec and an owner; statuses initialized to `requested`.
-- **Depends on:** 00.1 (decisions shape some fields, e.g. multi-level → `level`).
+- **Deliverable — rows:**
+  - **B Mockup/tokens** — the owner's own mockup (Figma or measured image) + colors/type/spacing/radius.
+  - **C Campus map (SVG)** — vector with each building a named shape; shape id = `buildings.id`; shapes grouped by `level`.
+  - **D Directory + master schedule** — room→teacher directory; building coordinates; `master_schedule(course, period, room, teacher)`.
+  - **E Bell schedule (optional)** — period times + day types; only needed if showing period time ranges or the optional current-period label.
+  - **F Locker sections** — per **section**: `{number_start, number_end, building, map_coord, panorama, optional per-locker yaw/pitch}`; **+ panorama image files** (equirectangular Theta exports). Resolution is by range → ~dozens of section rows, not one per locker.
+  - **H Google Workspace OAuth** — OAuth client id/secret for the project, authorized redirect URIs (local + prod), and sign-off to restrict to `stu.wvusd.org` (needs district Workspace admin).
+  - **G Real-data cutover sign-off** — confirmation to replace all placeholders.
+- **Done when:** every checkpoint B–H appears with its required-fields spec and an owner; statuses initialized to `requested`.
+- **Depends on:** 00.1 (decisions shape some fields).
 
 ### 00.3 — Interaction reference
-- **Scope:** Recover `dbhs-wayfinder-prototype.jsx` (referenced but absent) or transcribe its flow so the build has an interaction baseline.
+- **Scope:** Recover `dbhs-wayfinder-prototype.jsx` (referenced but absent) or transcribe its flow.
 - **Files:** `plan/interaction-reference.md` (and/or the restored `.jsx`).
-- **Deliverable:** The reference flow captured: manual schedule entry → map highlight → now/next banner → locker stub, with any screen/state notes.
-- **Done when:** the flow is documented in-repo and reconciled against the mockup intake (B) once it arrives.
-- **Depends on:** me supplying the prototype (else we transcribe from planning §Current status).
+- **Deliverable:** The reference flow captured — schedule entry → map highlight → (passive) period detail → locker → 360° — reconciled to the passive decision.
+- **Done when:** the flow is documented in-repo; the now/next bits are noted as passive per decision #1.
+- **Depends on:** owner supplying the prototype (else transcribe from planning §Current status).
 
 ### 00.4 — Supabase project & secrets approach 🚩
-- **Scope:** Confirm/identify the Supabase project (planning says "already connected in your tooling"); agree where the URL + anon/publishable key live. **No schema yet.**
-- **Files:** `.env.example` (keys only, no secrets), note in `DECISIONS.md`.
-- **Deliverable:** `.env.example` with `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` placeholders; recorded project ref; confirmation the app uses the **anon/publishable** key only (read-only).
-- **Done when:** `.env.example` is committed and the project ref + read-only-key decision are recorded.
-- **Depends on:** Supabase project access (via Supabase MCP or supplied credentials).
+- **Scope:** Confirm/identify the Supabase project; agree where the URL + anon/publishable key live. **No schema yet.** (Google OAuth provider config itself is Phase 09.)
+- **Files:** `.env.example` (keys only), note in `DECISIONS.md`.
+- **Deliverable:** `.env.example` with `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` placeholders; recorded project ref; confirmation the app uses the **anon/publishable** key only.
+- **Done when:** `.env.example` is committed and the project ref + key approach are recorded.
+- **Depends on:** Supabase project access (Supabase MCP or supplied credentials).
