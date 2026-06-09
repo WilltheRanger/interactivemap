@@ -8,11 +8,10 @@ auto-tracking, no clock-driven auto-advance.
 room/building/teacher and highlights that building on the map, and all class buildings highlight on
 the map. Empty state matches the mockup.
 
-> 🚩 **CHECKPOINT E is OPTIONAL here.** A bell schedule is only needed for the optional static
-> "current period" label (07.4). Core passive display needs no bell times.
->
-> Scope note: the active time-engine / auto-advancing now-next banner from the prototype is **cut**
-> per decision #1.
+> **No bell schedule needed (CHECKPOINT E not required).** Per the owner's final call the schedule
+> is **fully passive / tap-driven** — the active time-engine, the auto-advancing now-next banner,
+> AND the optional static "current period" label are all **cut**. Intake E is only ever revisited
+> if the owner later wants per-period time ranges displayed.
 
 ---
 
@@ -37,14 +36,7 @@ the map. Empty state matches the mockup.
 - **Done when:** opening the map with a saved schedule highlights all class buildings across the relevant levels.
 - **Depends on:** 05.6, 06.4
 
-### 07.4 — (Optional) static current-period label — pending confirm
-- **Scope:** A one-time clock→period lookup that labels the period happening now (e.g. "Now: Period 3"), **no** auto-advance or auto-highlight. Off by default; build only if the owner confirms + supplies bell times (intake E).
-- **Files:** `src/data/bellSchedule.ts`, `src/features/schedule/CurrentPeriodLabel.tsx`.
-- **Deliverable:** If enabled, a static label computed once on load; absent when disabled or off-hours.
-- **Done when:** with the feature enabled and a bell schedule present, the label shows the correct current period; with it disabled, nothing renders.
-- **Depends on:** owner confirm + intake E. **Skippable.**
-
-### 07.5 — Cross-screen sync
+### 07.4 — Cross-screen sync
 - **Scope:** Keep the schedule list + map highlight in sync as the schedule changes.
 - **Files:** `src/data/usePersonal.ts` consumers.
 - **Deliverable:** Editing the schedule updates the list and the map highlight live.
