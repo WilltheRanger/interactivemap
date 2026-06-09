@@ -94,10 +94,8 @@ export function LogScreen() {
 
       {step.name === 'done' && (
         <div className="screen__body log-screen__panel" role="status" aria-live="polite">
-          <p className="log-screen__panel-title">Logged ✓</p>
-          <p>
-            Your <strong>{step.reason}</strong> pass went to your teacher&rsquo;s sheet. The app
-            didn&rsquo;t store anything.
+          <p className="log-screen__panel-title">
+            Your <strong>{step.reason}</strong> pass has been logged ✓
           </p>
           <div className="log-screen__panel-actions">
             <Button variant="primary" onClick={() => setStep({ name: 'reason' })}>
