@@ -1,3 +1,5 @@
+import { motion } from 'framer-motion';
+import { spring } from '../../lib/motion';
 import './MapControls.css';
 
 interface MapControlsProps {
@@ -11,7 +13,12 @@ interface MapControlsProps {
  */
 export function MapControls({ level, period }: MapControlsProps) {
   return (
-    <div className="map-controls">
+    <motion.div
+      className="map-controls"
+      whileHover={{ y: -5, scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      transition={spring.smooth}
+    >
       <div className="map-controls__row">
         <span className="map-controls__label">Level</span>
         <span className="map-controls__value">{level}</span>
@@ -21,6 +28,6 @@ export function MapControls({ level, period }: MapControlsProps) {
         <span className="map-controls__label">Period</span>
         <span className="map-controls__value">{period}</span>
       </div>
-    </div>
+    </motion.div>
   );
 }

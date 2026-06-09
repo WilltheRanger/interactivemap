@@ -1,5 +1,7 @@
+import { motion } from 'framer-motion';
 import { SearchInput } from '../../components/SearchInput';
 import { MapControls } from './MapControls';
+import { fadeUpItem, staggerContainer } from '../../lib/motion';
 import './MapScreen.css';
 
 /**
@@ -9,13 +11,22 @@ import './MapScreen.css';
 export function MapScreen() {
   return (
     <div className="map-screen">
-      <div className="map-screen__top">
-        <SearchInput
-          placeholder="Search rooms, buildings, or locations…"
-          aria-label="Search rooms, buildings, or locations"
-        />
-        <MapControls level="1" period="3" />
-      </div>
+      <motion.div
+        className="map-screen__top"
+        variants={staggerContainer}
+        initial="hidden"
+        animate="show"
+      >
+        <motion.div className="map-screen__search" variants={fadeUpItem}>
+          <SearchInput
+            placeholder="Search rooms, buildings, or locations…"
+            aria-label="Search rooms, buildings, or locations"
+          />
+        </motion.div>
+        <motion.div variants={fadeUpItem}>
+          <MapControls level="1" period="3" />
+        </motion.div>
+      </motion.div>
       <div className="map-screen__canvas" role="img" aria-label="Campus map placeholder">
         <p className="map-screen__placeholder">Interactive campus map — Phase 05.</p>
       </div>

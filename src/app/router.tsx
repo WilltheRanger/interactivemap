@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { pageVariants } from '../lib/motion';
 import { Header } from './Header';
 import { BottomNav } from './BottomNav';
 import { MapScreen } from '../features/map/MapScreen';
@@ -17,6 +19,34 @@ function RequireAuth({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+/** Routed content with a fade + slight-rise transition between screens. */
+function AnimatedRoutes() {
+  const location = useLocation();
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={location.pathname}
+        className="page"
+        variants={pageVariants}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+      >
+        <Routes location={location}>
+          <Route path="/" element={<Navigate to="/map" replace />} />
+          <Route path="/map" element={<MapScreen />} />
+          <Route path="/find" element={<FindScreen />} />
+          <Route path="/lockers" element={<LockersScreen />} />
+          <Route path="/log" element={<LogScreen />} />
+          <Route path="/set-classes" element={<SetClassesScreen />} />
+          <Route path="/account" element={<AccountScreen />} />
+          <Route path="*" element={<Navigate to="/map" replace />} />
+        </Routes>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
 function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="app-shell">
@@ -31,16 +61,7 @@ export function AppRoutes() {
   return (
     <RequireAuth>
       <AppShell>
-        <Routes>
-          <Route path="/" element={<Navigate to="/map" replace />} />
-          <Route path="/map" element={<MapScreen />} />
-          <Route path="/find" element={<FindScreen />} />
-          <Route path="/lockers" element={<LockersScreen />} />
-          <Route path="/log" element={<LogScreen />} />
-          <Route path="/set-classes" element={<SetClassesScreen />} />
-          <Route path="/account" element={<AccountScreen />} />
-          <Route path="*" element={<Navigate to="/map" replace />} />
-        </Routes>
+        <AnimatedRoutes />
       </AppShell>
     </RequireAuth>
   );

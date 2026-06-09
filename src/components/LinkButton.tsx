@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
+import { motion } from 'framer-motion';
 import { Link, type LinkProps } from 'react-router-dom';
+import { spring, tap } from '../lib/motion';
 import './Button.css';
 
 type ButtonVariant = 'primary' | 'secondary';
@@ -23,13 +25,15 @@ export function LinkButton({
     .filter(Boolean)
     .join(' ');
   return (
-    <Link className={classes} {...rest}>
-      {icon ? (
-        <span className="btn__icon" aria-hidden="true">
-          {icon}
-        </span>
-      ) : null}
-      {children}
-    </Link>
+    <motion.span className="btn-press" whileTap={tap} transition={spring.snappy}>
+      <Link className={classes} {...rest}>
+        {icon ? (
+          <span className="btn__icon" aria-hidden="true">
+            {icon}
+          </span>
+        ) : null}
+        {children}
+      </Link>
+    </motion.span>
   );
 }

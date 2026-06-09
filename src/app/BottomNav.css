@@ -32,8 +32,9 @@
 .bottom-nav__item[aria-current='page'] {
   color: var(--color-primary);
 }
-.bottom-nav__item[aria-current='page']::before {
-  content: '';
+
+/* Shared-layout active indicator (slides between tabs via layoutId). */
+.bottom-nav__indicator {
   position: absolute;
   top: 0;
   left: 22%;

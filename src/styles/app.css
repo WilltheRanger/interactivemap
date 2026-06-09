@@ -18,6 +18,11 @@
   background: var(--color-bg);
 }
 
+/* Route-transition wrapper (see AnimatedRoutes). Full height so the map screen can fill it. */
+.page {
+  height: 100%;
+}
+
 /* Standard padded screen (used by Find / Lockers / Log / Set Classes / Account). The Map screen is
    full-bleed and styles itself. */
 .screen {
