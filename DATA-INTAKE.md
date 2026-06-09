@@ -8,12 +8,13 @@ Status legend: `requested` → `received` → `loaded`/`done`.
 
 | # | Asset | Required fields / format | Owner | Status | Unblocks |
 |---|-------|--------------------------|-------|--------|----------|
-| B | **Mockup + tokens** | The owner's **own** mockup (Figma link or measured image). Colors (bg/surface/text/primary/accent/border/error), type (fonts + size/weight scale), spacing scale, radius/shadow/density. (Referenced mockups in the docs are void.) | Owner | requested | Phase 04 (all UI) |
+| B | **Mockup + tokens** | The owner's **own** mockup (Figma link or measured image). Colors (bg/surface/text/primary/accent/border/error), type (fonts + size/weight scale), spacing scale, radius/shadow/density. **Include the Log/QR-scan screens** (Phase 12). (Referenced mockups in the docs are void.) | Owner | requested | Phases 04, 12 (all UI) |
 | C | **Campus map (SVG)** | Vector SVG; **each building a named shape** whose `id` = `buildings.id`; shapes grouped by level (e.g. `<g id="level-0">`); known viewBox/dimensions. | Owner / school | requested | Phase 05 (map) |
 | D | **Directory + master schedule** | Room→teacher directory; building coordinates/level; `master_schedule` rows `{course, period, room_id, teacher_id}` (operational, non-personal). | School | requested | Phases 05–06 |
 | E | **Bell schedule** *(optional)* | Per day-type, ordered periods `{label, start HH:MM, end HH:MM, kind}`. **Only needed if** per-period time ranges are ever displayed (passive build doesn't require it). | School | optional | Phase 07 |
 | F | **Locker sections + panoramas** | Per **section**: `{number_start, number_end, building_id, map_coord, panorama}` + optional per-locker `{yaw, pitch}`. **Plus** the panorama image files (equirectangular Theta exports). Resolution is **by range** → ~dozens of section rows, **not** one per locker. | Owner / school | requested | Phase 08 (locker) |
 | H | **Google Workspace OAuth** | OAuth client id + secret for the project; authorized redirect URIs (local + prod); written sign-off to restrict sign-in to the `stu.wvusd.org` domain. | District Workspace admin | requested | Phase 09 (auth) |
+| L | **Hall-pass Forms (per teacher)** | Each participating teacher creates their **own** Google Form (Workspace-restricted so it auto-collects the respondent's email; a "Reason" question; timestamp automatic) linked to a response Sheet, and prints its QR. Per `docs/hall-pass-teacher-setup.md` (Phase 12.4). The app stores nothing. | Teachers | not started | Phase 12 (log) |
 | G | **Real-data cutover sign-off** | Confirmation to replace all placeholder data with the real data above. | Owner | requested | Phase 11 (launch) |
 
 ## Per-section locker prompt (use verbatim when requesting F)

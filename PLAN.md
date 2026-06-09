@@ -15,7 +15,7 @@ until this plan is reviewed.**
 
 ## Hard rules — enforce in every phase (from CLAUDE.md)
 - **Join key:** resolve a class location by **teacher or room, NEVER class+period.** `class_label` is display-only. (The master schedule is a data *source* for pickers only — it does not become the join key.)
-- **Data split:** reference data → Supabase (read-only to the app); personal data (schedule, locker) → device `localStorage`. **No student-identifying data server-side, ever** — and personal data is never keyed to the signed-in Google identity.
+- **Data split:** reference data → Supabase (read-only to the app); personal data (schedule, locker) → device `localStorage`. **No student-identifying data server-side, ever** — and personal data is never keyed to the signed-in Google identity. (The Phase-12 hall-pass Log preserves this: it routes the log to the **teacher's own Google Sheet**; our app stores nothing.)
 - **Placeholder, never invented:** until real data arrives, all data is clearly labeled placeholder.
 - **Match the mockup** (the owner's forthcoming one); ask before inventing any screen/state. Building shape ids in the SVG map **must equal** `buildings.id`.
 - **Stay in scope:** no SIS auto-pull, no navigable/photoreal 3D, **no native app** (PWA only), no live GPS. Ask before new scope/deps.
@@ -55,6 +55,7 @@ until this plan is reviewed.**
 - **[09 — Auth & access gating](plan/phase-09-auth-access-gating.md)** 🚩 — Google sign-in restricted to `@stu.wvusd.org`, gating the app + campus photos; personal data stays device-local. Chunks: OAuth setup · Auth client/session · Domain enforcement · Protected shell · RLS+Storage gating · Privacy assertion. *Complete when:* only `@stu.wvusd.org` accounts enter, reference data + photos are gated, and no personal data is tied to identity.
 - **[10 — PWA, performance & deploy](plan/phase-10-pwa-perf-deploy.md)** — Installable PWA, performant panoramas without layout shift, deployed to a static host + Supabase with OAuth redirects wired. Chunks: Manifest/icons · Service worker · Image perf · Deploy pipeline · Docs. *Complete when:* installable PWA serves from a production URL against Supabase, with no panorama CLS and working sign-in.
 - **[11 — A11y, real-data cutover & pilot](plan/phase-11-a11y-realdata-pilot.md)** 🚩 — WCAG AA + keyboard pass, replace every placeholder with validated real data, pilot on a phone, document maintenance. Chunks: A11y audit · Real-data cutover · Device QA · Pilot · Maintenance handoff. *Complete when:* AA + keyboard pass, no placeholders remain, end-to-end flow verified on a real phone, maintenance owner documented.
+- **[12 — Hall-pass Log (QR → teacher's Google Sheet)](plan/phase-12-hall-pass-log.md)** — Tap **Log** → scan the teacher's QR → open the teacher's own Google Form; the app stores nothing, so the privacy rule holds. Chunks: URL-safety validator (built) · QR scanner · Log entry point · Teacher setup guide · Privacy assertion. *Complete when:* a valid teacher Form QR opens it, disallowed QRs are rejected, and an audit shows the app retains no log data.
 
 ## Recommended build order & blocking
 Ordered so each builds on verified prior work. **00 → 01 → 02 → 03** have no external blockers — run them first.
