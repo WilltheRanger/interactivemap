@@ -112,3 +112,23 @@
   gap: var(--space-3);
   margin-top: var(--space-2);
 }
+
+/* Brief "Logging…" spinner while the background request is in flight. */
+.log-screen__spinner {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 3px solid var(--color-primary-weak);
+  border-top-color: var(--color-primary);
+  animation: log-spin 0.8s linear infinite;
+}
+@keyframes log-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .log-screen__spinner {
+    animation-duration: 2s;
+  }
+}

@@ -37,20 +37,24 @@ confirms the app retains no log data.
 - **Done when:** a reason can be chosen and is passed to the scanner. ✅
 - **Depends on:** 12.1, 04 primitives.
 
-### 12.3 — QR scanner ✅ *(UI — built; restyle when mockup B lands)*
-- **Scope:** Camera scanner that decodes a QR, builds the URL via 12.1, and opens it.
+### 12.3 — QR scanner + silent submit ✅ *(UI — built; restyle when mockup B lands)*
+- **Scope:** Camera scanner that decodes a QR, validates it via 12.1, and logs the pass silently.
 - **Files:** `src/features/log/QrScanner.tsx`, `src/types/barcode-detector.d.ts`,
-  `src/features/log/LogScreen.css`.
+  `src/features/log/LogScreen.tsx`, `src/features/log/LogScreen.css`.
 - **Deliverable:** `getUserMedia` rear camera + native `BarcodeDetector` fast path with a **jsQR**
   fallback (chosen over `@zxing/browser`; **lazy-imported** so it's a separate chunk, off the path for
   browsers with the native API). On scan: `buildHallPassUrl(scanned, reason, student?)` → if `null`
-  the invalid-QR state, else a **confirm** step whose button opens the logger in a new tab (user
-  gesture, so it isn't pop-up-blocked; same-tab fallback if it is). States: starting, scanning,
-  permission-denied, unsupported, error, invalid-QR, confirm, done.
-- **Done when:** a valid teacher QR opens the logger; a disallowed QR shows invalid; denied/unsupported
-  camera shows a clear message + retry. ✅
-- **Deferred:** the `student=` param waits on Phase 09 sign-in; until then the teacher's Apps Script
-  captures the same-Workspace email itself. Real-device camera test pending (needs https + a phone).
+  the invalid-QR state, else **log instantly** (no confirm step) via a **fire-and-forget `fetch(url,
+  { mode: 'no-cors', keepalive: true })`** — the student never leaves the app. States: starting,
+  scanning, permission-denied, unsupported, error; then sending → done, plus invalid-QR and a
+  network-error retry.
+- **Trade-offs (owner-approved):** the silent call is anonymous, so the teacher must deploy with
+  **"Anyone"** access (see teacher guide), and `no-cors` means we can't read the response — we show an
+  optimistic "Logged ✓" and only catch hard network failures (then offer retry).
+- **Done when:** a valid teacher QR logs a row with no page navigation; a disallowed QR shows invalid;
+  denied/unsupported camera shows a clear message + retry. ✅
+- **Deferred:** the `student=` param waits on Phase 09 sign-in; until then rows record time + reason
+  only (anonymous). Real-device camera test pending (needs https + a phone).
 - **Depends on:** 12.1, 12.2, 04 primitives; 09 for the signed-in student id (deferred).
 
 ### 12.4 — Log entry point ✅ *(built)*
