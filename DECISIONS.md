@@ -35,4 +35,5 @@ _Last updated: 2026-06-09._
 ## Supabase project / secrets
 - App uses the **anon / publishable** key only (read-only via RLS). No service-role key in the client.
 - Env keys live in `.env` (gitignored); see `.env.example`. Host env vars set at deploy (Phase 10).
-- Project ref: _to confirm during Phase 02 schema work._
+- **Project:** `dbhs-wayfinder` · ref `mnvntttootxbbbnsnvke` · region `us-west-1` · org `gyfmvfoohksuckltsiym` · cost $0/mo (free tier).
+- Created Phase 02. RLS verified: anon can SELECT, anon INSERT denied. Security advisors clean.
