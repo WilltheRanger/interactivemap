@@ -2,8 +2,12 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  height: var(--header-height);
-  padding: 0 var(--space-4);
+  /* min-height (not height) so the status-bar inset padding adds to the bar instead of squeezing the
+     row. Pad for the iOS status bar / Dynamic Island (top) and the notch in landscape (left/right)
+     when installed to the home screen; insets are 0 on the web, so this is a no-op there. */
+  min-height: var(--header-height);
+  padding: env(safe-area-inset-top, 0) max(var(--space-4), env(safe-area-inset-right, 0)) 0
+    max(var(--space-4), env(safe-area-inset-left, 0));
   background: var(--color-surface);
   border-bottom: 2px solid var(--color-accent);
 }

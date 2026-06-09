@@ -1,9 +1,14 @@
 .bottom-nav {
   display: flex;
-  height: var(--nav-height);
+  /* min-height (not height): the home-indicator inset padding must add to the bar, otherwise (with
+     box-sizing: border-box) it eats into the fixed 64px and squishes the 44px tap targets on iPhones.
+     Also pad the notch sides in landscape; all insets are 0 on the web. */
+  min-height: var(--nav-height);
   background: var(--color-surface);
   border-top: 1px solid var(--color-border-subtle);
   padding-bottom: env(safe-area-inset-bottom, 0);
+  padding-left: env(safe-area-inset-left, 0);
+  padding-right: env(safe-area-inset-right, 0);
 }
 
 .bottom-nav__item {
