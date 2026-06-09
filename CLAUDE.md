@@ -69,9 +69,10 @@ follow the DESIGN.md checklist, and ask before inventing any screen or state not
 - `npm run preview` — serve the production build locally.
 - `npm run lint` — ESLint (flat config, TS + react-hooks).
 - `npm run format` / `npm run format:check` — Prettier write / verify.
+- `npm test` — Vitest (run once) · `npm run test:watch` — Vitest watch mode.
 
 Env: copy `.env.example` → `.env` and set `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` (anon key only;
-read-only via RLS). Tests: not set up yet (added with the data/time layers in Phases 02–03).
+read-only via RLS).
 
 ## Source layout (`src/`)
 - `app/` — root `App` + `router` (the Phase-09 `RequireAuth` seam wraps the routes here).
