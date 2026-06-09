@@ -1,0 +1,98 @@
+/* Account screen: sign-in placeholder + on-device settings (theme control). Token-only. */
+
+.account__card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+  padding: var(--space-4);
+}
+
+.account__identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+.account__avatar {
+  flex: 0 0 auto;
+  color: var(--color-text-muted);
+}
+.account__name {
+  font-weight: var(--font-weight-semibold);
+}
+.account__hint {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.account__section-title {
+  margin: var(--space-5) 0 var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+.account__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.account__row-label {
+  font-weight: var(--font-weight-medium);
+}
+.account__caption {
+  margin-top: var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+/* Segmented control (Light / Dark / System) */
+.seg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+}
+.seg__option {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-muted);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+.seg__option:hover:not(.is-active) {
+  color: var(--color-text);
+}
+.seg__option.is-active {
+  color: var(--color-on-primary);
+}
+.seg__content {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0 var(--space-3);
+}
+.seg__label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+.seg__indicator {
+  position: absolute;
+  inset: 0;
+  background: var(--color-primary);
+  border-radius: var(--radius-pill);
+}
