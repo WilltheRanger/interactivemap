@@ -11,8 +11,9 @@ before planning any non-trivial work.
 ## What (v1 scope)
 - Interactive 2D campus map; click a building/room → room number + teacher.
 - Manual schedule entry by the student; the app resolves class location from reference data.
-- "Now / next" period highlighting, driven by a hard-coded bell schedule.
+- Passive schedule view: tap a period → its class + location (no live now/next — see DECISIONS.md #1).
 - Locker finder: the map shows the locker section; click it → a 360° panorama with a pin on the locker.
+- Hall-pass Log: tap Log → scan the teacher's QR → open the teacher's own Google Form (the app stores no log data; see DECISIONS.md + `plan/phase-12-hall-pass-log.md`).
 
 ## Out of scope — do NOT build or re-propose
 - Auto-pulling student schedules from the SIS (personal/FERPA-protected, access-gated). Students self-enter.
@@ -26,7 +27,8 @@ before planning any non-trivial work.
   is a display label only.
 - **Data split:** reference data (buildings, rooms, teachers, lockers, panoramas) lives in Supabase.
   Personal data (a student's schedule + their locker number) stays on the device in `localStorage`.
-  Never store student-identifying data server-side.
+  Never store student-identifying data server-side. (The hall-pass Log honors this by routing entries
+  to the **teacher's own Google Sheet** — the app never stores them.)
 - Until real campus data is provided, use clearly-labeled **placeholder** data. Do not invent real
   room numbers, teacher names, or coordinates and present them as real.
 
