@@ -1,9 +1,9 @@
 .bottom-nav {
   display: flex;
-  /* min-height (not height): the home-indicator inset padding must add to the bar, otherwise (with
-     box-sizing: border-box) it eats into the fixed 64px and squishes the 44px tap targets on iPhones.
-     Also pad the notch sides in landscape; all insets are 0 on the web. */
-  min-height: var(--nav-height);
+  /* A full nav-height of tappable bar PLUS the home-indicator inset on top, so the inset is never
+     subtracted from the 64px (which compressed the icons against the top border). min-height (not
+     height) keeps the buttons from being squished; insets are 0 on the web. */
+  min-height: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px));
   background: var(--color-surface);
   border-top: 1px solid var(--color-border-subtle);
   padding-bottom: env(safe-area-inset-bottom, 0);
@@ -18,8 +18,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: var(--space-1);
   min-height: var(--tap-target);
+  padding-top: var(--space-1);
   color: var(--color-text-muted);
 }
 
