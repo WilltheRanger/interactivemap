@@ -17,10 +17,10 @@ export function Header() {
     >
       <MotionLink to="/map" className="app-header__brand" variants={fadeUpItem}>
         <img
-          src={`${import.meta.env.BASE_URL}db-logo.svg`}
+          src={`${import.meta.env.BASE_URL}brahmas-logo.webp`}
           alt=""
           className="app-header__logo"
-          width={44}
+          width={66}
           height={44}
         />
         <span className="app-header__titles">

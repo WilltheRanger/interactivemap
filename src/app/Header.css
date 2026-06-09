@@ -18,7 +18,8 @@
 .app-header__logo {
   display: block;
   flex: 0 0 auto;
-  border-radius: var(--radius-sm);
+  height: 44px;
+  width: auto;
 }
 .app-header__titles {
   display: flex;
