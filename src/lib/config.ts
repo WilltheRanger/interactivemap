@@ -9,15 +9,20 @@ export interface AppConfig {
   supabaseUrl: string;
   supabaseAnonKey: string;
   isSupabaseConfigured: boolean;
+  /** Where "Report wrong info" sends mail. Set VITE_FEEDBACK_EMAIL to a real address before launch. */
+  feedbackEmail: string;
 }
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL ?? '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? '';
+// `.example` is a reserved placeholder TLD (RFC 2606) — clearly not a real inbox until configured.
+const feedbackEmail = import.meta.env.VITE_FEEDBACK_EMAIL ?? 'wayfinder@dbhs.example';
 
 export const config: AppConfig = {
   supabaseUrl,
   supabaseAnonKey,
   isSupabaseConfigured: Boolean(supabaseUrl && supabaseAnonKey),
+  feedbackEmail,
 };
 
 export function assertSupabaseConfig(): void {
