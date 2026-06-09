@@ -40,9 +40,9 @@ CLAUDE.md §Commands is filled.
 - **Depends on:** 00.4, 01.1
 
 ### 01.5 — App shell & routing
-- **Scope:** Routes/tabs for the three v1 screens with mobile-first bottom nav; stub each screen's loading/empty/error slots (unstyled — mockup wiring is Phase 04).
+- **Scope:** Routes/tabs for the three v1 screens with mobile-first bottom nav; stub each screen's loading/empty/error slots (unstyled — mockup wiring is Phase 04). Leave a seam for the Phase-09 auth guard to wrap these routes (no auth logic yet).
 - **Files:** `src/app/router.tsx`, `src/features/{schedule,map,locker}/*Screen.tsx`, nav component.
-- **Deliverable:** Schedule / Map / Locker screens reachable via nav.
+- **Deliverable:** Schedule / Map / Locker screens reachable via nav; a single place where an `AuthGuard` will later wrap the routes.
 - **Done when:** navigating between all three works at 375px width; deep-link/refresh keeps the route.
 - **Depends on:** 01.3
 

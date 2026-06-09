@@ -1,24 +1,26 @@
 # Phase 04 — Design system & UI primitives
 
-**Goal:** Replace placeholder tokens with values **extracted from the mockup**, then build the
-small, reusable, accessible primitive set DESIGN.md requires.
+**Goal:** Replace placeholder tokens with values **extracted from the owner's mockup**, then build
+the small, reusable, accessible primitive set DESIGN.md requires.
 
 **Phase complete when:** every `<from mockup>` placeholder in DESIGN.md is a real value mirrored in
 `tokens.css`, the primitives match the mockup with the a11y baseline (≥44px targets, visible focus,
 labels), and a dev-only gallery verifies them.
 
-> 🚩 **DATA-INTAKE CHECKPOINT B — STOP and ask me for the mockup before starting.** Do not invent
-> colors, type, spacing, or any screen/state not in the mockup (DESIGN.md). If it's a Figma file,
-> read variables/measurements directly rather than eyeballing.
+> 🚩 **DATA-INTAKE CHECKPOINT B — STOP and wait for the owner's mockup before starting.** The
+> mockups referenced in the docs are **void**; the owner is supplying **their own** mockup. Do not
+> invent colors, type, spacing, or any screen/state not in it (DESIGN.md). If it's a Figma file,
+> read variables/measurements directly rather than eyeballing. **Non-visual phases (02, 03) and the
+> auth/data plumbing proceed while this is pending.**
 
 ---
 
 ### 04.0 — 🚩 Mockup intake & token extraction
-- **Scope:** Pull exact tokens from the mockup and record them.
-- **Files:** `DESIGN.md` (fill the token tables), `src/styles/tokens.css`.
+- **Scope:** Pull exact tokens from the owner's mockup and record them.
+- **Files:** `DESIGN.md` (fill the token tables; note that the previously-referenced mockups are void), `src/styles/tokens.css`.
 - **Deliverable:** Real values for colors (bg/surface/text/primary/accent/border/error), type (fonts + size/weight scale), spacing scale, radius/shadow/density.
 - **Done when:** no `<from mockup>` / placeholder tokens remain; `tokens.css` mirrors DESIGN.md exactly.
-- **Depends on:** me supplying the mockup. **Blocks all of Phase 04+ UI.**
+- **Depends on:** the owner supplying their mockup. **Blocks all of Phase 04+ UI.**
 
 ### 04.1 — Theme wiring + contrast check
 - **Scope:** Swap the Phase-01 placeholder tokens for the real ones; verify AA contrast.
