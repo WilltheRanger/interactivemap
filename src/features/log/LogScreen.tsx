@@ -6,35 +6,53 @@ import { QrScanner } from './QrScanner';
 import './LogScreen.css';
 
 /**
- * Hall-pass Log (Phase 12): pick a reason → scan the teacher's QR → open the teacher's own Apps
- * Script logger, which appends the row to *their* Sheet. The app stores nothing (decision #8): no
- * Supabase write, no localStorage write of log content — we only validate the scanned URL and open it.
+ * Hall-pass Log (Phase 12): pick a reason → scan the teacher's QR → the pass is logged silently in
+ * the background. We validate the scanned QR (it must be the teacher's Google Apps Script /exec
+ * endpoint — see hallPass.ts), then fire a fire-and-forget request to it; the script appends the row
+ * to the teacher's own Sheet. The student never leaves the app, and the app stores nothing
+ * (decision #8): no Supabase write, no localStorage write of log content.
+ *
+ * The background request is anonymous, so the teacher must deploy their script with "Anyone" access
+ * (see docs/hall-pass-teacher-setup.md). Student identity (?student=) arrives with the Phase 09
+ * Google sign-in; until then rows record time + reason only.
  */
 type Step =
   | { name: 'reason' }
   | { name: 'scan'; reason: HallPassReason }
-  | { name: 'confirm'; reason: HallPassReason; url: string }
+  | { name: 'sending'; reason: HallPassReason }
+  | { name: 'done'; reason: HallPassReason }
   | { name: 'invalid'; reason: HallPassReason }
-  | { name: 'done'; reason: HallPassReason };
+  | { name: 'error'; reason: HallPassReason; url: string };
 
 export function LogScreen() {
   const [step, setStep] = useState<Step>({ name: 'reason' });
 
-  // Phase 09 will supply the signed-in @stu.wvusd.org address. Until then the teacher's Apps Script
-  // captures the same-Workspace student email itself, so we pass no `student` param.
+  // Phase 09 will supply the signed-in @stu.wvusd.org address as ?student=. Until then we send no
+  // identity, so rows record time + reason only.
   const studentId: string | undefined = undefined;
 
-  const handleResult = (raw: string, reason: HallPassReason) => {
-    const url = buildHallPassUrl(raw, reason, studentId);
-    setStep(url ? { name: 'confirm', reason, url } : { name: 'invalid', reason });
+  const submit = async (url: string, reason: HallPassReason) => {
+    setStep({ name: 'sending', reason });
+    try {
+      // Fire-and-forget GET to the validated Apps Script endpoint. no-cors because Apps Script can't
+      // return CORS headers — we never read the response, we only need the side effect (a row in the
+      // teacher's Sheet). The app keeps nothing; keepalive lets it finish even if the view changes.
+      await fetch(url, { method: 'GET', mode: 'no-cors', keepalive: true });
+      setStep({ name: 'done', reason });
+    } catch {
+      // Only a hard network failure rejects a no-cors fetch; surface it so the student can retry.
+      setStep({ name: 'error', reason, url });
+    }
   };
 
-  const openLogger = (url: string, reason: HallPassReason) => {
-    // Open from this tap (a user gesture, so pop-up blockers allow it); fall back to a same-tab
-    // navigation if the new tab is blocked. Either way we keep none of it.
-    const opened = window.open(url, '_blank', 'noopener,noreferrer');
-    if (!opened) window.location.assign(url);
-    setStep({ name: 'done', reason });
+  const handleResult = (raw: string, reason: HallPassReason) => {
+    // Gate: only the teacher's Google Apps Script /exec endpoint passes; any other QR is rejected.
+    const url = buildHallPassUrl(raw, reason, studentId);
+    if (!url) {
+      setStep({ name: 'invalid', reason });
+      return;
+    }
+    void submit(url, reason);
   };
 
   return (
@@ -67,21 +85,23 @@ export function LogScreen() {
         </>
       )}
 
-      {step.name === 'confirm' && (
-        <div className="screen__body log-screen__panel" role="status">
-          <p className="log-screen__panel-title">Teacher QR found ✓</p>
+      {step.name === 'sending' && (
+        <div className="screen__body log-screen__panel" role="status" aria-live="polite">
+          <span className="log-screen__spinner" aria-hidden="true" />
+          <p className="log-screen__panel-title">Logging your {step.reason} pass…</p>
+        </div>
+      )}
+
+      {step.name === 'done' && (
+        <div className="screen__body log-screen__panel" role="status" aria-live="polite">
+          <p className="log-screen__panel-title">Logged ✓</p>
           <p>
-            Log a <strong>{step.reason}</strong> pass to your teacher&rsquo;s sheet?
+            Your <strong>{step.reason}</strong> pass went to your teacher&rsquo;s sheet. The app
+            didn&rsquo;t store anything.
           </p>
           <div className="log-screen__panel-actions">
-            <Button variant="primary" onClick={() => openLogger(step.url, step.reason)}>
-              Log {step.reason} pass
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => setStep({ name: 'scan', reason: step.reason })}
-            >
-              Rescan
+            <Button variant="primary" onClick={() => setStep({ name: 'reason' })}>
+              Log another pass
             </Button>
           </div>
         </div>
@@ -108,16 +128,19 @@ export function LogScreen() {
         </div>
       )}
 
-      {step.name === 'done' && (
-        <div className="screen__body log-screen__panel" role="status">
-          <p className="log-screen__panel-title">Opened the hall-pass log ✓</p>
-          <p>
-            Your <strong>{step.reason}</strong> pass opened in your teacher&rsquo;s logger. This app
-            didn&rsquo;t store anything — the entry goes straight to your teacher&rsquo;s own sheet.
-          </p>
+      {step.name === 'error' && (
+        <div className="screen__body log-screen__panel log-screen__panel--error" role="alert">
+          <p className="log-screen__panel-title">Couldn&rsquo;t reach the logger</p>
+          <p>Check your connection and try again.</p>
           <div className="log-screen__panel-actions">
-            <Button variant="primary" onClick={() => setStep({ name: 'reason' })}>
-              Log another pass
+            <Button variant="primary" onClick={() => void submit(step.url, step.reason)}>
+              Try again
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => setStep({ name: 'scan', reason: step.reason })}
+            >
+              Rescan
             </Button>
           </div>
         </div>
