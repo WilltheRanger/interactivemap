@@ -13,7 +13,7 @@ before planning any non-trivial work.
 - Manual schedule entry by the student; the app resolves class location from reference data.
 - Passive schedule view: tap a period → its class + location (no live now/next — see DECISIONS.md #1).
 - Locker finder: the map shows the locker section; click it → a 360° panorama with a pin on the locker.
-- Hall-pass Log: tap Log → scan the teacher's QR → open the teacher's own Google Form (the app stores no log data; see DECISIONS.md + `plan/phase-12-hall-pass-log.md`).
+- Hall-pass Log: tap Log → pick a reason → scan the teacher's QR → the teacher's Apps Script logs `{time, student, reason}` to their own Google Sheet (zero submit; the app stores no log data; see DECISIONS.md + `plan/phase-12-hall-pass-log.md`).
 
 ## Out of scope — do NOT build or re-propose
 - Auto-pulling student schedules from the SIS (personal/FERPA-protected, access-gated). Students self-enter.
