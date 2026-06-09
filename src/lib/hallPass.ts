@@ -31,11 +31,14 @@ export type HallPassReason = (typeof HALL_PASS_REASONS)[number];
 
 /**
  * Compose the URL to open after a scan: validate the scanned endpoint, then append the chosen reason
- * (URL-encoded). Returns null if the scanned QR is not an approved Apps Script endpoint.
+ * and (optionally) the signed-in student identifier — both URL-encoded. The student id comes from the
+ * app's Google sign-in (Phase 09) so logging doesn't depend on the Apps Script's cross-subdomain email
+ * capture. Returns null if the scanned QR is not an approved Apps Script endpoint.
  */
-export function buildHallPassUrl(scanned: string, reason: string): string | null {
+export function buildHallPassUrl(scanned: string, reason: string, student?: string): string | null {
   if (!isAllowedHallPassUrl(scanned)) return null;
   const url = new URL(scanned.trim());
   if (reason) url.searchParams.set('reason', reason);
+  if (student) url.searchParams.set('student', student);
   return url.toString();
 }

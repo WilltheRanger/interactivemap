@@ -23,8 +23,9 @@ confirms the app retains no log data.
   with the in-app reason appended.
 - **Files:** `src/lib/hallPass.ts`, `src/lib/hallPass.test.ts`.
 - **Deliverable:** `isAllowedHallPassUrl` (https + `script.google.com` + `/macros/…/exec`);
-  `HALL_PASS_REASONS` (placeholder list); `buildHallPassUrl(scanned, reason)` → validated URL with
-  `?reason=` appended, else `null`.
+  `HALL_PASS_REASONS` (placeholder list); `buildHallPassUrl(scanned, reason, student?)` → validated
+  URL with `?reason=` / `?student=` appended, else `null`. The app passes the **signed-in student**
+  (Phase 09) so logging doesn't rely on Apps Script reading the email across `stu`/`wvusd.org`.
 - **Done when:** tests cover allowed `/exec` endpoints, reject `/dev`/other Google surfaces/look-alikes/junk, and verify reason encoding + null-on-invalid. **(8 tests passing.)**
 - **Depends on:** —
 
@@ -39,11 +40,12 @@ confirms the app retains no log data.
 - **Scope:** Camera scanner that decodes a QR, builds the URL via 12.1, and opens it.
 - **Files:** `src/features/log/QrScanner.tsx`.
 - **Deliverable:** Native `BarcodeDetector` where available + a JS fallback (e.g. `@zxing/browser` —
-  **new dep, flag before adding**). On scan: `buildHallPassUrl(scanned, reason)` → if `null` show the
-  invalid-QR state, else open the URL. States: requesting-camera, scanning, invalid-QR, permission-denied.
+  **new dep, flag before adding**). On scan: `buildHallPassUrl(scanned, reason, signedInStudent)` (the
+  student comes from the Phase-09 sign-in) → if `null` show the invalid-QR state, else open the URL.
+  States: requesting-camera, scanning, invalid-QR, permission-denied.
 - **Done when:** a valid teacher QR opens the logger (row appears in the Sheet); a disallowed QR shows
   invalid; denied camera shows a clear message.
-- **Depends on:** 12.1, 12.2, mockup B, 04 primitives.
+- **Depends on:** 12.1, 12.2, mockup B, 04 primitives, 09 (signed-in student id).
 
 ### 12.4 — Log entry point *(UI — gated on mockup B)*
 - **Scope:** The "Log" affordance in the app per the mockup (4th nav item or a button) → reason picker → scanner.
