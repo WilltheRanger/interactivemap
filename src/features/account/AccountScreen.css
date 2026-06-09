@@ -51,6 +51,36 @@
   font-size: var(--font-size-sm);
 }
 
+/* Saved-info hub: tappable rows linking to the locker / schedule editors. */
+.account__link-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: var(--tap-target);
+  padding: var(--space-2) 0;
+}
+.account__link-row + .account__link-row {
+  border-top: 1px solid var(--color-border-subtle);
+}
+.account__link-row:hover .account__row-value {
+  color: var(--color-primary);
+}
+.account__row-value {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-text-muted);
+}
+
+/* Confirm / clear actions */
+.account__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
 /* Segmented control (Light / Dark / System) */
 .seg {
   display: inline-flex;
