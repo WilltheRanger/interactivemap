@@ -1,27 +1,45 @@
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ChevronRight, Monitor, Moon, Sun, UserCircle2 } from 'lucide-react';
+import { ChevronRight, Mail, Monitor, Moon, Sun, UserCircle2 } from 'lucide-react';
 import { Button } from '../../components';
-import { spring } from '../../lib/motion';
+import { config } from '../../lib/config';
 import { useTheme } from '../../data/useTheme';
+import { useDisplayPrefs } from '../../data/useDisplayPrefs';
 import { useMyLocker, useSchedule } from '../../data/usePersonal';
 import { clearAll } from '../../lib/personalStore';
 import type { ThemePreference } from '../../lib/theme';
+import type { Contrast, TextSize } from '../../lib/displayPrefs';
+import { Segmented, type SegmentedOption } from './Segmented';
 import './AccountScreen.css';
 
-const THEME_OPTIONS: { value: ThemePreference; label: string; icon: ReactNode }[] = [
+const THEME_OPTIONS: SegmentedOption<ThemePreference>[] = [
   { value: 'light', label: 'Light', icon: <Sun size={16} aria-hidden="true" /> },
   { value: 'dark', label: 'Dark', icon: <Moon size={16} aria-hidden="true" /> },
   { value: 'system', label: 'System', icon: <Monitor size={16} aria-hidden="true" /> },
 ];
+const TEXT_SIZE_OPTIONS: SegmentedOption<TextSize>[] = [
+  { value: 'default', label: 'Default' },
+  { value: 'large', label: 'Large' },
+  { value: 'larger', label: 'Larger' },
+];
+const CONTRAST_OPTIONS: SegmentedOption<Contrast>[] = [
+  { value: 'normal', label: 'Normal' },
+  { value: 'high', label: 'High' },
+];
+
+const FEEDBACK_HREF = `mailto:${config.feedbackEmail}?subject=${encodeURIComponent(
+  'DBHS Wayfinder — wrong info report',
+)}&body=${encodeURIComponent(
+  "What's wrong? (building / room / teacher / locker)\n\nWhere in the app did you see it?\n\n— Sent from DBHS Wayfinder",
+)}`;
 
 /**
  * Account screen. Google sign-in lands in Phase 09 (placeholder card for now); today it's the hub for
- * a student's on-device info (schedule + locker) and settings (theme, clear-data).
+ * a student's on-device info (schedule + locker) and settings (theme, accessibility, clear-data).
  */
 export function AccountScreen() {
   const { preference, resolved, setPreference } = useTheme();
+  const { textSize, contrast, setTextSize, setContrast } = useDisplayPrefs();
   const myLocker = useMyLocker();
   const schedule = useSchedule();
   const [confirmingClear, setConfirmingClear] = useState(false);
@@ -75,37 +93,58 @@ export function AccountScreen() {
       <div className="account__card">
         <div className="account__row">
           <span className="account__row-label">Theme</span>
-          <div className="seg" role="radiogroup" aria-label="Theme">
-            {THEME_OPTIONS.map((option) => {
-              const active = preference === option.value;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  className={`seg__option${active ? ' is-active' : ''}`}
-                  onClick={() => setPreference(option.value)}
-                >
-                  {active && (
-                    <motion.span
-                      layoutId="theme-seg-indicator"
-                      className="seg__indicator"
-                      transition={spring.snappy}
-                    />
-                  )}
-                  <span className="seg__content">
-                    {option.icon}
-                    <span className="seg__label">{option.label}</span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+          <Segmented
+            ariaLabel="Theme"
+            layoutId="theme-seg"
+            value={preference}
+            options={THEME_OPTIONS}
+            onChange={setPreference}
+          />
         </div>
         {preference === 'system' && (
           <p className="account__caption">Following your device — currently {resolved}.</p>
         )}
+      </div>
+
+      <h2 className="account__section-title">Accessibility</h2>
+      <div className="account__card">
+        <div className="account__setting">
+          <div className="account__row">
+            <span className="account__row-label">Text size</span>
+            <Segmented
+              ariaLabel="Text size"
+              layoutId="text-seg"
+              value={textSize}
+              options={TEXT_SIZE_OPTIONS}
+              onChange={setTextSize}
+            />
+          </div>
+        </div>
+        <div className="account__setting">
+          <div className="account__row">
+            <span className="account__row-label">Contrast</span>
+            <Segmented
+              ariaLabel="Contrast"
+              layoutId="contrast-seg"
+              value={contrast}
+              options={CONTRAST_OPTIONS}
+              onChange={setContrast}
+            />
+          </div>
+        </div>
+      </div>
+
+      <h2 className="account__section-title">Help &amp; feedback</h2>
+      <div className="account__card">
+        <a className="account__link-row" href={FEEDBACK_HREF}>
+          <span className="account__row-label">Report wrong info</span>
+          <span className="account__row-value">
+            <Mail size={18} aria-hidden="true" />
+          </span>
+        </a>
+        <p className="account__hint">
+          Found a wrong room, teacher, or locker? Email us so we can fix it.
+        </p>
       </div>
 
       <h2 className="account__section-title">Data</h2>

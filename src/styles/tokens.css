@@ -93,3 +93,23 @@
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.45);
   --shadow-2: 0 4px 16px rgba(0, 0, 0, 0.5);
 }
+
+/*
+ * High contrast (accessibility) — `data-contrast="high"` on <html>, set by lib/displayPrefs.ts. Layers
+ * on top of light or dark: pure-black/white text, darker muted text, and stronger borders. The dark
+ * variant has higher specificity, so it wins when both attributes are present.
+ */
+:root[data-contrast='high'] {
+  --color-text: #000000;
+  --color-text-muted: #3a3f4a;
+  --color-border: #6b7080;
+  --color-border-subtle: #6b7080;
+}
+:root[data-theme='dark'][data-contrast='high'] {
+  --color-bg: #000000;
+  --color-surface: #15171c;
+  --color-text: #ffffff;
+  --color-text-muted: #d6dae1;
+  --color-border: #9aa0ad;
+  --color-border-subtle: #9aa0ad;
+}

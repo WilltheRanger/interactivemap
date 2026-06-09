@@ -19,11 +19,17 @@
     <script>
       (function () {
         try {
+          var root = document.documentElement;
           var p = localStorage.getItem('dbhs-wayfinder:theme');
           var dark =
             p === 'dark' ||
             ((!p || p === 'system') && matchMedia('(prefers-color-scheme: dark)').matches);
-          document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+          root.dataset.theme = dark ? 'dark' : 'light';
+          var ts = localStorage.getItem('dbhs-wayfinder:text-size');
+          if (ts === 'large') root.style.fontSize = '112.5%';
+          else if (ts === 'larger') root.style.fontSize = '125%';
+          if (localStorage.getItem('dbhs-wayfinder:contrast') === 'high')
+            root.dataset.contrast = 'high';
         } catch (e) {}
       })();
     </script>
