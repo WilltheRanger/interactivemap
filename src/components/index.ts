@@ -1,3 +1,7 @@
-// UI primitives barrel. Populated in Phase 04 (Button, Input, Select, Card, Loader,
-// EmptyState, ErrorState, MapPin, Hotspot) once the owner's mockup is available.
-export {};
+// UI primitives barrel.
+export { Button } from './Button';
+export { LinkButton } from './LinkButton';
+export { IconButton } from './IconButton';
+export { Card } from './Card';
+export { SearchInput } from './SearchInput';
+export { LockerIcon } from './icons/LockerIcon';
