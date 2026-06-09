@@ -1,38 +1,55 @@
 import { describe, expect, it } from 'vitest';
-import { isAllowedHallPassUrl } from './hallPass';
+import { buildHallPassUrl, isAllowedHallPassUrl } from './hallPass';
 
 describe('isAllowedHallPassUrl', () => {
-  it('allows approved Google Form links', () => {
+  it('allows approved Apps Script web-app endpoints', () => {
     for (const url of [
-      'https://forms.gle/AbC123xyz',
-      'https://forms.google.com/something',
-      'https://docs.google.com/forms/d/e/1FAIpQLSxxxx/viewform',
-      'https://docs.google.com/forms/d/e/1FAIpQLSxxxx/viewform?usp=sf_link',
-      '  https://forms.gle/AbC123xyz  ', // trimmed
+      'https://script.google.com/macros/s/AKfycbxDEPLOYID/exec',
+      'https://script.google.com/a/macros/wvusd.org/s/AKfycbxDEPLOYID/exec',
+      'https://script.google.com/macros/s/AKfycbxDEPLOYID/exec?reason=Bathroom',
+      '  https://script.google.com/macros/s/AKfycbxDEPLOYID/exec  ', // trimmed
     ]) {
       expect(isAllowedHallPassUrl(url)).toBe(true);
     }
   });
 
   it('rejects non-https', () => {
-    expect(isAllowedHallPassUrl('http://forms.gle/AbC123xyz')).toBe(false);
+    expect(isAllowedHallPassUrl('http://script.google.com/macros/s/ID/exec')).toBe(false);
   });
 
-  it('rejects non-Form Google surfaces', () => {
-    expect(isAllowedHallPassUrl('https://docs.google.com/spreadsheets/d/abc/edit')).toBe(false);
-    expect(isAllowedHallPassUrl('https://docs.google.com/document/d/abc/edit')).toBe(false);
-    expect(isAllowedHallPassUrl('https://drive.google.com/file/d/abc/view')).toBe(false);
+  it('rejects non-exec Apps Script paths and other Google surfaces', () => {
+    expect(isAllowedHallPassUrl('https://script.google.com/macros/s/ID/dev')).toBe(false);
+    expect(isAllowedHallPassUrl('https://script.google.com/home')).toBe(false);
+    expect(isAllowedHallPassUrl('https://script.googleusercontent.com/macros/echo')).toBe(false);
+    expect(isAllowedHallPassUrl('https://forms.gle/AbC123xyz')).toBe(false);
+    expect(isAllowedHallPassUrl('https://docs.google.com/forms/d/e/ID/viewform')).toBe(false);
   });
 
-  it('rejects look-alike hosts and arbitrary sites', () => {
-    expect(isAllowedHallPassUrl('https://forms.gle.evil.com/AbC')).toBe(false);
-    expect(isAllowedHallPassUrl('https://evil.com/forms/')).toBe(false);
-    expect(isAllowedHallPassUrl('https://notdocs.google.com/forms/x')).toBe(false);
-  });
-
-  it('rejects junk and empty input', () => {
-    for (const bad of ['', '   ', 'not a url', 'javascript:alert(1)', 'forms.gle/AbC']) {
+  it('rejects look-alike hosts and junk', () => {
+    expect(isAllowedHallPassUrl('https://script.google.com.evil.com/macros/s/ID/exec')).toBe(false);
+    expect(isAllowedHallPassUrl('https://evil.com/macros/s/ID/exec')).toBe(false);
+    for (const bad of ['', '   ', 'not a url', 'javascript:alert(1)']) {
       expect(isAllowedHallPassUrl(bad)).toBe(false);
     }
+  });
+});
+
+describe('buildHallPassUrl', () => {
+  const base = 'https://script.google.com/macros/s/AKfycbxDEPLOYID/exec';
+
+  it('appends the reason to an approved endpoint', () => {
+    expect(buildHallPassUrl(base, 'Bathroom')).toBe(`${base}?reason=Bathroom`);
+  });
+
+  it('url-encodes the reason', () => {
+    expect(buildHallPassUrl(base, 'Front Office')).toBe(`${base}?reason=Front+Office`);
+  });
+
+  it('omits the param when no reason is given', () => {
+    expect(buildHallPassUrl(base, '')).toBe(base);
+  });
+
+  it('returns null for a disallowed scanned URL', () => {
+    expect(buildHallPassUrl('https://evil.com/macros/s/ID/exec', 'Bathroom')).toBeNull();
   });
 });

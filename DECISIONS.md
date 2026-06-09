@@ -17,7 +17,7 @@ _Last updated: 2026-06-09._
 | 5 | Auth | **Google sign-in, access-gate only, restricted to `@stu.wvusd.org`** | Sign-in gates the app + the campus map/360° photos (kept off the public web). Schedule + locker stay in `localStorage` and are **never** written server-side or keyed to the Google identity (FERPA-avoidance line). |
 | 6 | Platform | **PWA for v1** | Installable web app. Native iOS is **out of scope** for this build — a possible separate future project, not re-proposed here. |
 | 7 | Maintenance owner | **DBHS** | A named DBHS role/person to be recorded in `MAINTENANCE.md`; data refreshed yearly or it's stale by September. |
-| 8 | Hall-pass **Log** feature | **Yes — route to the teacher's own Google Form/Sheet** | Tap Log → scan teacher QR → open the teacher's Google Form (Workspace auto-captures identity; student types a reason). App stores **no** log data, so the no-student-data-server-side rule holds (the "store in our DB" option was declined). New scope beyond wayfinding — loop in the supervisor. See `plan/phase-12-hall-pass-log.md`. |
+| 8 | Hall-pass **Log** feature | **Yes — zero-submit via the teacher's own Apps Script → their Sheet; reason picked in-app** | Tap Log → pick a reason → scan teacher QR → the teacher's Apps Script web app appends `{time, student email, reason}` to their own Sheet (no form/submit; identity captured same-Workspace). App stores **no** log data, so the no-student-data-server-side rule holds (the "store in our DB" and the one-tap Form options were declined). New scope beyond wayfinding — loop in the supervisor. See `plan/phase-12-hall-pass-log.md` + `docs/hall-pass-teacher-setup.md`. |
 
 ## Tooling decisions
 
