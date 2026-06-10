@@ -29,6 +29,11 @@ jobs:
         run: npm run build
         env:
           VITE_BASE: /interactivemap/
+          # Supabase *publishable* key — public by design (it ships in the client bundle on any
+          # deploy) and read-only via RLS, so it's safe in the workflow. Rotate / move to repo
+          # secrets at the Phase 10 production deploy.
+          VITE_SUPABASE_URL: https://mnvntttootxbbbnsnvke.supabase.co
+          VITE_SUPABASE_ANON_KEY: sb_publishable_TLnFfdFCkX0_NoLFenvEqA_MGqjWmqV
       # SPA fallback so deep links / refresh work on GitHub Pages.
       - run: cp dist/index.html dist/404.html
       - uses: actions/configure-pages@v5
