@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { motion } from 'framer-motion';
-import { X } from 'lucide-react';
+import { Check, Copy, Download, X } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { SearchInput } from '../../components/SearchInput';
 import { MapControls } from './MapControls';
 import { fadeUpItem, staggerContainer } from '../../lib/motion';
@@ -24,17 +25,45 @@ const SHAPE_SELECTED: L.PathOptions = {
   fillColor: '#582c83',
   fillOpacity: 0.22,
 };
+/** Edit mode: every shape stays visible so misplaced boxes are findable. */
+const SHAPE_EDIT: L.PathOptions = {
+  stroke: true,
+  color: '#582c83',
+  weight: 2,
+  fill: true,
+  fillColor: '#582c83',
+  fillOpacity: 0.15,
+};
+
+const vertexIcon = L.divIcon({
+  className: 'map-edit-vertex',
+  iconSize: [16, 16],
+  iconAnchor: [8, 8],
+});
+const moveIcon = L.divIcon({
+  className: 'map-edit-move',
+  iconSize: [22, 22],
+  iconAnchor: [11, 11],
+});
 
 /**
  * Map screen: Leaflet (CRS.Simple) hosting the campus image at Google-Maps-style "cover" zoom,
- * with invisible tappable building polygons over it (campusShapes.ts). Tapping a building
- * highlights it and opens a detail card with its name + room numbers from the official campus map.
+ * with tappable building polygons over it (campusShapes.ts). Tapping a building highlights it and
+ * opens a detail card with its name + room numbers from the official campus map.
+ *
+ * Owner tooling: open /map?edit for shape-editing mode — drag corner dots to reshape a building,
+ * the square handle to move it, then Copy/Download the adjusted layout (JSON) and send it back so
+ * it can be baked into campusShapes.ts.
  */
 export function MapScreen() {
   const containerRef = useRef<HTMLDivElement>(null);
   const layersRef = useRef(new Map<string, L.Polygon>());
+  const exportRef = useRef<(() => string) | null>(null);
+  const [searchParams] = useSearchParams();
+  const editMode = searchParams.has('edit');
   const [status, setStatus] = useState<MapStatus>('loading');
   const [selected, setSelected] = useState<CampusShape | null>(null);
+  const [exportState, setExportState] = useState<'idle' | 'copied'>('idle');
 
   const clearSelection = () => {
     for (const layer of layersRef.current.values()) layer.setStyle(SHAPE_IDLE);
@@ -56,7 +85,7 @@ export function MapScreen() {
         [0, 0],
         [h, w],
       ]);
-      map = L.map(containerRef.current, {
+      const localMap = L.map(containerRef.current, {
         crs: L.CRS.Simple,
         attributionControl: false,
         zoomControl: false, // pinch / double-tap zoom; on-screen controls come with Phase 05 polish
@@ -66,27 +95,101 @@ export function MapScreen() {
         maxBounds: bounds,
         maxBoundsViscosity: 1, // solid edges — no rubber-banding into the void
       });
-      L.imageOverlay(MAP_IMAGE_URL, bounds).addTo(map);
+      map = localMap;
+      L.imageOverlay(MAP_IMAGE_URL, bounds).addTo(localMap);
 
-      // Tappable building shapes (fractions of the image → CRS.Simple coords; y is flipped).
+      // ── Edit-mode plumbing ────────────────────────────────────────────────────
+      let handleMarkers: L.Marker[] = [];
+      const clearHandles = () => {
+        for (const m of handleMarkers) m.remove();
+        handleMarkers = [];
+      };
+      const centerOf = (ring: L.LatLng[]) => L.latLngBounds(ring).getCenter();
+
+      /** Show drag handles for one shape: a dot per corner + a square move handle. */
+      const selectForEdit = (polygon: L.Polygon) => {
+        clearHandles();
+        const ring = (polygon.getLatLngs()[0] as L.LatLng[]).slice();
+        const refresh = () => polygon.setLatLngs([ring]);
+
+        const moveHandle = L.marker(centerOf(ring), { draggable: true, icon: moveIcon });
+        ring.forEach((latlng, i) => {
+          const marker = L.marker(latlng, { draggable: true, icon: vertexIcon }).addTo(localMap);
+          marker.on('drag', () => {
+            ring[i] = marker.getLatLng();
+            refresh();
+          });
+          marker.on('dragend', () => moveHandle.setLatLng(centerOf(ring)));
+          handleMarkers.push(marker);
+        });
+
+        let prev = centerOf(ring);
+        moveHandle.on('dragstart', () => {
+          prev = moveHandle.getLatLng();
+        });
+        moveHandle.on('drag', () => {
+          const cur = moveHandle.getLatLng();
+          const dLat = cur.lat - prev.lat;
+          const dLng = cur.lng - prev.lng;
+          for (let i = 0; i < ring.length; i++) {
+            ring[i] = L.latLng(ring[i].lat + dLat, ring[i].lng + dLng);
+            handleMarkers[i].setLatLng(ring[i]);
+          }
+          prev = cur;
+          refresh();
+        });
+        moveHandle.addTo(localMap);
+        handleMarkers.push(moveHandle);
+      };
+
+      // Serialize the CURRENT on-map shapes back to fractional coords for campusShapes.ts.
+      exportRef.current = () => {
+        const data = CAMPUS_SHAPES.map((shape) => {
+          const polygon = layers.get(shape.id);
+          const ring = (polygon?.getLatLngs()[0] ?? []) as L.LatLng[];
+          return {
+            id: shape.id,
+            label: shape.label,
+            ...(shape.rooms ? { rooms: shape.rooms } : {}),
+            poly: ring.map((ll) => [
+              Number((ll.lng / w).toFixed(4)),
+              Number((1 - ll.lat / h).toFixed(4)),
+            ]),
+          };
+        });
+        return JSON.stringify(data, null, 2);
+      };
+
+      // ── Shapes (fractions of the image → CRS.Simple coords; y is flipped) ─────
       layers.clear();
       for (const shape of CAMPUS_SHAPES) {
         const latlngs = shape.poly.map(([fx, fy]) => [h * (1 - fy), w * fx] as L.LatLngTuple);
-        const polygon = L.polygon(latlngs, SHAPE_IDLE).addTo(map);
-        polygon.on('click', (e) => {
-          L.DomEvent.stop(e.originalEvent ?? e);
-          for (const layer of layers.values()) layer.setStyle(SHAPE_IDLE);
-          polygon.setStyle(SHAPE_SELECTED);
-          setSelected(shape);
-        });
+        const polygon = L.polygon(latlngs, editMode ? SHAPE_EDIT : SHAPE_IDLE).addTo(localMap);
+        if (editMode) {
+          polygon.bindTooltip(shape.id, {
+            permanent: true,
+            direction: 'center',
+            className: 'map-edit-tip',
+          });
+          polygon.on('click', (e) => {
+            L.DomEvent.stop(e.originalEvent ?? e);
+            selectForEdit(polygon);
+          });
+        } else {
+          polygon.on('click', (e) => {
+            L.DomEvent.stop(e.originalEvent ?? e);
+            for (const layer of layers.values()) layer.setStyle(SHAPE_IDLE);
+            polygon.setStyle(SHAPE_SELECTED);
+            setSelected(shape);
+          });
+        }
         layers.set(shape.id, polygon);
       }
-      // Tapping the bare map clears the selection (building taps stop propagation above).
-      map.on('click', () => clearSelection());
+      // Tapping the bare map clears selection / handles (shape taps stop propagation above).
+      localMap.on('click', () => (editMode ? clearHandles() : clearSelection()));
 
       // Google-Maps feel: start at "cover" (the image fills the whole viewport, pan for the rest)
       // and make that the zoom floor so empty space can never show. Recomputed on resize/rotation.
-      const localMap = map;
       const applyCoverZoom = (recenter: boolean) => {
         const coverZoom = localMap.getBoundsZoom(bounds, true);
         localMap.setMinZoom(coverZoom);
@@ -105,32 +208,88 @@ export function MapScreen() {
     return () => {
       cancelled = true;
       layers.clear();
+      exportRef.current = null;
       map?.remove();
     };
-  }, []);
+  }, [editMode]);
+
+  const downloadLayout = (text: string) => {
+    const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'campus-shapes.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleCopy = async () => {
+    const text = exportRef.current?.();
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      setExportState('copied');
+      setTimeout(() => setExportState('idle'), 2000);
+    } catch {
+      downloadLayout(text); // clipboard blocked → fall back to a file download
+    }
+  };
 
   return (
     <div className="map-screen">
-      <motion.div
-        className="map-screen__top"
-        variants={staggerContainer}
-        initial="hidden"
-        animate="show"
-      >
-        <motion.div className="map-screen__search" variants={fadeUpItem}>
-          <SearchInput
-            placeholder="Search rooms, buildings, or locations…"
-            aria-label="Search rooms, buildings, or locations"
-          />
+      {!editMode && (
+        <motion.div
+          className="map-screen__top"
+          variants={staggerContainer}
+          initial="hidden"
+          animate="show"
+        >
+          <motion.div className="map-screen__search" variants={fadeUpItem}>
+            <SearchInput
+              placeholder="Search rooms, buildings, or locations…"
+              aria-label="Search rooms, buildings, or locations"
+            />
+          </motion.div>
+          <motion.div variants={fadeUpItem}>
+            <MapControls level="1" period="3" />
+          </motion.div>
         </motion.div>
-        <motion.div variants={fadeUpItem}>
-          <MapControls level="1" period="3" />
-        </motion.div>
-      </motion.div>
+      )}
 
       <div ref={containerRef} className="map-screen__canvas" aria-label="Campus map" />
 
-      {selected && (
+      {editMode && (
+        <div className="map-screen__editbar" role="toolbar" aria-label="Shape editing">
+          <p className="map-screen__editbar-text">
+            <strong>Edit mode.</strong> Tap a building, drag the dots to reshape or the square to
+            move, then send me the layout.
+          </p>
+          <div className="map-screen__editbar-actions">
+            <button type="button" className="map-screen__editbtn" onClick={handleCopy}>
+              {exportState === 'copied' ? (
+                <>
+                  <Check size={16} aria-hidden="true" /> Copied
+                </>
+              ) : (
+                <>
+                  <Copy size={16} aria-hidden="true" /> Copy layout
+                </>
+              )}
+            </button>
+            <button
+              type="button"
+              className="map-screen__editbtn map-screen__editbtn--secondary"
+              onClick={() => {
+                const text = exportRef.current?.();
+                if (text) downloadLayout(text);
+              }}
+            >
+              <Download size={16} aria-hidden="true" /> Download
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!editMode && selected && (
         <motion.div
           className="map-screen__detail"
           role="dialog"
