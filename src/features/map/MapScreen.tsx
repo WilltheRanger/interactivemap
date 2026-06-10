@@ -100,55 +100,98 @@ export function MapScreen() {
       L.imageOverlay(MAP_IMAGE_URL, bounds).addTo(localMap);
 
       // ── Edit-mode plumbing ────────────────────────────────────────────────────
-      let handleMarkers: L.Marker[] = [];
-      const clearHandles = () => {
-        for (const m of handleMarkers) m.remove();
-        handleMarkers = [];
-      };
+      interface EditState {
+        polygon: L.Polygon;
+        ring: L.LatLng[];
+        vertexMarkers: L.Marker[];
+        moveHandle: L.Marker;
+      }
+      let editState: EditState | null = null;
       const centerOf = (ring: L.LatLng[]) => L.latLngBounds(ring).getCenter();
+      const clearEdit = () => {
+        if (!editState) return;
+        for (const m of editState.vertexMarkers) m.remove();
+        editState.moveHandle.remove();
+        editState = null;
+      };
+      /** Push the current ring to the polygon + every handle. */
+      const syncEdit = (st: EditState) => {
+        st.polygon.setLatLngs([st.ring]);
+        st.ring.forEach((latlng, i) => st.vertexMarkers[i].setLatLng(latlng));
+        st.moveHandle.setLatLng(centerOf(st.ring));
+      };
 
-      /** Show drag handles for one shape: a dot per corner + a square move handle. */
-      const selectForEdit = (polygon: L.Polygon) => {
-        clearHandles();
+      /** Select a shape for editing: corner dots reshape it; the box itself (or the gold square)
+       * drags to move it. */
+      const selectForEdit = (polygon: L.Polygon): EditState => {
+        if (editState?.polygon === polygon) return editState;
+        clearEdit();
         const ring = (polygon.getLatLngs()[0] as L.LatLng[]).slice();
-        const refresh = () => polygon.setLatLngs([ring]);
+
+        const vertexMarkers = ring.map((latlng, i) => {
+          const marker = L.marker(latlng, {
+            draggable: true,
+            icon: vertexIcon,
+            autoPan: true, // keep dragging when the handle reaches the screen edge
+          }).addTo(localMap);
+          marker.on('drag', () => {
+            if (!editState) return;
+            editState.ring[i] = marker.getLatLng();
+            editState.polygon.setLatLngs([editState.ring]);
+          });
+          marker.on('dragend', () => {
+            if (editState) editState.moveHandle.setLatLng(centerOf(editState.ring));
+          });
+          return marker;
+        });
 
         const moveHandle = L.marker(centerOf(ring), {
           draggable: true,
           icon: moveIcon,
-          autoPan: true, // keep dragging when the handle reaches the screen edge
-        });
-        ring.forEach((latlng, i) => {
-          const marker = L.marker(latlng, {
-            draggable: true,
-            icon: vertexIcon,
-            autoPan: true,
-          }).addTo(localMap);
-          marker.on('drag', () => {
-            ring[i] = marker.getLatLng();
-            refresh();
-          });
-          marker.on('dragend', () => moveHandle.setLatLng(centerOf(ring)));
-          handleMarkers.push(marker);
-        });
-
+          autoPan: true,
+        }).addTo(localMap);
         let prev = centerOf(ring);
         moveHandle.on('dragstart', () => {
           prev = moveHandle.getLatLng();
         });
         moveHandle.on('drag', () => {
+          if (!editState) return;
           const cur = moveHandle.getLatLng();
           const dLat = cur.lat - prev.lat;
           const dLng = cur.lng - prev.lng;
-          for (let i = 0; i < ring.length; i++) {
-            ring[i] = L.latLng(ring[i].lat + dLat, ring[i].lng + dLng);
-            handleMarkers[i].setLatLng(ring[i]);
-          }
+          editState.ring = editState.ring.map((ll) => L.latLng(ll.lat + dLat, ll.lng + dLng));
+          editState.ring.forEach((ll, i) => vertexMarkers[i].setLatLng(ll));
+          editState.polygon.setLatLngs([editState.ring]);
           prev = cur;
-          refresh();
         });
-        moveHandle.addTo(localMap);
-        handleMarkers.push(moveHandle);
+
+        editState = { polygon, ring, vertexMarkers, moveHandle };
+        return editState;
+      };
+
+      /** Direct box dragging — press a shape and move it; no pre-selection or handles needed.
+       * Document-level pointer listeners so the drag never sticks if the finger leaves the map. */
+      const startBoxDrag = (polygon: L.Polygon, startLatLng: L.LatLng) => {
+        const st = selectForEdit(polygon);
+        const baseRing = st.ring.slice();
+        localMap.dragging.disable();
+        const onMove = (ev: PointerEvent) => {
+          if (!editState) return;
+          const ll = localMap.mouseEventToLatLng(ev as unknown as MouseEvent);
+          const dLat = ll.lat - startLatLng.lat;
+          const dLng = ll.lng - startLatLng.lng;
+          editState.ring = baseRing.map((p) => L.latLng(p.lat + dLat, p.lng + dLng));
+          syncEdit(editState);
+        };
+        const onUp = () => {
+          document.removeEventListener('pointermove', onMove);
+          document.removeEventListener('pointerup', onUp);
+          document.removeEventListener('pointercancel', onUp);
+          localMap.dragging.enable();
+        };
+        document.addEventListener('pointermove', onMove);
+        document.addEventListener('pointerup', onUp);
+        document.addEventListener('pointercancel', onUp);
       };
 
       // Serialize the CURRENT on-map shapes back to fractional coords for campusShapes.ts.
@@ -180,9 +223,13 @@ export function MapScreen() {
             direction: 'center',
             className: 'map-edit-tip',
           });
+          // Press-and-drag moves the box directly (the natural gesture); handles appear too.
+          polygon.on('mousedown', (e) => {
+            L.DomEvent.stop(e.originalEvent ?? e);
+            startBoxDrag(polygon, e.latlng);
+          });
           polygon.on('click', (e) => {
             L.DomEvent.stop(e.originalEvent ?? e);
-            selectForEdit(polygon);
           });
         } else {
           polygon.on('click', (e) => {
@@ -195,7 +242,7 @@ export function MapScreen() {
         layers.set(shape.id, polygon);
       }
       // Tapping the bare map clears selection / handles (shape taps stop propagation above).
-      localMap.on('click', () => (editMode ? clearHandles() : clearSelection()));
+      localMap.on('click', () => (editMode ? clearEdit() : clearSelection()));
 
       // Google-Maps feel: start at "cover" (the image fills the whole viewport, pan for the rest)
       // and make that the zoom floor so empty space can never show. Recomputed on resize/rotation.
@@ -269,8 +316,8 @@ export function MapScreen() {
       {editMode && (
         <div className="map-screen__editbar" role="toolbar" aria-label="Shape editing">
           <p className="map-screen__editbar-text">
-            <strong>Edit mode.</strong> Tap a building, drag the dots to reshape or the square to
-            move, then send me the layout.
+            <strong>Edit mode.</strong> Drag a box to move it; drag its corner dots to resize. Then
+            Copy layout and send it in.
           </p>
           <div className="map-screen__editbar-actions">
             <button type="button" className="map-screen__editbtn" onClick={handleCopy}>
