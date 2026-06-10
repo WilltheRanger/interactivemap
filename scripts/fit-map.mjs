@@ -20,9 +20,9 @@ const require = createRequire(import.meta.url);
 const sharp = require('sharp');
 
 const ROOT = new URL('..', import.meta.url).pathname;
-const IMAGE = { w: 1610, h: 977 };
+const IMAGE = { w: 1854, h: 1106 };
 // ── keep in sync with src/features/map/campusGeo.ts ──────────────────────────
-const SVG_TO_IMAGE = { ax: 5.6, sx: 1.01, ay: 45.8, sy: 1.0225 };
+const SVG_TO_IMAGE = { ax: 11.3, sx: 1.1413, ay: 49.1, sy: 1.1401 };
 const ADJUST = {
   'bldg600-upper': { dx: -3, dy: 0 },
 };
@@ -34,7 +34,7 @@ const { w: W, h: H } = IMAGE;
 // ── illustration edge map + truncated chamfer distance transform ────────────
 const gray = (
   await sharp(`${ROOT}public/campus-map.webp`)
-    .resize(IMAGE.w, IMAGE.h) // the asset is a 2x render of the 1610×977 coordinate space
+    .resize(IMAGE.w, IMAGE.h) // normalize the asset to the coordinate space
     .greyscale()
     .raw()
     .toBuffer({ resolveWithObject: true })
@@ -83,7 +83,7 @@ function groupSvg(gid) {
   return Buffer.from(
     `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">` +
       `<g transform="translate(${ax},${ay}) scale(${sx},${sy}) translate(${dx},${dy})" fill="#000">` +
-      (g ?? lone)[0].replaceAll('fill="#D9D9D9"', '').replaceAll(/opacity="[^"]*"/g, '') +
+      (g ?? lone)[0].replace(/ (?:fill|stroke|stroke-width|opacity)="[^"]*"/g, '') +
       `</g></svg>`,
   );
 }
@@ -141,9 +141,9 @@ const GIDS = [
   'bldg600-upper',
   'bldg800',
   'bldg900',
-  'aquatics-center',
+  'Aquatics center',
   '1031',
-  'green-room',
+  'Green Room',
 ];
 
 // Anisotropic score: x' = fx·x + dx, y' = fy·y + dy (about the image origin).
@@ -181,8 +181,8 @@ if (process.argv[2] === 'global') {
   }
   console.log(`global fit over ${all.length} boundary points`);
   let best = { fx: 1, fy: 1, dx: 0, dy: 0, v: Infinity };
-  for (let fx = 1.0; fx <= 1.1001; fx += 0.005)
-    for (let fy = 1.0; fy <= 1.1001; fy += 0.005) {
+  for (let fx = 1.0; fx <= 1.2001; fx += 0.005)
+    for (let fy = 1.0; fy <= 1.2001; fy += 0.005) {
       const t = bestTranslateXY(all, fx, fy);
       if (t.v < best.v) best = { fx: +fx.toFixed(3), fy: +fy.toFixed(3), ...t };
     }

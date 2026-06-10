@@ -12,6 +12,8 @@ export const BUILDING_LABELS: Record<string, string> = {
   'bldg600-upper': '600s Building',
   bldg800: '800s — Gym & PE',
   bldg900: '900s — Theater & Arts',
-  'aquatics-center': 'Aquatics Center',
+  // The 2026-06-10 re-export renamed the standalone shapes to human-readable ids.
+  'Aquatics center': 'Aquatics Center',
+  'Green Room': 'Green Room',
   '1031': 'Instrumental Music',
 };

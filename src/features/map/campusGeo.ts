@@ -1,16 +1,15 @@
 /**
  * Campus map geometry + room index.
  *
- * The illustration (campus-map.webp, a 2x/retina render at 3220×1954, displayed in a 1610×977
- * coordinate space) has the traced room lines BAKED IN — it was rendered from the same plan as
- * campus-upper.svg (viewBox 1382×863), so the invisible SVG tap targets sit exactly on the drawn
- * walls. SVG_TO_IMAGE maps SVG coords → coordinate-space pixels (image = a + s·svg); fitted by
+ * The illustration (campus-map.webp, 1854×1106, color-coded buildings) was rendered from the same
+ * plan as campus-upper.svg (viewBox 1382×863), so the invisible SVG tap targets sit exactly on the
+ * drawn walls. SVG_TO_IMAGE maps SVG coords → image pixels (image = a + s·svg); fitted by
  * chamfer-matching every building trace against the image's edges (`scripts/fit-map.mjs`, mean
- * boundary error ≈0.3px; verified per building with `scripts/calibrate-map.mjs`). Re-run those
+ * boundary error ≈0.16px; verified per building with `scripts/calibrate-map.mjs`). Re-run those
  * scripts if either asset is re-exported.
  */
-export const IMAGE_SIZE = { w: 1610, h: 977 }; // coordinate space; the asset itself is 2x
-export const SVG_TO_IMAGE = { ax: 5.6, sx: 1.01, ay: 45.8, sy: 1.0225 };
+export const IMAGE_SIZE = { w: 1854, h: 1106 };
+export const SVG_TO_IMAGE = { ax: 11.3, sx: 1.1413, ay: 49.1, sy: 1.1401 };
 
 /**
  * Per-building alignment nudges (SVG units), applied as a translate on each building group at
@@ -23,7 +22,7 @@ export const MAP_SVG_URL = `${import.meta.env.BASE_URL}campus-upper.svg`;
 export const MAP_IMAGE_URL = `${import.meta.env.BASE_URL}campus-map.webp`;
 
 export interface CampusRoom {
-  /** Shape id — a room number ("461") or a place name ("aquatics-center"). */
+  /** Shape id — a room number ("461") or a place name ("Aquatics center"). */
   id: string;
   /** Owning building group id, or the shape's own id for standalone places. */
   buildingId: string;
