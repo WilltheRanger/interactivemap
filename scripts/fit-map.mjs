@@ -34,6 +34,7 @@ const { w: W, h: H } = IMAGE;
 // ── illustration edge map + truncated chamfer distance transform ────────────
 const gray = (
   await sharp(`${ROOT}public/campus-map.webp`)
+    .resize(IMAGE.w, IMAGE.h) // the asset is a 2x render of the 1610×977 coordinate space
     .greyscale()
     .raw()
     .toBuffer({ resolveWithObject: true })
