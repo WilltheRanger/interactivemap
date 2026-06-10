@@ -57,15 +57,16 @@
 .campus-svg {
   pointer-events: none;
 }
+/* The illustration has the room lines baked in, so rooms are invisible at rest — the SVG only
+   provides the tap targets and paints the hover/selected highlight. */
 .campus-svg .campus-room {
-  pointer-events: all; /* tappable even with a near-transparent fill */
+  pointer-events: all; /* tappable even with a fully transparent fill */
   cursor: pointer;
-  opacity: 1; /* override any per-shape opacity from the export so rooms look uniform */
+  opacity: 1; /* override any per-shape opacity from the export so highlights look uniform */
   fill: #582c83;
-  fill-opacity: 0.08; /* faint tint so rooms read as tappable without hiding the artwork */
-  stroke: rgba(88, 44, 131, 0.45);
-  stroke-width: 1;
-  vector-effect: non-scaling-stroke; /* crisp 1px outline at any zoom */
+  fill-opacity: 0;
+  stroke: none;
+  vector-effect: non-scaling-stroke; /* crisp highlight outline at any zoom */
   transition:
     fill-opacity 0.12s ease,
     stroke 0.12s ease;
