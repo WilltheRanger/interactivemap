@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, Mail, Monitor, Moon, Sun, UserCircle2 } from 'lucide-react';
+import { ChevronRight, LogOut, Mail, Monitor, Moon, Sun, UserCircle2 } from 'lucide-react';
 import { Button } from '../../components';
 import { config } from '../../lib/config';
+import { useSupabaseSession } from '../../data/useSession';
+import { getSupabase } from '../../lib/supabase';
 import { useTheme } from '../../data/useTheme';
 import { useDisplayPrefs } from '../../data/useDisplayPrefs';
 import { useMyLocker, useSchedule } from '../../data/usePersonal';
@@ -34,10 +36,11 @@ const FEEDBACK_HREF = `mailto:${config.feedbackEmail}?subject=${encodeURICompone
 )}`;
 
 /**
- * Account screen. Google sign-in lands in Phase 09 (placeholder card for now); today it's the hub for
- * a student's on-device info (schedule + locker) and settings (theme, accessibility, clear-data).
+ * Account screen: the signed-in Google profile (Phase 09) + the hub for a student's on-device
+ * info (schedule + locker) and settings (theme, accessibility, clear-data).
  */
 export function AccountScreen() {
+  const { session } = useSupabaseSession();
   const { preference, resolved, setPreference } = useTheme();
   const { textSize, contrast, setTextSize, setContrast } = useDisplayPrefs();
   const myLocker = useMyLocker();
@@ -62,13 +65,34 @@ export function AccountScreen() {
         Account
       </h1>
 
-      {/* Sign-in placeholder — Google sign-in (@stu.wvusd.org) arrives in Phase 09. */}
+      {/* The signed-in Google profile (the RequireAuth gate guarantees a session). */}
       <div className="account__card account__identity">
-        <UserCircle2 className="account__avatar" size={44} aria-hidden="true" />
+        {session?.user.user_metadata?.avatar_url ? (
+          <img
+            className="account__avatar account__avatar--photo"
+            src={session.user.user_metadata.avatar_url as string}
+            alt=""
+            width={44}
+            height={44}
+            referrerPolicy="no-referrer"
+          />
+        ) : (
+          <UserCircle2 className="account__avatar" size={44} aria-hidden="true" />
+        )}
         <div className="account__identity-text">
-          <p className="account__name">Guest</p>
-          <p className="account__hint">School Google sign-in is coming soon.</p>
+          <p className="account__name">
+            {(session?.user.user_metadata?.full_name as string | undefined) ?? 'Signed in'}
+          </p>
+          <p className="account__hint">{session?.user.email}</p>
         </div>
+        <Button
+          className="account__signout"
+          variant="secondary"
+          icon={<LogOut size={16} />}
+          onClick={() => void getSupabase().auth.signOut()}
+        >
+          Sign out
+        </Button>
       </div>
 
       <h2 className="account__section-title">Your info</h2>
