@@ -31,7 +31,7 @@ export function SetClassesScreen() {
       <p className="screen__sub">
         {count === 0
           ? 'Add a class for each period. Your schedule stays on this device only.'
-          : `${count} of ${PERIODS.length} periods set. Tap a period to see or change it.`}
+          : `${count} ${count === 1 ? 'period' : 'periods'} set. Tap a period to see or change it.`}
       </p>
 
       <ul className="sched-list">

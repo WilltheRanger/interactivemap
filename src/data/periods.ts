@@ -1,14 +1,15 @@
 /**
  * Period model (06.1) — the ordered slots that drive the schedule form, one row per period.
- * PLACEHOLDER structure (Periods 1–7): confirm the real period structure with the owner before
- * launch. Bell *times* (intake E) stay optional — the passive schedule never shows them.
+ * REAL structure per the owner: periods 0–6, where Period 0 is the optional zero/early period —
+ * not every student has one. Every row is skippable by design (empty = no class that period), so
+ * Period 0 simply carries an "(optional)" label rather than a separate none control.
  */
 export interface Period {
   id: string;
   label: string;
 }
 
-export const PERIODS: Period[] = Array.from({ length: 7 }, (_, i) => ({
-  id: String(i + 1),
-  label: `Period ${i + 1}`,
-}));
+export const PERIODS: Period[] = [
+  { id: '0', label: 'Period 0 (optional)' },
+  ...Array.from({ length: 6 }, (_, i) => ({ id: String(i + 1), label: `Period ${i + 1}` })),
+];

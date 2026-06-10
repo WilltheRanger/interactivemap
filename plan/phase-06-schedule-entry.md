@@ -6,9 +6,10 @@ location by the **teacher/room** join key, and persist on-device. `class_label` 
 > **Status: built ✅** (against placeholder seed; restyle when mockup B lands). Implementation
 > consolidates the pickers into a shared `OptionList` + a `PeriodEditor` state machine
 > (course → section, with teacher / building→room directory fallbacks) instead of three separate
-> picker files. The period list (1–7) in `src/data/periods.ts` is a **placeholder structure** —
-> confirm the real period set with the owner. Live verification against Supabase happens on the
-> deployed preview (this container can't reach the network).
+> picker files. The period list in `src/data/periods.ts` is the **confirmed structure** (owner,
+> 2026-06-10): periods 0–6, with Period 0 the optional zero period (labeled optional; empty = none).
+> Live verification against Supabase happens on the deployed preview (this container can't reach
+> the network).
 
 **Phase complete when:** a full schedule can be entered/edited, persists across reload, and each
 entry resolves to room+building+teacher; empty / filled / lookup-miss states match the mockup.
