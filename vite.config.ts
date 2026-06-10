@@ -13,6 +13,7 @@ export default defineConfig({
     // shell, so a home-screen launch is instant and survives flaky hallway Wi-Fi.
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: false, // main.tsx registers via virtual:pwa-register (reload-on-update)
       includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'brahmas-logo.webp'],
       manifest: {
         name: 'DBHS Wayfinder',
