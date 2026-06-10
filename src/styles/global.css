@@ -15,6 +15,18 @@ body,
   height: 100%;
 }
 
+/* In-browser Safari resizes the visible viewport as its URL bar expands/collapses (a tap near the
+   bottom edge — e.g. the Log tab — summons the bar back), and `100%` doesn't track that, so the
+   bottom nav drifted. Dynamic viewport units follow the real visible height. Standalone (installed)
+   launches have no toolbars, so this is a no-op there. */
+@supports (height: 100dvh) {
+  html,
+  body,
+  #root {
+    height: 100dvh;
+  }
+}
+
 /* iOS zoom guards: `manipulation` disables double-tap "smart zoom" on taps app-wide (pinch-zoom
    still works, so accessibility is preserved), and text controls stay >= 16px so focusing one never
    triggers Safari's auto-zoom. */
