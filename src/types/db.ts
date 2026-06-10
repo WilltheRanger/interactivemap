@@ -10,6 +10,36 @@ export type Database = {
   };
   public: {
     Tables: {
+      announcements: {
+        Row: {
+          body: string;
+          created_at: string;
+          event_date: string | null;
+          event_location: string | null;
+          event_title: string | null;
+          id: string;
+          title: string;
+        };
+        Insert: {
+          body: string;
+          created_at?: string;
+          event_date?: string | null;
+          event_location?: string | null;
+          event_title?: string | null;
+          id?: string;
+          title: string;
+        };
+        Update: {
+          body?: string;
+          created_at?: string;
+          event_date?: string | null;
+          event_location?: string | null;
+          event_title?: string | null;
+          id?: string;
+          title?: string;
+        };
+        Relationships: [];
+      };
       buildings: {
         Row: {
           created_at: string;
@@ -262,7 +292,7 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      is_announcements_admin: { Args: never; Returns: boolean };
     };
     Enums: {
       [_ in never]: never;
