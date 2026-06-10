@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Button } from '../../components';
+import { useSupabaseSession } from '../../data/useSession';
 import { buildHallPassUrl, type HallPassReason } from '../../lib/hallPass';
 import { ReasonPicker } from './ReasonPicker';
 import { QrScanner } from './QrScanner';
@@ -27,9 +28,10 @@ type Step =
 export function LogScreen() {
   const [step, setStep] = useState<Step>({ name: 'reason' });
 
-  // Phase 09 will supply the signed-in @stu.wvusd.org address as ?student=. Until then we send no
-  // identity, so rows record time + reason only.
-  const studentId: string | undefined = undefined;
+  // The Phase 09 gate guarantees a signed-in school account — its address goes along as
+  // ?student= so the teacher's Sheet rows identify who logged the pass.
+  const { session } = useSupabaseSession();
+  const studentId = session?.user.email;
 
   const submit = async (url: string, reason: HallPassReason) => {
     setStep({ name: 'sending', reason });

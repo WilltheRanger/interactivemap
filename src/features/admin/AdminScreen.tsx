@@ -1,60 +1,14 @@
-import { useEffect, useState } from 'react';
-import type { Session } from '@supabase/supabase-js';
+import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { LogIn, LogOut, Pencil, Trash2 } from 'lucide-react';
 import { Button, Card, Skeleton } from '../../components';
 import { useAnnouncements } from '../../data/hooks';
-import { isAdminEmail } from '../../lib/adminAuth';
+import { signInWithGoogle, useSupabaseSession } from '../../data/useSession';
+import { isAdminEmail } from '../../lib/authPolicy';
 import type { Announcement } from '../../lib/refData';
 import { getSupabase } from '../../lib/supabase';
 import { AnnouncementForm } from './AnnouncementForm';
 import './Admin.css';
-
-type AuthState =
-  | { name: 'loading' }
-  | { name: 'signed-out' }
-  | { name: 'unauthorized'; email: string }
-  | { name: 'admin'; session: Session };
-
-/** Watch the Supabase session; non-whitelisted accounts are signed out immediately. */
-function useAdminSession(): [AuthState, () => void] {
-  const [state, setState] = useState<AuthState>({ name: 'loading' });
-
-  useEffect(() => {
-    const supabase = getSupabase();
-    let cancelled = false;
-
-    const apply = (session: Session | null) => {
-      if (cancelled) return;
-      if (!session) {
-        setState((s) => (s.name === 'unauthorized' ? s : { name: 'signed-out' }));
-      } else if (isAdminEmail(session.user.email)) {
-        setState({ name: 'admin', session });
-      } else {
-        // Not on the whitelist: drop the session right away (RLS would reject writes anyway).
-        setState({ name: 'unauthorized', email: session.user.email ?? 'unknown account' });
-        void supabase.auth.signOut();
-      }
-    };
-
-    void supabase.auth.getSession().then(({ data }) => apply(data.session));
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => apply(session));
-    return () => {
-      cancelled = true;
-      sub.subscription.unsubscribe();
-    };
-  }, []);
-
-  const signIn = () => {
-    void getSupabase().auth.signInWithOAuth({
-      provider: 'google',
-      // Back to /admin after Google: respects the GitHub Pages base path.
-      options: { redirectTo: `${window.location.origin}${import.meta.env.BASE_URL}admin` },
-    });
-  };
-
-  return [state, signIn];
-}
 
 function AdminList({ onEdit }: { onEdit: (a: Announcement) => void }) {
   const announcements = useAnnouncements();
@@ -154,13 +108,15 @@ function AdminList({ onEdit }: { onEdit: (a: Announcement) => void }) {
 
 /**
  * /admin — announcements manager. Not linked from the student nav; reached by URL only.
- * Google OAuth via Supabase Auth, then a hardcoded email whitelist (src/lib/adminAuth.ts) gates
- * the UI — non-whitelisted sign-ins are dropped immediately. RLS enforces the same whitelist
- * server-side, so the client check is UX, not security.
+ * The app-wide RequireAuth gate has already ensured a signed-in, school-or-admin account;
+ * here the hardcoded whitelist (src/lib/authPolicy.ts) additionally gates the manager UI.
+ * School accounts that aren't admins see a "not authorized" panel but stay signed in to the
+ * app. RLS enforces the same whitelist server-side, so the client check is UX, not security.
  */
 export function AdminScreen() {
-  const [auth, signIn] = useAdminSession();
+  const { loading, session } = useSupabaseSession();
   const [editing, setEditing] = useState<Announcement | null>(null);
+  const isAdmin = !!session && isAdminEmail(session.user.email);
 
   return (
     <section className="screen" aria-labelledby="admin-title">
@@ -168,42 +124,39 @@ export function AdminScreen() {
         Admin
       </h1>
 
-      {auth.name === 'loading' && (
+      {loading && (
         <div className="screen__body" aria-busy="true" role="status" aria-label="Checking sign-in">
           <Skeleton height={48} radius="var(--radius-md)" />
         </div>
       )}
 
-      {auth.name === 'signed-out' && (
+      {!loading && !session && (
         <>
           <p className="screen__sub">Staff sign-in for posting announcements.</p>
           <div className="screen__body">
-            <Button variant="primary" icon={<LogIn size={18} />} onClick={signIn}>
+            <Button variant="primary" icon={<LogIn size={18} />} onClick={signInWithGoogle}>
               Sign in with Google
             </Button>
           </div>
         </>
       )}
 
-      {auth.name === 'unauthorized' && (
+      {!loading && session && !isAdmin && (
         <div className="screen__body">
           <div className="ann-panel ann-panel--error" role="alert">
             <p className="ann-panel__title">This account isn&rsquo;t authorized</p>
             <p>
-              {auth.email} can&rsquo;t manage announcements, so it was signed out. If you should
-              have access, ask the Wayfinder owner to add you.
+              {session.user.email} can&rsquo;t manage announcements. If you should have access, ask
+              the Wayfinder owner to add you.
             </p>
-            <Button variant="secondary" onClick={signIn}>
-              Sign in with a different account
-            </Button>
           </div>
         </div>
       )}
 
-      {auth.name === 'admin' && (
+      {!loading && session && isAdmin && (
         <>
           <p className="screen__sub">
-            Signed in as {auth.session.user.email}
+            Signed in as {session.user.email}
             <Button
               className="admin-signout"
               variant="secondary"
