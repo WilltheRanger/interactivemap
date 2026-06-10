@@ -113,12 +113,14 @@ function bodyBox(text, adj = { dx: 0, dy: 0 }) {
 }
 
 await sharp(`${ROOT}public/campus-map.webp`)
+  .resize(IMAGE.w, IMAGE.h) // the asset is a 2x render of the 1610×977 coordinate space
   .composite([{ input: overlaySvg() }])
   .png()
   .toFile(`${OUT}/full.png`);
 
 for (const [gid, b] of Object.entries(groupBoxes())) {
   const composite = await sharp(`${ROOT}public/campus-map.webp`)
+    .resize(IMAGE.w, IMAGE.h)
     .composite([{ input: overlaySvg(gid) }])
     .png()
     .toBuffer();
