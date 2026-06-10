@@ -38,16 +38,25 @@ export function MapScreen() {
         crs: L.CRS.Simple,
         attributionControl: false,
         zoomControl: false, // pinch / double-tap zoom; on-screen controls come with Phase 05 polish
-        minZoom: -4,
         maxZoom: 1, // zoom 0 = 1 image px : 1 screen px; 1 = 2x
         zoomSnap: 0.25,
         zoomDelta: 0.5,
+        maxBounds: bounds,
+        maxBoundsViscosity: 1, // solid edges — no rubber-banding into the void
       });
       L.imageOverlay(MAP_IMAGE_URL, bounds).addTo(map);
-      map.fitBounds(bounds);
-      // Lock the view to the image: no zooming out past the fitted view, no panning into the void.
-      map.setMinZoom(map.getZoom());
-      map.setMaxBounds(bounds.pad(0.05));
+
+      // Google-Maps feel: start at "cover" (the image fills the whole viewport, pan for the rest)
+      // and make that the zoom floor so empty space can never show. Recomputed on resize/rotation.
+      const localMap = map;
+      const applyCoverZoom = (recenter: boolean) => {
+        const coverZoom = localMap.getBoundsZoom(bounds, true);
+        localMap.setMinZoom(coverZoom);
+        if (recenter) localMap.setView(bounds.getCenter(), coverZoom);
+        else if (localMap.getZoom() < coverZoom) localMap.setZoom(coverZoom);
+      };
+      applyCoverZoom(true);
+      localMap.on('resize', () => applyCoverZoom(false));
       setStatus('ready');
     };
     img.onerror = () => {
