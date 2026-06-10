@@ -20,9 +20,9 @@ const require = createRequire(import.meta.url);
 const sharp = require('sharp');
 
 const ROOT = new URL('..', import.meta.url).pathname;
-const IMAGE = { w: 1627, h: 967 };
+const IMAGE = { w: 1610, h: 977 };
 // ── keep in sync with src/features/map/campusGeo.ts ──────────────────────────
-const SVG_TO_IMAGE = { ax: 11.5, sx: 1, ay: 44.8, sy: 1 };
+const SVG_TO_IMAGE = { ax: 5.6, sx: 1.01, ay: 45.8, sy: 1.0225 };
 const ADJUST = {
   'bldg600-upper': { dx: -3, dy: 0 },
 };
