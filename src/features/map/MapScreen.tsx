@@ -8,7 +8,7 @@ import { SearchInput } from '../../components/SearchInput';
 import { MapControls } from './MapControls';
 import { fadeUpItem, staggerContainer } from '../../lib/motion';
 import { BUILDING_LABELS } from './buildingLabels';
-import { IMAGE_SIZE, MAP_IMAGE_URL, MAP_SVG_URL, SVG_TO_IMAGE } from './campusGeo';
+import { GROUP_ADJUST, IMAGE_SIZE, MAP_IMAGE_URL, MAP_SVG_URL, SVG_TO_IMAGE } from './campusGeo';
 import './MapScreen.css';
 
 type MapStatus = 'loading' | 'ready' | 'missing';
@@ -84,6 +84,13 @@ export function MapScreen() {
         svg.removeAttribute('width');
         svg.removeAttribute('height');
         svg.classList.add('campus-svg');
+        // Per-building calibration: nudge each group onto its illustrated building.
+        for (const [gid, { dx, dy }] of Object.entries(GROUP_ADJUST)) {
+          const el = svg.querySelector(`[id="${gid}"]`);
+          if (el instanceof SVGGraphicsElement) {
+            el.setAttribute('transform', `translate(${dx},${dy})`);
+          }
+        }
         L.svgOverlay(svg, svgBounds, { interactive: false }).addTo(localMap);
 
         const selectShapeEl = (shape: SVGGraphicsElement) => {
@@ -118,10 +125,17 @@ export function MapScreen() {
           const el = svg.querySelector(`[id="${roomId.replace(/"/g, '')}"]`);
           if (!(el instanceof SVGGraphicsElement)) return false;
           selectShapeEl(el);
+          // getBBox excludes the element's own/ancestor transforms — add the calibration nudge.
+          const owner =
+            el.tagName === 'g'
+              ? el.getAttribute('id')
+              : (el.closest('g[id]:not([id="Upper"])')?.getAttribute('id') ??
+                el.getAttribute('id'));
+          const { dx, dy } = GROUP_ADJUST[owner ?? ''] ?? { dx: 0, dy: 0 };
           const b = el.getBBox();
           const roomBounds = L.latLngBounds([
-            [H - (ay + sy * (b.y + b.height)), ax + sx * b.x],
-            [H - (ay + sy * b.y), ax + sx * (b.x + b.width)],
+            [H - (ay + sy * (b.y + dy + b.height)), ax + sx * (b.x + dx)],
+            [H - (ay + sy * (b.y + dy)), ax + sx * (b.x + dx + b.width)],
           ]);
           localMap.fitBounds(roomBounds.pad(3), { maxZoom: 1.5 });
           return true;
