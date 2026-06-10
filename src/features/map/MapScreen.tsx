@@ -8,7 +8,14 @@ import { SearchInput } from '../../components/SearchInput';
 import { MapControls } from './MapControls';
 import { fadeUpItem, staggerContainer } from '../../lib/motion';
 import { BUILDING_LABELS } from './buildingLabels';
-import { GROUP_ADJUST, IMAGE_SIZE, MAP_IMAGE_URL, MAP_SVG_URL, SVG_TO_IMAGE } from './campusGeo';
+import {
+  CAMPUS_LEVELS,
+  GROUP_ADJUST,
+  isWrapperGroupId,
+  loadAllCampusRooms,
+  type CampusLevel,
+  type CampusRoom,
+} from './campusGeo';
 import './MapScreen.css';
 
 type MapStatus = 'loading' | 'ready' | 'missing';
@@ -19,18 +26,39 @@ interface RoomSelection {
   building: string;
 }
 
+const MAX_SEARCH_RESULTS = 8;
+
+/** Display title for a shape id ("461" → "Room 461", "RR_2" → "Restroom", names pass through). */
+function roomTitle(id: string): string {
+  if (/^RR(_\d+)?$/.test(id)) return 'Restroom';
+  if (/^\d/.test(id)) return `Room ${id}`;
+  return BUILDING_LABELS[id] ?? id;
+}
+
 /**
- * Map screen: the campus illustration (raster underlay) with the owner's traced plan SVG aligned on
- * top — every named room shape is directly tappable (highlight + detail card). Supports /map?room=ID
- * so Find results can jump straight to a room. Google-Maps-style cover zoom over the full image.
+ * Map screen: per-level campus illustration (raster underlay) with the traced plan SVG aligned
+ * invisibly on top — every named room shape is directly tappable (highlight + detail card).
+ * The Level control switches between the upper and lower campus; the search bar finds rooms on
+ * either level and jumps to them (also via /map?room=ID from other screens).
  */
 export function MapScreen() {
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const selectByIdRef = useRef<((roomId: string) => boolean) | null>(null);
+  /** Room to select once the (possibly newly switched) level finishes loading. */
+  const pendingRoomRef = useRef<string | null>(null);
   const [searchParams] = useSearchParams();
-  const [status, setStatus] = useState<MapStatus>('loading');
+  const [level, setLevel] = useState<CampusLevel>('upper');
+  // Status is stored with the level it belongs to, so switching levels *derives* a fresh
+  // 'loading' without a synchronous state reset inside the setup effect.
+  const [mapState, setMapState] = useState<{ level: CampusLevel; status: MapStatus }>({
+    level: 'upper',
+    status: 'loading',
+  });
+  const status: MapStatus = mapState.level === level ? mapState.status : 'loading';
   const [selected, setSelected] = useState<RoomSelection | null>(null);
+  const [rooms, setRooms] = useState<CampusRoom[] | null>(null);
+  const [query, setQuery] = useState('');
 
   const clearSelection = () => {
     svgRef.current
@@ -39,30 +67,46 @@ export function MapScreen() {
     setSelected(null);
   };
 
+  // Search index: every room on both levels (independent of which level is showing).
   useEffect(() => {
+    let cancelled = false;
+    loadAllCampusRooms()
+      .then((all) => {
+        if (!cancelled) setRooms(all);
+      })
+      .catch(() => {
+        if (!cancelled) setRooms([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    const config = CAMPUS_LEVELS[level];
     let map: L.Map | null = null;
     let cancelled = false;
 
-    fetch(MAP_SVG_URL)
+    fetch(config.svgUrl)
       .then((res) => (res.ok ? res.text() : Promise.reject(new Error('missing'))))
       .then((svgText) => {
         if (cancelled || !containerRef.current) return;
         const svg = new DOMParser().parseFromString(svgText, 'image/svg+xml')
           .documentElement as unknown as SVGSVGElement;
         if (svg.nodeName !== 'svg') {
-          setStatus('missing');
+          setMapState({ level, status: 'missing' });
           return;
         }
         svgRef.current = svg;
 
-        const { w: W, h: H } = IMAGE_SIZE;
-        const { ax, sx, ay, sy } = SVG_TO_IMAGE;
-        const vb = (svg.getAttribute('viewBox') ?? '0 0 1382 863').split(/\s+/).map(Number);
+        const { w: W, h: H } = config.imageSize;
+        const { ax, sx, ay, sy } = config.svgToImage;
+        const vb = (svg.getAttribute('viewBox') ?? `0 0 ${W} ${H}`).split(/\s+/).map(Number);
         const imageBounds = L.latLngBounds([
           [0, 0],
           [H, W],
         ]);
-        // The traced frame is a crop of the illustration — place the SVG at its aligned position.
+        // The traced frame and the illustration share a plan — place the SVG at its fitted position.
         const svgBounds = L.latLngBounds([
           [H - (ay + sy * vb[3]), ax],
           [H - ay, ax + sx * vb[2]],
@@ -72,7 +116,7 @@ export function MapScreen() {
           crs: L.CRS.Simple,
           attributionControl: false,
           zoomControl: false,
-          maxZoom: 2, // enough to tap small rooms; SVG stays crisp, raster softens acceptably
+          maxZoom: 3, // small source images: enough to tap rooms; SVG highlights stay crisp
           zoomSnap: 0.25,
           zoomDelta: 0.5,
           maxBounds: imageBounds,
@@ -80,11 +124,11 @@ export function MapScreen() {
         });
         map = localMap;
 
-        L.imageOverlay(MAP_IMAGE_URL, imageBounds).addTo(localMap);
+        L.imageOverlay(config.imageUrl, imageBounds).addTo(localMap);
         svg.removeAttribute('width');
         svg.removeAttribute('height');
         svg.classList.add('campus-svg');
-        // Per-building calibration: nudge each group onto its illustrated building.
+        // Per-building calibration seam: nudge a group onto its illustrated building if needed.
         for (const [gid, { dx, dy }] of Object.entries(GROUP_ADJUST)) {
           const el = svg.querySelector(`[id="${gid}"]`);
           if (el instanceof SVGGraphicsElement) {
@@ -98,15 +142,19 @@ export function MapScreen() {
           shape.classList.add('is-selected');
           const id = shape.getAttribute('id') ?? '';
           if (shape.tagName === 'g') {
-            // A whole building group (from a Find "Buildings" result).
+            // A whole building group.
             setSelected({ id, title: BUILDING_LABELS[id] ?? id, building: '' });
             return;
           }
           const gid = shape.closest('g[id]')?.getAttribute('id');
-          if (gid && gid !== 'Upper') {
-            setSelected({ id, title: `Room ${id}`, building: BUILDING_LABELS[gid] ?? gid });
+          if (!isWrapperGroupId(gid)) {
+            setSelected({
+              id,
+              title: roomTitle(id),
+              building: BUILDING_LABELS[gid as string] ?? (gid as string),
+            });
           } else {
-            setSelected({ id, title: BUILDING_LABELS[id] ?? id, building: '' });
+            setSelected({ id, title: roomTitle(id), building: `${config.label} campus` });
           }
         };
 
@@ -120,7 +168,7 @@ export function MapScreen() {
         });
         localMap.on('click', () => clearSelection());
 
-        // Find → map: select a room by id and zoom to it with some context around it.
+        // Search / ?room= → select a room by id and zoom to it with some context around it.
         selectByIdRef.current = (roomId: string) => {
           const el = svg.querySelector(`[id="${roomId.replace(/"/g, '')}"]`);
           if (!(el instanceof SVGGraphicsElement)) return false;
@@ -129,15 +177,14 @@ export function MapScreen() {
           const owner =
             el.tagName === 'g'
               ? el.getAttribute('id')
-              : (el.closest('g[id]:not([id="Upper"])')?.getAttribute('id') ??
-                el.getAttribute('id'));
+              : (el.closest('g[id]')?.getAttribute('id') ?? el.getAttribute('id'));
           const { dx, dy } = GROUP_ADJUST[owner ?? ''] ?? { dx: 0, dy: 0 };
           const b = el.getBBox();
           const roomBounds = L.latLngBounds([
             [H - (ay + sy * (b.y + dy + b.height)), ax + sx * (b.x + dx)],
             [H - (ay + sy * (b.y + dy)), ax + sx * (b.x + dx + b.width)],
           ]);
-          localMap.fitBounds(roomBounds.pad(3), { maxZoom: 1.5 });
+          localMap.fitBounds(roomBounds.pad(3), { maxZoom: 2 });
           return true;
         };
 
@@ -149,10 +196,17 @@ export function MapScreen() {
         };
         applyCoverZoom(true);
         localMap.on('resize', () => applyCoverZoom(false));
-        setStatus('ready');
+        setMapState({ level, status: 'ready' });
+
+        // A search hit / ?room= jump that switched levels lands here once the level is up.
+        if (pendingRoomRef.current) {
+          const pending = pendingRoomRef.current;
+          pendingRoomRef.current = null;
+          selectByIdRef.current?.(pending);
+        }
       })
       .catch(() => {
-        if (!cancelled) setStatus('missing');
+        if (!cancelled) setMapState({ level, status: 'missing' });
       });
 
     return () => {
@@ -161,14 +215,49 @@ export function MapScreen() {
       selectByIdRef.current = null;
       map?.remove();
     };
-  }, []);
+  }, [level]);
 
-  // Apply ?room=ID once the map is ready (and whenever the param changes while mounted).
+  /** Jump to a room, switching levels first when needed. */
+  const jumpToRoom = (room: CampusRoom) => {
+    setQuery('');
+    if (room.level === level) {
+      selectByIdRef.current?.(room.id);
+    } else {
+      pendingRoomRef.current = room.id;
+      setLevel(room.level);
+    }
+  };
+
+  // Apply ?room=ID once the map + room index are ready (the room may be on either level).
+  // Deferred a tick so a needed level switch isn't a synchronous set-state-in-effect.
   useEffect(() => {
-    if (status !== 'ready') return;
-    const room = searchParams.get('room');
-    if (room) selectByIdRef.current?.(room);
-  }, [status, searchParams]);
+    if (status !== 'ready' || !rooms) return;
+    const roomId = searchParams.get('room');
+    if (!roomId) return;
+    const room = rooms.find((r) => r.id.toLowerCase() === roomId.toLowerCase());
+    if (!room) return;
+    const t = setTimeout(() => {
+      if (room.level === level) {
+        selectByIdRef.current?.(room.id);
+      } else {
+        pendingRoomRef.current = room.id;
+        setLevel(room.level);
+      }
+    }, 0);
+    return () => clearTimeout(t);
+  }, [status, searchParams, rooms, level]);
+
+  const q = query.trim().toLowerCase();
+  const results = q
+    ? (rooms ?? [])
+        .filter(
+          (room) =>
+            room.id.toLowerCase().includes(q) ||
+            roomTitle(room.id).toLowerCase().includes(q) ||
+            (BUILDING_LABELS[room.buildingId] ?? '').toLowerCase().includes(q),
+        )
+        .slice(0, MAX_SEARCH_RESULTS)
+    : [];
 
   return (
     <div className="map-screen">
@@ -180,16 +269,55 @@ export function MapScreen() {
       >
         <motion.div className="map-screen__search" variants={fadeUpItem}>
           <SearchInput
-            placeholder="Search rooms, buildings, or locations…"
-            aria-label="Search rooms, buildings, or locations"
+            placeholder="Search rooms…"
+            aria-label="Search rooms"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
           />
+          {q && (
+            <div className="map-screen__results" role="listbox" aria-label="Room results">
+              {rooms === null && <p className="map-screen__results-note">Loading rooms…</p>}
+              {rooms !== null && results.length === 0 && (
+                <p className="map-screen__results-note">No rooms match “{query.trim()}”.</p>
+              )}
+              {results.map((room) => {
+                const building =
+                  room.buildingId !== room.id
+                    ? (BUILDING_LABELS[room.buildingId] ?? room.buildingId)
+                    : null;
+                const where = `${CAMPUS_LEVELS[room.level].label} campus`;
+                return (
+                  <button
+                    key={`${room.level}-${room.id}`}
+                    type="button"
+                    role="option"
+                    aria-selected="false"
+                    className="map-screen__result"
+                    onClick={() => jumpToRoom(room)}
+                  >
+                    <span className="map-screen__result-title">{roomTitle(room.id)}</span>
+                    <span className="map-screen__result-sub">
+                      {building ? `${building} · ${where}` : where}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </motion.div>
         <motion.div variants={fadeUpItem}>
-          <MapControls level="1" period="3" />
+          <MapControls
+            level={level}
+            onToggleLevel={() => {
+              clearSelection();
+              setLevel((l) => (l === 'upper' ? 'lower' : 'upper'));
+            }}
+            period="3"
+          />
         </motion.div>
       </motion.div>
 
-      <div ref={containerRef} className="map-screen__canvas" aria-label="Campus map" />
+      <div ref={containerRef} key={level} className="map-screen__canvas" aria-label="Campus map" />
 
       {selected && (
         <motion.div

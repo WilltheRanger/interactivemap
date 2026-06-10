@@ -1,8 +1,8 @@
 import { motion } from 'framer-motion';
-import { CalendarDays, CalendarPlus, Download, MapPin } from 'lucide-react';
+import { CalendarDays, CalendarPlus, MapPin } from 'lucide-react';
 import { Button, Card, Skeleton } from '../../components';
 import { useAnnouncements } from '../../data/hooks';
-import { downloadIcs, googleCalendarUrl, type CalendarEvent } from '../../lib/calendar';
+import { googleCalendarUrl, type CalendarEvent } from '../../lib/calendar';
 import type { Announcement } from '../../lib/refData';
 import { fadeUpItem, spring, staggerContainer, tap } from '../../lib/motion';
 import './Announcements.css';
@@ -84,14 +84,6 @@ function AnnouncementCard({ announcement }: { announcement: Announcement }) {
                 Add to Calendar
               </a>
             </motion.span>
-            <Button
-              variant="secondary"
-              icon={<Download size={18} />}
-              onClick={() => downloadIcs(event, `${event.title}.ics`)}
-              aria-label={`Download ${event.title} as an .ics calendar file`}
-            >
-              .ics
-            </Button>
           </div>
         </div>
       )}
@@ -101,7 +93,7 @@ function AnnouncementCard({ announcement }: { announcement: Announcement }) {
 
 /**
  * Announcements: a read-only feed of staff posts (newest first). Posts with an event date carry
- * "Add to Calendar" (pre-filled Google Calendar link + .ics fallback). Written from /admin only.
+ * an "Add to Calendar" pre-filled Google Calendar link. Written from /admin only.
  */
 export function AnnouncementsScreen() {
   const announcements = useAnnouncements();
