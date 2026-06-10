@@ -66,23 +66,36 @@
   fill: #582c83;
   fill-opacity: 0;
   stroke: none;
-  vector-effect: non-scaling-stroke; /* crisp highlight outline at any zoom */
+  vector-effect: non-scaling-stroke; /* (resting/hover) crisp if a stroke is ever shown */
   transition:
     fill-opacity 0.12s ease,
-    stroke 0.12s ease;
+    stroke 0.12s ease,
+    filter 0.12s ease;
 }
+/* Highlights carry no crisp edges — a softly blurred fill and a glow-style gold stroke instead
+   of a hard outline — so a hair of drift between the tap shapes and the drawn walls can't
+   register against the artwork's lines. Strokes scale with the map (vector-effect: none) to stay
+   proportional to the drawn walls at every zoom. */
 .campus-svg .campus-room:hover {
-  fill-opacity: 0.22;
+  fill-opacity: 0.18;
+  filter: blur(1.2px);
 }
 .campus-svg .campus-room.is-selected {
   fill-opacity: 0.45;
   stroke: #f4b41a;
-  stroke-width: 2;
+  stroke-width: 4;
+  stroke-opacity: 0.85;
+  vector-effect: none;
+  filter: blur(1.6px);
 }
 /* Whole-building selection (Find → a building result): light up every room in the group. */
 .campus-svg g.is-selected .campus-room {
   fill-opacity: 0.35;
   stroke: #f4b41a;
+  stroke-width: 3;
+  stroke-opacity: 0.7;
+  vector-effect: none;
+  filter: blur(1.6px);
 }
 
 /* Tapped-room detail card, floating above the map bottom. */
