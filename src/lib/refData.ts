@@ -66,6 +66,12 @@ export async function getRoom(roomId: string): Promise<Room | null> {
   return data;
 }
 
+export async function getTeachers(): Promise<Teacher[]> {
+  const { data, error } = await getSupabase().from('teachers').select('*').order('name');
+  if (error) throw error;
+  return data ?? [];
+}
+
 export async function getTeacher(teacherId: string): Promise<Teacher | null> {
   const { data, error } = await getSupabase()
     .from('teachers')

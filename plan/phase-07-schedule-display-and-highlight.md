@@ -8,6 +8,11 @@ auto-tracking, no clock-driven auto-advance.
 room/building/teacher and highlights that building on the map, and all class buildings highlight on
 the map. Empty state matches the mockup.
 
+> **Status: 07.1 + the detail half of 07.2 are built** into the Set Classes screen (list of periods
+> with resolved room/building/teacher; tap to expand detail with rename/change/remove; live sync via
+> `useSchedule` covers 07.4 for the list). The **map-highlight halves of 07.2/07.3 wait on Phase 05**
+> (the SVG map + `highlight()` API don't exist yet).
+
 > **No bell schedule needed (CHECKPOINT E not required).** Per the owner's final call the schedule
 > is **fully passive / tap-driven** — the active time-engine, the auto-advancing now-next banner,
 > AND the optional static "current period" label are all **cut**. Intake E is only ever revisited
