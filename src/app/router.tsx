@@ -12,6 +12,7 @@ import { LockersScreen } from '../features/locker/LockersScreen';
 import { LogScreen } from '../features/log/LogScreen';
 import { SetClassesScreen } from '../features/schedule/SetClassesScreen';
 import { AccountScreen } from '../features/account/AccountScreen';
+import { AdminScreen } from '../features/admin/AdminScreen';
 
 /**
  * Seam for the Phase 09 auth guard — currently a pass-through; Phase 09 replaces the body with the
@@ -48,6 +49,8 @@ function AnimatedRoutes() {
             <Route path="/log" element={<LogScreen />} />
             <Route path="/set-classes" element={<SetClassesScreen />} />
             <Route path="/account" element={<AccountScreen />} />
+            {/* Staff-only; not linked from the student nav (see AdminScreen). */}
+            <Route path="/admin" element={<AdminScreen />} />
             <Route path="*" element={<Navigate to="/map" replace />} />
           </Routes>
         </ErrorBoundary>

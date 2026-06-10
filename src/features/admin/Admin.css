@@ -1,0 +1,156 @@
+/* Admin announcements manager (not in student nav). Token-only; reuses .ann-panel from the feed. */
+
+.admin-body {
+  display: grid;
+  gap: var(--space-5);
+}
+
+/* ── Form ── */
+.admin-form {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.admin-form__title {
+  margin: 0;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+}
+
+.admin-field {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.admin-field__label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+}
+
+.admin-input {
+  font: inherit;
+  color: inherit;
+  padding: var(--space-3);
+  min-height: var(--tap-target);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.admin-input:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+.admin-input[aria-invalid='true'] {
+  border-color: var(--color-error);
+}
+
+.admin-input--area {
+  resize: vertical;
+  min-height: 96px;
+}
+
+.admin-field__error {
+  color: var(--color-error);
+  font-size: var(--font-size-sm);
+}
+
+.admin-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--tap-target);
+  font-weight: var(--font-weight-medium);
+}
+
+.admin-toggle input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--color-primary);
+}
+
+.admin-form__event {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-primary-weak);
+  border-radius: var(--radius-md);
+}
+
+.admin-form__actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.admin-status {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.admin-status--error {
+  color: var(--color-error);
+}
+
+/* ── Posted list ── */
+.admin-section-title {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+.admin-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.admin-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-1);
+}
+
+.admin-row__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.admin-row__title {
+  font-weight: var(--font-weight-semibold);
+}
+
+.admin-row__sub {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.admin-row__actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.admin-empty {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.admin-signout {
+  margin-left: var(--space-3);
+}
