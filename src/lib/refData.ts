@@ -7,6 +7,7 @@
 import { getSupabase } from './supabase';
 import type { Tables } from '../types/db';
 
+export type Announcement = Tables<'announcements'>;
 export type Building = Tables<'buildings'>;
 export type Room = Tables<'rooms'>;
 export type Teacher = Tables<'teachers'>;
@@ -27,6 +28,16 @@ export interface CourseSection {
   period: string;
   teacher: Teacher | null;
   room: Room | null;
+}
+
+// ── Announcements (public read; written only by admins via the /admin screen) ────
+export async function getAnnouncements(): Promise<Announcement[]> {
+  const { data, error } = await getSupabase()
+    .from('announcements')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data ?? [];
 }
 
 // ── Buildings / rooms / teachers ────────────────────────────────────────────────

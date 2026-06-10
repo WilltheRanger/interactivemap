@@ -56,3 +56,16 @@ insert into lockers (id, section_id, number, hotspot_yaw, hotspot_pitch) values
   ('lk-1042', 'sec-1000s', 1042, 10, -5),
   ('lk-1100', 'sec-1100s', 1100, -30, 0)
 on conflict (id) do nothing;
+
+-- Announcements (placeholder posts so the feed has content; one carries an event to
+-- exercise the Add to Calendar buttons).
+insert into announcements (title, body, event_date, event_title, event_location)
+select * from (values
+  ('Welcome to the Wayfinder (placeholder)',
+   'This is placeholder text so the feed has something to show. Real announcements from school staff will appear here.',
+   null::timestamptz, null::text, null::text),
+  ('Placeholder event: Back-to-School Night',
+   'A placeholder event post — tap Add to Calendar to try the Google Calendar and .ics buttons.',
+   now() + interval '7 days', 'Back-to-School Night (placeholder)', 'DBHS Gym (placeholder)')
+) as seed(title, body, event_date, event_title, event_location)
+where not exists (select 1 from announcements);
