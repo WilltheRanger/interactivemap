@@ -35,15 +35,16 @@ const SHAPE_EDIT: L.PathOptions = {
   fillOpacity: 0.15,
 };
 
+// Generous handle sizes — these get dragged with thumbs on a phone.
 const vertexIcon = L.divIcon({
   className: 'map-edit-vertex',
-  iconSize: [16, 16],
-  iconAnchor: [8, 8],
+  iconSize: [22, 22],
+  iconAnchor: [11, 11],
 });
 const moveIcon = L.divIcon({
   className: 'map-edit-move',
-  iconSize: [22, 22],
-  iconAnchor: [11, 11],
+  iconSize: [28, 28],
+  iconAnchor: [14, 14],
 });
 
 /**
@@ -59,7 +60,7 @@ export function MapScreen() {
   const containerRef = useRef<HTMLDivElement>(null);
   const layersRef = useRef(new Map<string, L.Polygon>());
   const exportRef = useRef<(() => string) | null>(null);
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const editMode = searchParams.has('edit');
   const [status, setStatus] = useState<MapStatus>('loading');
   const [selected, setSelected] = useState<CampusShape | null>(null);
@@ -112,9 +113,17 @@ export function MapScreen() {
         const ring = (polygon.getLatLngs()[0] as L.LatLng[]).slice();
         const refresh = () => polygon.setLatLngs([ring]);
 
-        const moveHandle = L.marker(centerOf(ring), { draggable: true, icon: moveIcon });
+        const moveHandle = L.marker(centerOf(ring), {
+          draggable: true,
+          icon: moveIcon,
+          autoPan: true, // keep dragging when the handle reaches the screen edge
+        });
         ring.forEach((latlng, i) => {
-          const marker = L.marker(latlng, { draggable: true, icon: vertexIcon }).addTo(localMap);
+          const marker = L.marker(latlng, {
+            draggable: true,
+            icon: vertexIcon,
+            autoPan: true,
+          }).addTo(localMap);
           marker.on('drag', () => {
             ring[i] = marker.getLatLng();
             refresh();
@@ -284,6 +293,13 @@ export function MapScreen() {
               }}
             >
               <Download size={16} aria-hidden="true" /> Download
+            </button>
+            <button
+              type="button"
+              className="map-screen__editbtn map-screen__editbtn--secondary"
+              onClick={() => setSearchParams({})}
+            >
+              <X size={16} aria-hidden="true" /> Exit
             </button>
           </div>
         </div>
