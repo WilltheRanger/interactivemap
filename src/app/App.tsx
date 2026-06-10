@@ -2,6 +2,7 @@ import { MotionConfig } from 'framer-motion';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import { AppRoutes } from './router';
+import { Splash } from './Splash';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,6 +22,7 @@ export default function App() {
         <BrowserRouter basename={basename}>
           <AppRoutes />
         </BrowserRouter>
+        <Splash />
       </QueryClientProvider>
     </MotionConfig>
   );

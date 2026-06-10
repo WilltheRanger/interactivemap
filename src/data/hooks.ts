@@ -8,6 +8,7 @@ import {
   getBuildings,
   getCoursesForPeriod,
   getPanorama,
+  getRooms,
   getRoomsByBuilding,
   getRoomWithTeacher,
   getSectionsForCourse,
@@ -50,6 +51,10 @@ export function useRoomWithTeacher(roomId: string | null) {
 
 export function useTeachers() {
   return useQuery({ queryKey: ['teachers'], queryFn: getTeachers, staleTime: STALE_MS });
+}
+
+export function useRooms() {
+  return useQuery({ queryKey: ['rooms', 'all'], queryFn: getRooms, staleTime: STALE_MS });
 }
 
 export function useCoursesForPeriod(period: string | null) {
