@@ -1,0 +1,36 @@
+/* Launch splash: theme-aware full-screen overlay with the app-icon tile + wordmark. Token-only. */
+
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  background: var(--color-bg);
+}
+
+.splash__tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 112px;
+  height: 112px;
+  border-radius: 26px; /* iOS-icon squircle feel */
+  background: #ffffff; /* matches the icon artwork's white ground in both themes */
+  box-shadow: var(--shadow-2);
+  overflow: hidden;
+}
+
+.splash__logo {
+  width: 96px;
+  height: 96px;
+}
+
+.splash__name {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+}

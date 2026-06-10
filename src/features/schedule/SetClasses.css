@@ -99,7 +99,8 @@
   background: var(--color-surface);
   color: inherit;
   font: inherit;
-  font-size: var(--font-size-sm);
+  /* >= 16px or iOS auto-zooms the page when the input gets focus. */
+  font-size: var(--font-size-md);
 }
 
 /* Inline period editor */

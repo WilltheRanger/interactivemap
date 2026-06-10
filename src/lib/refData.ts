@@ -56,6 +56,12 @@ export async function getRoomsByBuilding(buildingId: string): Promise<Room[]> {
   return data ?? [];
 }
 
+export async function getRooms(): Promise<Room[]> {
+  const { data, error } = await getSupabase().from('rooms').select('*').order('label');
+  if (error) throw error;
+  return data ?? [];
+}
+
 export async function getRoom(roomId: string): Promise<Room | null> {
   const { data, error } = await getSupabase()
     .from('rooms')
