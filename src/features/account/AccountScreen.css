@@ -18,6 +18,13 @@
   flex: 0 0 auto;
   color: var(--color-text-muted);
 }
+.account__avatar--photo {
+  border-radius: var(--radius-pill);
+}
+.account__signout {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
 .account__name {
   font-weight: var(--font-weight-semibold);
 }
