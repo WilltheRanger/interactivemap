@@ -13,6 +13,17 @@
   justify-content: space-between;
   gap: var(--space-4);
 }
+/* The Level row is a real button (toggles upper/lower). */
+.map-controls__row--button {
+  border: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+.map-controls__row--button:hover .map-controls__value {
+  background: var(--color-primary-weak);
+}
 .map-controls__label {
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
@@ -22,8 +33,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
+  min-width: 26px;
   height: 26px;
+  padding: 0 var(--space-2);
   border: 2px solid var(--color-accent);
   border-radius: var(--radius-pill);
   font-size: var(--font-size-sm);
