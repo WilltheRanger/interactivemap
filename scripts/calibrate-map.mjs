@@ -24,9 +24,9 @@ const ROOT = new URL('..', import.meta.url).pathname;
 const OUT = '/tmp/map-calib';
 mkdirSync(OUT, { recursive: true });
 
-const IMAGE = { w: 1610, h: 977 };
+const IMAGE = { w: 1854, h: 1106 };
 // ── keep in sync with src/features/map/campusGeo.ts ──────────────────────────
-const SVG_TO_IMAGE = { ax: 5.6, sx: 1.01, ay: 45.8, sy: 1.0225 };
+const SVG_TO_IMAGE = { ax: 11.3, sx: 1.1413, ay: 49.1, sy: 1.1401 };
 const ADJUST = {
   'bldg600-upper': { dx: -3, dy: 0 },
 };
@@ -43,10 +43,8 @@ function styledSvgBody(onlyGroup) {
     const lone = body.match(new RegExp(`<(?:rect|path)[^>]*id="${onlyGroup}"[^>]*/?>`));
     body = `<g id="Upper">${(g ?? lone)[0]}</g>`;
   }
-  body = body.replaceAll(
-    'fill="#D9D9D9"',
-    'fill="rgba(124,58,237,0.25)" stroke="#E11D48" stroke-width="1.5"',
-  );
+  // Strip per-shape paint so the wrapper <g>'s fill/stroke inherit (SVG presentation attrs).
+  body = body.replace(/ (?:fill|stroke|stroke-width|opacity)="[^"]*"/g, '');
   for (const [gid, { dx, dy }] of Object.entries(ADJUST)) {
     body = body.replace(
       new RegExp(`(<(?:g|rect|path)[^>]*id="${gid}")`),
@@ -60,7 +58,7 @@ function overlaySvg(onlyGroup) {
   const { ax, sx, ay, sy } = SVG_TO_IMAGE;
   return Buffer.from(
     `<svg xmlns="http://www.w3.org/2000/svg" width="${IMAGE.w}" height="${IMAGE.h}">` +
-      `<g transform="translate(${ax},${ay}) scale(${sx},${sy})">${styledSvgBody(onlyGroup)}</g></svg>`,
+      `<g transform="translate(${ax},${ay}) scale(${sx},${sy})" fill="rgba(124,58,237,0.25)" stroke="#E11D48" stroke-width="1.5">${styledSvgBody(onlyGroup)}</g></svg>`,
   );
 }
 
@@ -113,7 +111,7 @@ function bodyBox(text, adj = { dx: 0, dy: 0 }) {
 }
 
 await sharp(`${ROOT}public/campus-map.webp`)
-  .resize(IMAGE.w, IMAGE.h) // the asset is a 2x render of the 1610×977 coordinate space
+  .resize(IMAGE.w, IMAGE.h) // normalize the asset to the coordinate space
   .composite([{ input: overlaySvg() }])
   .png()
   .toFile(`${OUT}/full.png`);
