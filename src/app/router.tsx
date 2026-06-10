@@ -5,6 +5,7 @@ import { pageVariants } from '../lib/motion';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { Header } from './Header';
 import { BottomNav } from './BottomNav';
+import { RequireAuth } from './RequireAuth';
 import { ScreenCrashCard } from './ErrorFallbacks';
 import { MapScreen } from '../features/map/MapScreen';
 import { AnnouncementsScreen } from '../features/announcements/AnnouncementsScreen';
@@ -13,14 +14,6 @@ import { LogScreen } from '../features/log/LogScreen';
 import { SetClassesScreen } from '../features/schedule/SetClassesScreen';
 import { AccountScreen } from '../features/account/AccountScreen';
 import { AdminScreen } from '../features/admin/AdminScreen';
-
-/**
- * Seam for the Phase 09 auth guard — currently a pass-through; Phase 09 replaces the body with the
- * `@stu.wvusd.org` Google sign-in gate.
- */
-function RequireAuth({ children }: { children: ReactNode }) {
-  return <>{children}</>;
-}
 
 /** Routed content with a fade + slight-rise transition between screens. */
 function AnimatedRoutes() {
