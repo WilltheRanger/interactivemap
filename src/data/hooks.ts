@@ -11,6 +11,7 @@ import {
   getRoomsByBuilding,
   getRoomWithTeacher,
   getSectionsForCourse,
+  getTeachers,
   resolveLockerSection,
 } from '../lib/refData';
 
@@ -45,6 +46,10 @@ export function useRoomWithTeacher(roomId: string | null) {
     enabled: roomId != null,
     staleTime: STALE_MS,
   });
+}
+
+export function useTeachers() {
+  return useQuery({ queryKey: ['teachers'], queryFn: getTeachers, staleTime: STALE_MS });
 }
 
 export function useCoursesForPeriod(period: string | null) {
