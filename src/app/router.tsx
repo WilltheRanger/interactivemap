@@ -7,7 +7,7 @@ import { Header } from './Header';
 import { BottomNav } from './BottomNav';
 import { ScreenCrashCard } from './ErrorFallbacks';
 import { MapScreen } from '../features/map/MapScreen';
-import { FindScreen } from '../features/find/FindScreen';
+import { AnnouncementsScreen } from '../features/announcements/AnnouncementsScreen';
 import { LockersScreen } from '../features/locker/LockersScreen';
 import { LogScreen } from '../features/log/LogScreen';
 import { SetClassesScreen } from '../features/schedule/SetClassesScreen';
@@ -43,7 +43,7 @@ function AnimatedRoutes() {
           <Routes location={location}>
             <Route path="/" element={<Navigate to="/map" replace />} />
             <Route path="/map" element={<MapScreen />} />
-            <Route path="/find" element={<FindScreen />} />
+            <Route path="/announcements" element={<AnnouncementsScreen />} />
             <Route path="/lockers" element={<LockersScreen />} />
             <Route path="/log" element={<LogScreen />} />
             <Route path="/set-classes" element={<SetClassesScreen />} />

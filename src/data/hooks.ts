@@ -4,6 +4,7 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import {
+  getAnnouncements,
   getBuilding,
   getBuildings,
   getCoursesForPeriod,
@@ -17,6 +18,11 @@ import {
 } from '../lib/refData';
 
 const STALE_MS = 5 * 60 * 1000; // reference data changes rarely
+
+export function useAnnouncements() {
+  // Fresher than reference data — staff post these during the year.
+  return useQuery({ queryKey: ['announcements'], queryFn: getAnnouncements, staleTime: 60 * 1000 });
+}
 
 export function useBuildings() {
   return useQuery({ queryKey: ['buildings'], queryFn: getBuildings, staleTime: STALE_MS });
