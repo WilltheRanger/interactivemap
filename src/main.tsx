@@ -7,6 +7,7 @@ import '@fontsource/poppins/700.css';
 import './styles/tokens.css';
 import './styles/global.css';
 import './styles/app.css';
+import { registerSW } from 'virtual:pwa-register';
 import { initTheme } from './lib/theme';
 import { initDisplayPrefs } from './lib/displayPrefs';
 import App from './app/App';
@@ -15,6 +16,11 @@ import App from './app/App';
 // already set the first paint to avoid a flash).
 initTheme();
 initDisplayPrefs();
+
+// PWA updates take over immediately: with registerType 'autoUpdate' the new service worker skips
+// waiting, and this registration reloads the tab when it takes control — no more stale builds
+// until a manual double-reload. (GitHub Pages still caches sw.js ~10 min after a deploy.)
+registerSW({ immediate: true });
 
 const rootEl = document.getElementById('root');
 if (!rootEl) {
