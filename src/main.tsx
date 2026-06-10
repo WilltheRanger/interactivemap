@@ -21,8 +21,17 @@ if (!rootEl) {
   throw new Error('Root element #root not found');
 }
 
-createRoot(rootEl).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
+// Boot guard: if mounting throws before the in-app error boundaries exist, show a plain reload
+// prompt instead of leaving the static "Loading…" fallback (index.html) up forever.
+try {
+  createRoot(rootEl).render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  );
+} catch (error) {
+  console.error('[boot]', error);
+  rootEl.innerHTML =
+    '<div class="boot-fallback" role="alert"><p>Something went wrong starting the app.</p>' +
+    '<button onclick="location.reload()">Reload</button></div>';
+}

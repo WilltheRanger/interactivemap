@@ -1,5 +1,6 @@
 // UI primitives barrel.
 export { Button } from './Button';
+export { ErrorBoundary } from './ErrorBoundary';
 export { LinkButton } from './LinkButton';
 export { IconButton } from './IconButton';
 export { Card } from './Card';
