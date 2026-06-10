@@ -52,6 +52,82 @@
   padding: var(--space-3) var(--space-4);
 }
 
+/* ── Shape edit mode (/map?edit) ─────────────────────────────────────────── */
+.map-edit-vertex {
+  background: #ffffff;
+  border: 3px solid var(--color-primary);
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  cursor: grab;
+}
+.map-edit-move {
+  background: var(--color-accent);
+  border: 3px solid #ffffff;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  cursor: move;
+}
+.map-edit-tip {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: none;
+  color: var(--color-primary);
+  font-weight: 700;
+  font-size: 11px;
+  padding: 1px 5px;
+}
+.map-edit-tip::before {
+  display: none; /* no tooltip arrow */
+}
+
+.map-screen__editbar {
+  position: absolute;
+  z-index: 1000;
+  left: var(--space-4);
+  right: var(--space-4);
+  bottom: var(--space-4);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2);
+}
+.map-screen__editbar-text {
+  flex: 1;
+  min-width: 180px;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+.map-screen__editbar-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+.map-screen__editbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--tap-target);
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+}
+.map-screen__editbtn--secondary {
+  background: var(--color-surface);
+  color: var(--color-primary);
+  border: 1px solid var(--color-border);
+}
+
 /* Tapped-building detail card, floating above the map bottom. */
 .map-screen__detail {
   position: absolute;
