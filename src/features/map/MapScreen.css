@@ -52,30 +52,36 @@
   padding: var(--space-3) var(--space-4);
 }
 
-/* ── Campus plan SVG ─────────────────────────────────────────────────────── */
+/* ── Campus plan SVG (aligned over the illustration) ─────────────────────── */
 /* The <svg> itself ignores pointer events so map gaps pan/deselect; only rooms capture taps. */
 .campus-svg {
   pointer-events: none;
 }
 .campus-svg .campus-room {
-  pointer-events: auto;
+  pointer-events: all; /* tappable even with a near-transparent fill */
   cursor: pointer;
   opacity: 1; /* override any per-shape opacity from the export so rooms look uniform */
-  fill: var(--color-surface);
-  stroke: var(--color-border);
+  fill: #582c83;
+  fill-opacity: 0.08; /* faint tint so rooms read as tappable without hiding the artwork */
+  stroke: rgba(88, 44, 131, 0.45);
   stroke-width: 1;
   vector-effect: non-scaling-stroke; /* crisp 1px outline at any zoom */
   transition:
-    fill 0.12s ease,
+    fill-opacity 0.12s ease,
     stroke 0.12s ease;
 }
 .campus-svg .campus-room:hover {
-  fill: var(--color-primary-weak);
+  fill-opacity: 0.22;
 }
 .campus-svg .campus-room.is-selected {
-  fill: var(--color-primary);
-  stroke: var(--color-accent);
+  fill-opacity: 0.45;
+  stroke: #f4b41a;
   stroke-width: 2;
+}
+/* Whole-building selection (Find → a building result): light up every room in the group. */
+.campus-svg g.is-selected .campus-room {
+  fill-opacity: 0.35;
+  stroke: #f4b41a;
 }
 
 /* Tapped-room detail card, floating above the map bottom. */

@@ -3,32 +3,32 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { SearchInput } from '../../components/SearchInput';
 import { MapControls } from './MapControls';
 import { fadeUpItem, staggerContainer } from '../../lib/motion';
 import { BUILDING_LABELS } from './buildingLabels';
+import { IMAGE_SIZE, MAP_IMAGE_URL, MAP_SVG_URL, SVG_TO_IMAGE } from './campusGeo';
 import './MapScreen.css';
-
-/** Owner-supplied campus plan (Figma export): one SVG, each room a named shape (id = room number). */
-const MAP_SVG_URL = `${import.meta.env.BASE_URL}campus-upper.svg`;
 
 type MapStatus = 'loading' | 'ready' | 'missing';
 
 interface RoomSelection {
-  /** Shape id — a room number ("461") or a place name ("aquatics-center"). */
   id: string;
   title: string;
   building: string;
 }
 
 /**
- * Map screen: Leaflet (CRS.Simple) hosting the campus plan SVG at Google-Maps-style "cover" zoom.
- * Every room is its own SVG shape, so each one is directly tappable — tapping highlights it and
- * opens a detail card (room number + building). Vector, so it stays crisp and themes for dark mode.
+ * Map screen: the campus illustration (raster underlay) with the owner's traced plan SVG aligned on
+ * top — every named room shape is directly tappable (highlight + detail card). Supports /map?room=ID
+ * so Find results can jump straight to a room. Google-Maps-style cover zoom over the full image.
  */
 export function MapScreen() {
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const selectByIdRef = useRef<((roomId: string) => boolean) | null>(null);
+  const [searchParams] = useSearchParams();
   const [status, setStatus] = useState<MapStatus>('loading');
   const [selected, setSelected] = useState<RoomSelection | null>(null);
 
@@ -55,54 +55,82 @@ export function MapScreen() {
         }
         svgRef.current = svg;
 
+        const { w: W, h: H } = IMAGE_SIZE;
+        const { ax, sx, ay, sy } = SVG_TO_IMAGE;
         const vb = (svg.getAttribute('viewBox') ?? '0 0 1382 863').split(/\s+/).map(Number);
-        const w = vb[2];
-        const h = vb[3];
-        const bounds = L.latLngBounds([
+        const imageBounds = L.latLngBounds([
           [0, 0],
-          [h, w],
+          [H, W],
+        ]);
+        // The traced frame is a crop of the illustration — place the SVG at its aligned position.
+        const svgBounds = L.latLngBounds([
+          [H - (ay + sy * vb[3]), ax],
+          [H - ay, ax + sx * vb[2]],
         ]);
 
         const localMap = L.map(containerRef.current, {
           crs: L.CRS.Simple,
           attributionControl: false,
           zoomControl: false,
-          maxZoom: 3,
+          maxZoom: 2, // enough to tap small rooms; SVG stays crisp, raster softens acceptably
           zoomSnap: 0.25,
           zoomDelta: 0.5,
-          maxBounds: bounds,
+          maxBounds: imageBounds,
           maxBoundsViscosity: 1,
         });
         map = localMap;
 
+        L.imageOverlay(MAP_IMAGE_URL, imageBounds).addTo(localMap);
         svg.removeAttribute('width');
         svg.removeAttribute('height');
         svg.classList.add('campus-svg');
-        L.svgOverlay(svg, bounds, { interactive: false }).addTo(localMap);
+        L.svgOverlay(svg, svgBounds, { interactive: false }).addTo(localMap);
 
-        // Each room shape becomes a tappable button. click (not mousedown) → so dragging still pans.
-        svg.querySelectorAll<SVGElement>('rect[id], path[id]').forEach((shape) => {
+        const selectShapeEl = (shape: SVGGraphicsElement) => {
+          svg.querySelectorAll('.is-selected').forEach((s) => s.classList.remove('is-selected'));
+          shape.classList.add('is-selected');
+          const id = shape.getAttribute('id') ?? '';
+          if (shape.tagName === 'g') {
+            // A whole building group (from a Find "Buildings" result).
+            setSelected({ id, title: BUILDING_LABELS[id] ?? id, building: '' });
+            return;
+          }
+          const gid = shape.closest('g[id]')?.getAttribute('id');
+          if (gid && gid !== 'Upper') {
+            setSelected({ id, title: `Room ${id}`, building: BUILDING_LABELS[gid] ?? gid });
+          } else {
+            setSelected({ id, title: BUILDING_LABELS[id] ?? id, building: '' });
+          }
+        };
+
+        // Each room shape becomes a tappable button (click, not mousedown — dragging still pans).
+        svg.querySelectorAll<SVGGraphicsElement>('rect[id], path[id]').forEach((shape) => {
           shape.classList.add('campus-room');
           shape.addEventListener('click', (event) => {
             event.stopPropagation();
-            svg.querySelectorAll('.is-selected').forEach((s) => s.classList.remove('is-selected'));
-            shape.classList.add('is-selected');
-            const id = shape.getAttribute('id') ?? '';
-            const group = shape.closest('g[id]');
-            const gid = group?.getAttribute('id');
-            if (gid && gid !== 'Upper') {
-              setSelected({ id, title: `Room ${id}`, building: BUILDING_LABELS[gid] ?? gid });
-            } else {
-              setSelected({ id, title: BUILDING_LABELS[id] ?? id, building: '' });
-            }
+            selectShapeEl(shape);
           });
         });
         localMap.on('click', () => clearSelection());
 
+        // Find → map: select a room by id and zoom to it with some context around it.
+        selectByIdRef.current = (roomId: string) => {
+          const el = svg.querySelector(`[id="${roomId.replace(/"/g, '')}"]`);
+          if (!(el instanceof SVGGraphicsElement)) return false;
+          selectShapeEl(el);
+          const b = el.getBBox();
+          const roomBounds = L.latLngBounds([
+            [H - (ay + sy * (b.y + b.height)), ax + sx * b.x],
+            [H - (ay + sy * b.y), ax + sx * (b.x + b.width)],
+          ]);
+          localMap.fitBounds(roomBounds.pad(3), { maxZoom: 1.5 });
+          return true;
+        };
+
         const applyCoverZoom = (recenter: boolean) => {
-          const coverZoom = localMap.getBoundsZoom(bounds, true);
+          const coverZoom = localMap.getBoundsZoom(imageBounds, true);
           localMap.setMinZoom(coverZoom);
-          if (recenter) localMap.setView(bounds.getCenter(), coverZoom);
+          if (recenter) localMap.setView(imageBounds.getCenter(), coverZoom);
           else if (localMap.getZoom() < coverZoom) localMap.setZoom(coverZoom);
         };
         applyCoverZoom(true);
@@ -116,9 +144,17 @@ export function MapScreen() {
     return () => {
       cancelled = true;
       svgRef.current = null;
+      selectByIdRef.current = null;
       map?.remove();
     };
   }, []);
+
+  // Apply ?room=ID once the map is ready (and whenever the param changes while mounted).
+  useEffect(() => {
+    if (status !== 'ready') return;
+    const room = searchParams.get('room');
+    if (room) selectByIdRef.current?.(room);
+  }, [status, searchParams]);
 
   return (
     <div className="map-screen">

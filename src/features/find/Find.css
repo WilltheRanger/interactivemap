@@ -61,3 +61,22 @@
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
 }
+
+/* Tappable result (jumps to the map). */
+.find-item--link {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.find-item--link:hover {
+  background: var(--color-primary-weak);
+}
+.find-item__chevron {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--color-text-muted);
+}
