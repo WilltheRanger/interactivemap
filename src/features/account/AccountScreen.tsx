@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, Mail, Map as MapIcon, Monitor, Moon, Sun, UserCircle2 } from 'lucide-react';
+import { ChevronRight, Mail, Monitor, Moon, Sun, UserCircle2 } from 'lucide-react';
 import { Button } from '../../components';
 import { config } from '../../lib/config';
 import { useTheme } from '../../data/useTheme';
@@ -188,21 +188,6 @@ export function AccountScreen() {
             )}
           </>
         )}
-      </div>
-
-      {/* Owner tooling — moves behind the Phase 09 sign-in gate later. Editing is local-only; the
-          layout only changes for everyone after the exported JSON is baked into the code. */}
-      <h2 className="account__section-title">Owner tools</h2>
-      <div className="account__card">
-        <Link to="/map?edit" className="account__link-row">
-          <span className="account__row-label">Edit map shapes</span>
-          <span className="account__row-value">
-            <MapIcon size={18} aria-hidden="true" />
-          </span>
-        </Link>
-        <p className="account__hint">
-          Drag the building boxes into place on the map, then Copy layout and send it in.
-        </p>
       </div>
     </section>
   );
