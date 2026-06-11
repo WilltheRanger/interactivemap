@@ -8,6 +8,8 @@ import { getSupabase } from './supabase';
 import type { Tables } from '../types/db';
 
 export type Announcement = Tables<'announcements'>;
+export type Course = Tables<'courses'>;
+export type GraduationRequirement = Tables<'graduation_requirements'>;
 export type Building = Tables<'buildings'>;
 export type Room = Tables<'rooms'>;
 export type Teacher = Tables<'teachers'>;
@@ -36,6 +38,19 @@ export async function getAnnouncements(): Promise<Announcement[]> {
     .from('announcements')
     .select('*')
     .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+// ── 4-year plan reference data (courses + graduation/UC/Brahma-Tech requirements) ─
+export async function getCourses(): Promise<Course[]> {
+  const { data, error } = await getSupabase().from('courses').select('*').order('name');
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function getGraduationRequirements(): Promise<GraduationRequirement[]> {
+  const { data, error } = await getSupabase().from('graduation_requirements').select('*');
   if (error) throw error;
   return data ?? [];
 }

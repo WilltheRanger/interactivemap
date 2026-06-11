@@ -40,6 +40,66 @@ export type Database = {
         };
         Relationships: [];
       };
+      courses: {
+        Row: {
+          created_at: string;
+          credits: number;
+          grade_levels: number[] | null;
+          id: string;
+          name: string;
+          satisfies_brahma_tech: boolean;
+          satisfies_uc: boolean;
+          subject_area: string;
+        };
+        Insert: {
+          created_at?: string;
+          credits: number;
+          grade_levels?: number[] | null;
+          id?: string;
+          name: string;
+          satisfies_brahma_tech?: boolean;
+          satisfies_uc?: boolean;
+          subject_area: string;
+        };
+        Update: {
+          created_at?: string;
+          credits?: number;
+          grade_levels?: number[] | null;
+          id?: string;
+          name?: string;
+          satisfies_brahma_tech?: boolean;
+          satisfies_uc?: boolean;
+          subject_area?: string;
+        };
+        Relationships: [];
+      };
+      graduation_requirements: {
+        Row: {
+          created_at: string;
+          credits_required: number;
+          id: string;
+          notes: string | null;
+          pathway: string;
+          subject_area: string;
+        };
+        Insert: {
+          created_at?: string;
+          credits_required: number;
+          id?: string;
+          notes?: string | null;
+          pathway: string;
+          subject_area: string;
+        };
+        Update: {
+          created_at?: string;
+          credits_required?: number;
+          id?: string;
+          notes?: string | null;
+          pathway?: string;
+          subject_area?: string;
+        };
+        Relationships: [];
+      };
       buildings: {
         Row: {
           created_at: string;

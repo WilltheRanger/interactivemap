@@ -5,6 +5,8 @@
 import { useQuery } from '@tanstack/react-query';
 import {
   getAnnouncements,
+  getCourses,
+  getGraduationRequirements,
   getBuilding,
   getBuildings,
   getCoursesForPeriod,
@@ -22,6 +24,18 @@ const STALE_MS = 5 * 60 * 1000; // reference data changes rarely
 export function useAnnouncements() {
   // Fresher than reference data — staff post these during the year.
   return useQuery({ queryKey: ['announcements'], queryFn: getAnnouncements, staleTime: 60 * 1000 });
+}
+
+export function useCourses() {
+  return useQuery({ queryKey: ['courses'], queryFn: getCourses, staleTime: STALE_MS });
+}
+
+export function useGraduationRequirements() {
+  return useQuery({
+    queryKey: ['graduationRequirements'],
+    queryFn: getGraduationRequirements,
+    staleTime: STALE_MS,
+  });
 }
 
 export function useBuildings() {

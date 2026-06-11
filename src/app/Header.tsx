@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { LayoutGrid, User } from 'lucide-react';
+import { CalendarRange, LayoutGrid, User } from 'lucide-react';
 import { LinkButton } from '../components/LinkButton';
 import { fadeUpItem, staggerContainer } from '../lib/motion';
 import './Header.css';
@@ -36,6 +36,9 @@ export function Header() {
           icon={<LayoutGrid size={18} />}
         >
           <span className="app-header__action-label">Set Classes</span>
+        </LinkButton>
+        <LinkButton to="/plan" tracked aria-label="4-year plan" icon={<CalendarRange size={18} />}>
+          <span className="app-header__action-label">Plan</span>
         </LinkButton>
         <LinkButton to="/account" tracked aria-label="Account" icon={<User size={18} />}>
           <span className="app-header__action-label">Account</span>
