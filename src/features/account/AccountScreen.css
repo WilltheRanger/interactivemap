@@ -58,6 +58,11 @@
   font-size: var(--font-size-sm);
 }
 
+/* Inline icon within a hint line (e.g. the iOS Share glyph in the install steps). */
+.account__inline-icon {
+  vertical-align: -2px;
+}
+
 /* Saved-info hub: tappable rows linking to the locker / schedule editors. */
 .account__link-row {
   display: flex;
