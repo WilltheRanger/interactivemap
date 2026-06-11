@@ -154,3 +154,145 @@
 .admin-signout {
   margin-left: var(--space-3);
 }
+
+/* ── Unified admin: tabs + section chrome (Chunk 3) ── */
+.admin-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-4);
+}
+.admin-tabs--inner {
+  margin-bottom: 0;
+}
+.admin-tab {
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  padding: var(--space-2) var(--space-3);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+.admin-tab:hover {
+  background: var(--color-primary-weak);
+}
+.admin-tab.is-active {
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: var(--font-weight-semibold);
+}
+
+.admin-note {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-primary-weak);
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.admin-subsection__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.admin-form__grid {
+  display: grid;
+  gap: var(--space-3);
+}
+@media (min-width: 640px) {
+  .admin-form__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.admin-form__checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.admin-list--compact .admin-row {
+  padding: var(--space-2) var(--space-3);
+}
+.admin-row--stacked {
+  flex-direction: column;
+  align-items: stretch;
+}
+.admin-row__main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+.admin-row__main .admin-row__text {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Bell schedule rows */
+.admin-bell__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.admin-bell__period {
+  width: 110px;
+}
+.admin-bell__row .admin-input[type='time'] {
+  width: 110px;
+}
+
+/* Requirements inline editors */
+.admin-req__notes {
+  width: 100%;
+  margin-top: var(--space-1);
+  font-size: var(--font-size-sm);
+}
+.admin-req__credits {
+  width: 84px;
+}
+.admin-req-group {
+  display: grid;
+  gap: var(--space-2);
+}
+.admin-req-group__title {
+  margin: var(--space-2) 0 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+/* Locker hotspot editor */
+.admin-hotspots {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+}
+.admin-hotspots__title {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+.admin-hotspots__form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.admin-hotspots__form .admin-input {
+  width: 110px;
+}

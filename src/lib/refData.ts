@@ -8,6 +8,7 @@ import { getSupabase } from './supabase';
 import type { Tables } from '../types/db';
 
 export type Announcement = Tables<'announcements'>;
+export type BellPeriod = Tables<'bell_schedule'>;
 export type Course = Tables<'courses'>;
 export type GraduationRequirement = Tables<'graduation_requirements'>;
 export type Building = Tables<'buildings'>;
@@ -51,6 +52,42 @@ export async function getCourses(): Promise<Course[]> {
 
 export async function getGraduationRequirements(): Promise<GraduationRequirement[]> {
   const { data, error } = await getSupabase().from('graduation_requirements').select('*');
+  if (error) throw error;
+  return data ?? [];
+}
+
+// ── Admin-managed reference lists (lockers / panoramas / bell schedule) ─────────
+export async function getLockerSections(): Promise<LockerSection[]> {
+  const { data, error } = await getSupabase()
+    .from('locker_sections')
+    .select('*')
+    .order('number_start');
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function getLockersBySection(sectionId: string): Promise<Locker[]> {
+  const { data, error } = await getSupabase()
+    .from('lockers')
+    .select('*')
+    .eq('section_id', sectionId)
+    .order('number');
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function getPanoramas(): Promise<Panorama[]> {
+  const { data, error } = await getSupabase().from('panoramas').select('*').order('id');
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function getBellSchedule(): Promise<BellPeriod[]> {
+  const { data, error } = await getSupabase()
+    .from('bell_schedule')
+    .select('*')
+    .order('day_type')
+    .order('sort_order');
   if (error) throw error;
   return data ?? [];
 }

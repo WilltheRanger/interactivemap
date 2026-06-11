@@ -213,12 +213,15 @@ insert into graduation_requirements (pathway, subject_area, credits_required, no
 ('uc','World Language',20,'UC a-g area (e) Language Other Than English: 2 years required, 3 recommended'),
 ('uc','Visual & Performing Arts',10,'UC a-g area (f): 1 year required'),
 ('uc','Other Elective',10,'UC a-g area (g) College-prep elective: 1 year required'),
-('graduation','English',40,'PLACEHOLDER — supply real DBHS graduation credits'),
-('graduation','Mathematics',30,'PLACEHOLDER — supply real DBHS graduation credits'),
-('graduation','Science',20,'PLACEHOLDER — supply real DBHS graduation credits'),
-('graduation','History/Social Science',30,'PLACEHOLDER — supply real DBHS graduation credits'),
-('graduation','Physical Education',20,'PLACEHOLDER — supply real DBHS graduation credits'),
-('graduation','Health',5,'PLACEHOLDER — supply real DBHS graduation credits'),
-('graduation','Visual & Performing Arts',10,'PLACEHOLDER — supply real DBHS graduation credits'),
-('graduation','World Language',10,'PLACEHOLDER — supply real DBHS graduation credits'),
-('brahma_tech','Career/Technical Elective',40,'PLACEHOLDER — supply real Brahma Tech pathway requirements (Canva doc)');
+-- REAL DBHS/WVUSD graduation requirements (official Graduation Requirements page; 220 total
+-- credits to graduate = 170 academic + 50 elective; the rows below are the subject minimums).
+('graduation','English',40,'4 years'),
+('graduation','History/Social Science',30,'World History (gr 9, 10cr) + US History (gr 11, 10cr) + Civics (5cr) + Economics (5cr) in gr 12'),
+('graduation','Physical Education',30,'3 years'),
+('graduation','Science',20,'2 years'),
+('graduation','Mathematics',20,'Must include and pass Algebra I; the second 10 credits must be in gr 11-12 unless Geometry is passed before grade 11'),
+('graduation','Career/Technical Elective',15,'Applied Arts - must include a computer-literacy course (the separate Computer requirement, 5-10cr, is satisfied here)'),
+('graduation','Visual & Performing Arts',10,'Fine/Visual Arts - alternatively 10 additional Foreign Language credits'),
+('graduation','World Language',10,'Foreign Language - alternatively 10 additional Fine/Visual Arts credits'),
+('graduation','Health',5,'State Required Course (SRC)'),
+('brahma_tech','Career/Technical Elective',40,'PLACEHOLDER - Year 1 (gr 9): Innovations in Technology / Intro to Engineering Design (PLTW) / AP CSP. Gr 10-12: courses across the 7 STEM strands + 150-hour capstone internship. Per-strand counts live in the external Canva doc; update when supplied.');
