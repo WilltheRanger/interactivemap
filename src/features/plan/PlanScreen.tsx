@@ -65,9 +65,9 @@ function AddCourse({
 
   if (!open) {
     return (
-      <button type="button" className="plan-cell__add" onClick={() => setOpen(true)}>
-        <Plus size={16} aria-hidden="true" /> Add course
-      </button>
+      <Button variant="secondary" icon={<Plus size={16} />} onClick={() => setOpen(true)}>
+        Add course
+      </Button>
     );
   }
 
@@ -102,9 +102,9 @@ function AddCourse({
           </button>
         ))}
       </div>
-      <button type="button" className="plan-cell__cancel" onClick={() => setOpen(false)}>
+      <Button variant="secondary" onClick={() => setOpen(false)}>
         Cancel
-      </button>
+      </Button>
     </div>
   );
 }
