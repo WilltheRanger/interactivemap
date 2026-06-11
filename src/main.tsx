@@ -10,12 +10,17 @@ import './styles/app.css';
 import { registerSW } from 'virtual:pwa-register';
 import { initTheme } from './lib/theme';
 import { initDisplayPrefs } from './lib/displayPrefs';
+import { initPwaInstall } from './lib/pwaInstall';
 import App from './app/App';
 
 // Apply saved appearance prefs + wire OS-scheme/cross-tab listeners (the inline script in index.html
 // already set the first paint to avoid a flash).
 initTheme();
 initDisplayPrefs();
+
+// Capture the "Add to Home Screen" prompt early — Chromium can fire beforeinstallprompt before React
+// mounts, so the listener must be attached before render (see InstallPrompt).
+initPwaInstall();
 
 // PWA updates take over immediately: with registerType 'autoUpdate' the new service worker skips
 // waiting, and this registration reloads the tab when it takes control — no more stale builds
