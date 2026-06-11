@@ -24,6 +24,11 @@
   --color-on-error: #ffffff; /* text on a filled error/danger surface */
   --color-success: #1d7a4d; /* status "on track" — text, icons, progress fill */
   --color-warn: #b06a00; /* status "at risk" — text, icons */
+  /* Soft status fills for pill badges. Derived from the status colors + the current surface, so a
+     single definition tracks both light and dark (the referenced tokens are themed below). */
+  --color-success-weak: color-mix(in srgb, var(--color-success) 14%, var(--color-surface));
+  --color-warn-weak: color-mix(in srgb, var(--color-warn) 16%, var(--color-surface));
+  --color-error-weak: color-mix(in srgb, var(--color-error) 14%, var(--color-surface));
 
   /* Spacing */
   --space-1: 4px;

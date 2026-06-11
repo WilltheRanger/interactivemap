@@ -121,6 +121,19 @@ export function setCurrentGrade(grade: Grade): void {
   persist({ ...current, current_grade: grade });
 }
 
+/**
+ * Reuse a grade's Fall courses for its Spring — for the common case of year-long classes the student
+ * keeps both semesters. Merges into Spring (existing Spring courses stay; no duplicates) and leaves
+ * Fall untouched.
+ */
+export function copyFallToSpring(grade: Grade): void {
+  const grades = structuredClonePlan(current.four_year_plan);
+  const merged = [...grades[grade].spring];
+  for (const id of grades[grade].fall) if (!merged.includes(id)) merged.push(id);
+  grades[grade].spring = merged;
+  persist({ ...current, four_year_plan: grades });
+}
+
 export function clearPlan(): void {
   persist(defaultPlan());
 }
