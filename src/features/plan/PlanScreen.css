@@ -1,10 +1,6 @@
-/* 4-Year Plan + credit tracker. Token-only; reuses .ann-panel for the error state. */
-
-/* The planning view is the one screen that earns desktop width: four years across the top, the
-   progress summary full-width below. Everything still collapses to a single column on mobile. */
-.screen.plan {
-  max-width: 960px;
-}
+/* 4-Year Plan + credit tracker. Mobile-first, card-based — matches the app's house style
+   (segmented control, surface cards, uppercase section titles). Token-only; reuses .ann-panel for
+   the error state. */
 
 .plan-disclaimer {
   margin: var(--space-3) 0 0;
@@ -22,136 +18,120 @@
   margin-top: var(--space-4);
 }
 
-/* Grid of years on top, the progress summary stacked full-width below it. */
-.plan-layout {
-  display: grid;
-  gap: var(--space-5);
+/* ── Grade selector (the shared Segmented control, centered like a tab bar) ── */
+.plan-year {
+  display: flex;
+  justify-content: center;
   margin-top: var(--space-4);
 }
 
-.plan-grid {
-  display: grid;
-  gap: var(--space-4);
-}
-/* On a wide screen, lay the four years out side by side (Fall over Spring within each). */
-@media (min-width: 880px) {
-  .plan-grid {
-    grid-template-columns: repeat(4, 1fr);
-    align-items: start;
-  }
-  .plan-grade__cells {
-    grid-template-columns: 1fr;
-  }
+.plan-hint {
+  margin: var(--space-3) 0 0;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
 }
 
-.plan-empty {
-  grid-column: 1 / -1;
-  margin: 0;
+/* ── Term cards (Fall / Spring for the selected year) ── */
+.plan-terms {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.plan-term {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
   padding: var(--space-4);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-1);
-  color: var(--color-text-muted);
 }
-
-/* Uppercase muted section header — same treatment as .account__section-title. */
-.plan-grade__title {
-  margin: 0 0 var(--space-2);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-semibold);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--color-text-muted);
-}
-.plan-grade__cells {
-  display: grid;
-  gap: var(--space-3);
-}
-@media (min-width: 520px) {
-  .plan-grade__cells {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-.plan-cell {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-3);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-1);
-}
-.plan-cell__head {
+.plan-term__head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  font-weight: var(--font-weight-semibold);
-  font-size: var(--font-size-sm);
 }
-.plan-cell__credits {
+.plan-term__title {
+  margin: 0;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+}
+.plan-term__credits {
   color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
 }
-.plan-cell__courses {
+.plan-term__empty {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.plan-term__courses {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  gap: var(--space-1);
+  gap: var(--space-2);
 }
-.plan-cell__course {
+.plan-course {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-1) var(--space-2);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
   background: var(--color-bg);
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-sm);
+  border-radius: var(--radius-md);
 }
-.plan-cell__course-name {
+.plan-course__text {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
+  gap: 1px;
 }
-.plan-cell__course-cr {
+.plan-course__name {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+.plan-course__meta {
   color: var(--color-text-muted);
   font-size: var(--font-size-xs);
 }
 /* Full 44px tap target; the negative margins absorb the row padding so the compact course chip
-   stays ~44px tall instead of growing to 52px. */
-.plan-cell__remove {
+   stays ~44px tall instead of growing past it. */
+.plan-course__remove {
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: var(--tap-target);
   height: var(--tap-target);
-  margin: calc(-1 * var(--space-1)) calc(-1 * var(--space-2)) calc(-1 * var(--space-1)) 0;
+  margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-2)) calc(-1 * var(--space-2)) 0;
   border: 0;
   border-radius: var(--radius-sm);
   background: none;
   color: var(--color-text-muted);
   cursor: pointer;
 }
-.plan-cell__remove:hover {
+.plan-course__remove:hover {
   color: var(--color-error);
 }
 
-.plan-cell__picker {
+/* ── Add-course picker ── */
+.plan-picker {
   display: grid;
   gap: var(--space-2);
 }
-.plan-cell__options {
+.plan-picker__options {
   display: grid;
   gap: 2px;
   max-height: 220px;
   overflow-y: auto;
 }
-.plan-cell__option {
+.plan-picker__option {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -166,25 +146,48 @@
   text-align: left;
   cursor: pointer;
 }
-.plan-cell__option:hover {
+.plan-picker__option:hover {
   background: var(--color-primary-weak);
 }
-.plan-cell__option-name {
+.plan-picker__option-name {
   font-weight: var(--font-weight-medium);
   font-size: var(--font-size-sm);
 }
-.plan-cell__option-meta {
+.plan-picker__option-meta {
   color: var(--color-text-muted);
   font-size: var(--font-size-xs);
 }
-.plan-cell__note {
+.plan-picker__note {
   margin: 0;
   padding: var(--space-2);
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
 }
-/* ── Summary panel ── */
-.plan-summary {
+
+/* ── Progress ── */
+.plan-section-title {
+  margin: var(--space-6) 0 var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+.plan-incomplete {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.plan-pathways {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.plan-pathway {
   display: grid;
   gap: var(--space-3);
   padding: var(--space-4);
@@ -193,58 +196,41 @@
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-1);
 }
-.plan-summary__title {
-  margin: 0;
-  font-size: var(--font-size-md);
-  font-weight: var(--font-weight-bold);
-}
-.plan-summary__incomplete {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin: 0;
-  color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
-}
-
-/* The three pathway trackers: stacked on mobile, side by side once the summary has room. */
-.plan-summary__bars {
-  display: grid;
-  gap: var(--space-3);
-}
-@media (min-width: 880px) {
-  .plan-summary__bars {
-    grid-template-columns: repeat(3, 1fr);
-    align-items: start;
-  }
-}
-
-.plan-pathway {
-  display: grid;
-  gap: var(--space-2);
-  padding: var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-}
 .plan-pathway__head {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--space-2);
 }
 .plan-pathway__name {
+  font-size: var(--font-size-md);
   font-weight: var(--font-weight-semibold);
 }
+
+/* Status as a tinted pill badge (icon + label), colored per status. */
 .plan-pathway__status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+}
+.plan-pathway__status svg {
+  flex: 0 0 auto;
 }
 .plan-pathway--on_track .plan-pathway__status {
+  background: var(--color-success-weak);
   color: var(--color-success);
 }
 .plan-pathway--at_risk .plan-pathway__status {
+  background: var(--color-warn-weak);
   color: var(--color-warn);
 }
 .plan-pathway--not_on_track .plan-pathway__status {
+  background: var(--color-error-weak);
   color: var(--color-error);
 }
 
@@ -295,6 +281,9 @@
 }
 .plan-pathway__subjects li.is-met {
   color: var(--color-text);
+}
+.plan-pathway__subjects li.is-met svg {
+  color: var(--color-success);
 }
 .plan-pathway__subject-credits {
   margin-left: auto;
