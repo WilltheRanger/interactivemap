@@ -1,13 +1,15 @@
 import { motion } from 'framer-motion';
 import { NavLink } from 'react-router-dom';
-import { ClipboardList, MapPin, Megaphone } from 'lucide-react';
+import { CalendarDays, ClipboardList, MapPin } from 'lucide-react';
 import { LockerIcon } from '../components/icons/LockerIcon';
 import { duration, ease, spring } from '../lib/motion';
 import './BottomNav.css';
 
+// A student's own destinations sit in the thumb-reachable bar; News + Plan + Account live in the
+// header. Schedule earns a slot here over News — it's the thing a student checks day to day.
 const ITEMS = [
   { to: '/map', label: 'Map', icon: <MapPin size={22} aria-hidden="true" /> },
-  { to: '/announcements', label: 'News', icon: <Megaphone size={22} aria-hidden="true" /> },
+  { to: '/set-classes', label: 'Schedule', icon: <CalendarDays size={22} aria-hidden="true" /> },
   { to: '/lockers', label: 'Lockers', icon: <LockerIcon size={22} /> },
   { to: '/log', label: 'Log', icon: <ClipboardList size={22} aria-hidden="true" /> },
 ];

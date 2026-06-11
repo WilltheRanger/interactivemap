@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { CalendarRange, LayoutGrid, User } from 'lucide-react';
+import { CalendarRange, Megaphone, User } from 'lucide-react';
 import { LinkButton } from '../components/LinkButton';
 import { fadeUpItem, staggerContainer } from '../lib/motion';
 import './Header.css';
@@ -30,12 +30,12 @@ export function Header() {
       </MotionLink>
       <motion.div className="app-header__actions" variants={fadeUpItem}>
         <LinkButton
-          to="/set-classes"
+          to="/announcements"
           tracked
-          aria-label="Set classes"
-          icon={<LayoutGrid size={18} />}
+          aria-label="Announcements"
+          icon={<Megaphone size={18} />}
         >
-          <span className="app-header__action-label">Set Classes</span>
+          <span className="app-header__action-label">News</span>
         </LinkButton>
         <LinkButton to="/plan" tracked aria-label="4-year plan" icon={<CalendarRange size={18} />}>
           <span className="app-header__action-label">Plan</span>
