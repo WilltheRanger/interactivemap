@@ -5,8 +5,12 @@
 import { useQuery } from '@tanstack/react-query';
 import {
   getAnnouncements,
+  getBellSchedule,
   getCourses,
   getGraduationRequirements,
+  getLockerSections,
+  getLockersBySection,
+  getPanoramas,
   getBuilding,
   getBuildings,
   getCoursesForPeriod,
@@ -36,6 +40,31 @@ export function useGraduationRequirements() {
     queryFn: getGraduationRequirements,
     staleTime: STALE_MS,
   });
+}
+
+export function useLockerSections() {
+  return useQuery({
+    queryKey: ['lockerSections'],
+    queryFn: getLockerSections,
+    staleTime: STALE_MS,
+  });
+}
+
+export function useLockersBySection(sectionId: string | null) {
+  return useQuery({
+    queryKey: ['lockers', sectionId],
+    queryFn: () => getLockersBySection(sectionId as string),
+    enabled: sectionId != null,
+    staleTime: STALE_MS,
+  });
+}
+
+export function usePanoramas() {
+  return useQuery({ queryKey: ['panoramas'], queryFn: getPanoramas, staleTime: STALE_MS });
+}
+
+export function useBellSchedule() {
+  return useQuery({ queryKey: ['bellSchedule'], queryFn: getBellSchedule, staleTime: STALE_MS });
 }
 
 export function useBuildings() {

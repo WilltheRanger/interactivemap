@@ -40,6 +40,36 @@ export type Database = {
         };
         Relationships: [];
       };
+      bell_schedule: {
+        Row: {
+          created_at: string;
+          day_type: string;
+          end_time: string;
+          id: string;
+          period: string;
+          sort_order: number;
+          start_time: string;
+        };
+        Insert: {
+          created_at?: string;
+          day_type: string;
+          end_time: string;
+          id?: string;
+          period: string;
+          sort_order?: number;
+          start_time: string;
+        };
+        Update: {
+          created_at?: string;
+          day_type?: string;
+          end_time?: string;
+          id?: string;
+          period?: string;
+          sort_order?: number;
+          start_time?: string;
+        };
+        Relationships: [];
+      };
       courses: {
         Row: {
           created_at: string;
