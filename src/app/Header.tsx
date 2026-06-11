@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { CalendarRange, Megaphone, User } from 'lucide-react';
+import { Megaphone, User } from 'lucide-react';
 import { LinkButton } from '../components/LinkButton';
 import { fadeUpItem, staggerContainer } from '../lib/motion';
 import './Header.css';
@@ -36,9 +36,6 @@ export function Header() {
           icon={<Megaphone size={18} />}
         >
           <span className="app-header__action-label">News</span>
-        </LinkButton>
-        <LinkButton to="/plan" tracked aria-label="4-year plan" icon={<CalendarRange size={18} />}>
-          <span className="app-header__action-label">Plan</span>
         </LinkButton>
         <LinkButton to="/account" tracked aria-label="Account" icon={<User size={18} />}>
           <span className="app-header__action-label">Account</span>

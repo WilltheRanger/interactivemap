@@ -1,5 +1,9 @@
 /* Set Classes: period rows, inline period editor, and the shared pick lists. Token-only. */
 
+.sched__hint {
+  color: var(--color-text-muted);
+}
+
 .sched-list {
   list-style: none;
   margin: var(--space-4) 0 0;

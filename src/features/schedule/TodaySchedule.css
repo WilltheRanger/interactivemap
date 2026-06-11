@@ -1,0 +1,192 @@
+/* Today's bell schedule — a surface card with a live "now" banner and per-period rows. The active
+   period is highlighted in the brand gold (the source app's yellow), with a live countdown. */
+
+.bell-loading {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.bell-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+  padding: var(--space-4);
+}
+
+.bell-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.bell-card__title {
+  font-weight: var(--font-weight-bold);
+}
+.bell-card__offline {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: 2px;
+  color: var(--color-warn);
+  font-size: var(--font-size-xs);
+}
+
+/* Refresh icon button — 44px tap target, snug via negative margin. */
+.bell-refresh {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--tap-target);
+  height: var(--tap-target);
+  margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-2)) 0 0;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+.bell-refresh:hover {
+  background: var(--color-primary-weak);
+  color: var(--color-primary);
+}
+.bell-refresh:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.bell-refresh--spin {
+  animation: bell-spin 0.8s linear infinite;
+}
+@keyframes bell-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bell-refresh--spin {
+    animation: none;
+  }
+}
+
+/* "Now" banner — the headline answer to "what class am I in?" */
+.bell-now {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-3);
+  background: var(--color-accent-weak);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-md);
+}
+.bell-now--idle {
+  background: var(--color-bg);
+  border-color: var(--color-border);
+}
+.bell-now__label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+.bell-now__what {
+  font-weight: var(--font-weight-semibold);
+}
+.bell-now__class {
+  color: var(--color-text);
+  font-weight: var(--font-weight-medium);
+}
+.bell-now__count {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: 2px;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-accent-strong);
+}
+
+/* Period rows */
+.bell-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-1);
+}
+.bell-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+}
+.bell-row--break {
+  color: var(--color-text-muted);
+}
+.bell-row.is-active {
+  background: var(--color-accent-weak);
+  box-shadow: inset 3px 0 0 var(--color-accent);
+}
+
+.bell-row__main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.bell-row__name {
+  font-weight: var(--font-weight-medium);
+}
+.bell-row.is-active .bell-row__name {
+  font-weight: var(--font-weight-semibold);
+}
+.bell-row__class {
+  font-size: var(--font-size-xs);
+  color: var(--color-primary);
+  font-weight: var(--font-weight-medium);
+}
+.bell-row__time {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.bell-row__remaining {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-accent-strong);
+  white-space: nowrap;
+}
+
+/* Empty / no-school card */
+.bell-empty {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--color-text-muted);
+}
+.bell-empty svg {
+  flex: 0 0 auto;
+  color: var(--color-primary);
+}
+.bell-empty > div {
+  flex: 1;
+  min-width: 0;
+}
+.bell-empty__title {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+.bell-empty__sub {
+  font-size: var(--font-size-sm);
+}
