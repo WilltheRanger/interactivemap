@@ -12,10 +12,9 @@ import { MapScreen } from '../features/map/MapScreen';
 import { AnnouncementsScreen } from '../features/announcements/AnnouncementsScreen';
 import { LockersScreen } from '../features/locker/LockersScreen';
 import { LogScreen } from '../features/log/LogScreen';
-import { SetClassesScreen } from '../features/schedule/SetClassesScreen';
+import { ScheduleScreen } from '../features/schedule/ScheduleScreen';
 import { AccountScreen } from '../features/account/AccountScreen';
 import { AdminScreen } from '../features/admin/AdminScreen';
-import { PlanScreen } from '../features/plan/PlanScreen';
 
 /** Routed content with a fade + slight-rise transition between screens. */
 function AnimatedRoutes() {
@@ -42,8 +41,9 @@ function AnimatedRoutes() {
             <Route path="/announcements" element={<AnnouncementsScreen />} />
             <Route path="/lockers" element={<LockersScreen />} />
             <Route path="/log" element={<LogScreen />} />
-            <Route path="/set-classes" element={<SetClassesScreen />} />
-            <Route path="/plan" element={<PlanScreen />} />
+            <Route path="/set-classes" element={<ScheduleScreen />} />
+            {/* Plan now lives inside Schedule's "4-Year Plan" tab; keep the old path as a deep link. */}
+            <Route path="/plan" element={<Navigate to="/set-classes?view=plan" replace />} />
             <Route path="/account" element={<AccountScreen />} />
             {/* Staff-only; not linked from the student nav (see AdminScreen). */}
             <Route path="/admin" element={<AdminScreen />} />

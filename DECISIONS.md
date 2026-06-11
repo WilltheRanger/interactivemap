@@ -4,13 +4,15 @@ Locked decisions for v1. Source of truth for choices that shape the build. See `
 each one threads into the phases, and `dbhs-wayfinder-planning.md` §Open decisions for the original
 questions.
 
-_Last updated: 2026-06-09._
+_Last updated: 2026-06-11._
 
 ## Project decisions
 
 | # | Decision | Choice | Build impact |
 |---|----------|--------|--------------|
-| 1 | Schedule view: passive vs active | **Passive — fully tap-driven** | Tap a period → its class/room/teacher; static map highlight. No live now/next, no auto-advance, **no** current-period label. The active time-engine is cut. Bell schedule (intake E) is now optional and only revisited if per-period time ranges are ever wanted. |
+| 1 | Schedule view: passive vs active | **Passive — fully tap-driven** _(partly reversed 2026-06-11, see below)_ | Tap a period → its class/room/teacher; static map highlight. No live now/next, no auto-advance, **no** current-period label. The active time-engine is cut. Bell schedule (intake E) is now optional and only revisited if per-period time ranges are ever wanted. |
+
+**Update 2026-06-11 — live bell schedule + highlight added (owner request).** The Schedule view's "This Year" tab now shows **today's bell schedule** and highlights the **in-session period + your class** with a live countdown — reviving a client-side time engine (`src/lib/bellSchedule.ts`, pure + unit-tested). Schedule data is **proxied** from the teacher's "Brahma Bells" feed (`mrwai.com/dbhsbells`) through a Supabase Edge Function (`supabase/functions/bell-schedule`) — the feed serves a native app and sends no CORS headers, so a browser can't read it directly; the proxy also forwards the day-variant settings (Pathways/Rally) it expects. Falls back to bundled Regular-day times (clearly labeled) when the feed is unreachable. **Notifications stay out of scope** for now (the source app schedules them; deferred — less reliable on web). The 4-Year Plan is folded into this same screen as a second tab.
 | 2 | Map format | **SVG** (vector) | Each building is a named SVG shape; the shape `id` **equals** `buildings.id`. Clickable/crisp/per-level for free. |
 | 3 | Multi-level | **Yes** | `buildings.level` field + a map level toggle; SVG shapes grouped by level. |
 | 4 | Master schedule access | **Yes — as a pickers data source only** | `master_schedule(course, period, room, teacher)` table powers period→course→teacher pickers. **Resolution stays teacher/room** — `(course, period)` is never the join key (hard rule; a course can have multiple sections in one period). |

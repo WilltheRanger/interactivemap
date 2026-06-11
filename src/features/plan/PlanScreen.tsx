@@ -239,12 +239,13 @@ function PathwayCard({ summary }: { summary: PathwaySummary }) {
 }
 
 /**
- * 4-Year Plan + Credit Tracker. Pick a grade (9–12), add courses to its Fall/Spring cards — or reuse
- * Fall for Spring with "Same as Fall" — and a live summary computes Graduation / UC / Brahma Tech
- * progress. The personal plan persists to localStorage only; requirement data is partly placeholder
- * (see the warnings).
+ * 4-Year Plan + Credit Tracker body. Pick a grade (9–12), add courses to its Fall/Spring cards — or
+ * reuse Fall for Spring with "Same as Fall" — and a live summary computes Graduation / UC / Brahma
+ * Tech progress. The personal plan persists to localStorage only; requirement data is partly
+ * placeholder (see the warnings). Rendered inside the combined Schedule screen's "4-Year Plan" tab,
+ * which supplies the screen chrome — so this returns just the body.
  */
-export function PlanScreen() {
+export function PlanBody() {
   const courses = useCourses();
   const requirements = useGraduationRequirements();
   const plan = useFourYearPlan();
@@ -271,12 +272,7 @@ export function PlanScreen() {
   const isEmpty = filled === 0;
 
   return (
-    <section className="screen plan" aria-labelledby="plan-title">
-      <h1 id="plan-title" className="screen__title">
-        4-Year Plan
-      </h1>
-      <p className="screen__sub">Map your classes and track credits toward each pathway.</p>
-
+    <>
       <p className="plan-disclaimer" role="note">
         {DISCLAIMER}
       </p>
@@ -360,6 +356,6 @@ export function PlanScreen() {
           </>
         )}
       </div>
-    </section>
+    </>
   );
 }

@@ -10,12 +10,12 @@ import { PeriodEditor } from './PeriodEditor';
 import './SetClasses.css';
 
 /**
- * Set Classes (06.5–06.6 + the 07.1 list / 07.2 detail): one row per period. Empty rows prompt to
- * add a class; saved rows show the class + resolved room/building/teacher and expand to rename,
- * change, or remove. Everything persists on-device only. (The 07.2 map highlight wires up when the
- * Phase 05 map + highlight API exist.)
+ * The student's per-period class editor (formerly the whole "Set Classes" screen — now the lower
+ * half of the combined Schedule view). One row per period: empty rows prompt to add a class; saved
+ * rows show the class + resolved room/building/teacher and expand to rename, change, or remove.
+ * Everything persists on-device only. The same saved data drives the live highlight in TodaySchedule.
  */
-export function SetClassesScreen() {
+export function ClassList() {
   const schedule = useSchedule();
   const [editing, setEditing] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -24,11 +24,8 @@ export function SetClassesScreen() {
   const count = PERIODS.filter((p) => schedule[p.id]).length;
 
   return (
-    <section className="screen" aria-labelledby="setclasses-title">
-      <h1 id="setclasses-title" className="screen__title">
-        Schedule
-      </h1>
-      <p className="screen__sub">
+    <div className="sched">
+      <p className="sched__hint">
         {count === 0
           ? 'Add a class for each period. Your schedule stays on this device only.'
           : `${count} ${count === 1 ? 'period' : 'periods'} set. Tap a period to see or change it.`}
@@ -90,7 +87,7 @@ export function SetClassesScreen() {
           )}
         </div>
       )}
-    </section>
+    </div>
   );
 }
 
@@ -197,7 +194,7 @@ function PeriodRow({
   );
 }
 
-/** class_label is display-only and editable (06.3) — renaming never changes the stored teacher/room. */
+/** class_label is display-only and editable — renaming never changes the stored teacher/room. */
 function RenameField({
   entry,
   onRename,

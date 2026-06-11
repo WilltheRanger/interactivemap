@@ -29,6 +29,11 @@
   --color-success-weak: color-mix(in srgb, var(--color-success) 14%, var(--color-surface));
   --color-warn-weak: color-mix(in srgb, var(--color-warn) 16%, var(--color-surface));
   --color-error-weak: color-mix(in srgb, var(--color-error) 14%, var(--color-surface));
+  --color-accent-weak: color-mix(
+    in srgb,
+    var(--color-accent) 22%,
+    var(--color-surface)
+  ); /* live-period highlight */
 
   /* Spacing */
   --space-1: 4px;
