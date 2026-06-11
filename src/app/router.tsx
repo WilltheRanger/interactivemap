@@ -14,6 +14,7 @@ import { LogScreen } from '../features/log/LogScreen';
 import { SetClassesScreen } from '../features/schedule/SetClassesScreen';
 import { AccountScreen } from '../features/account/AccountScreen';
 import { AdminScreen } from '../features/admin/AdminScreen';
+import { PlanScreen } from '../features/plan/PlanScreen';
 
 /** Routed content with a fade + slight-rise transition between screens. */
 function AnimatedRoutes() {
@@ -41,6 +42,7 @@ function AnimatedRoutes() {
             <Route path="/lockers" element={<LockersScreen />} />
             <Route path="/log" element={<LogScreen />} />
             <Route path="/set-classes" element={<SetClassesScreen />} />
+            <Route path="/plan" element={<PlanScreen />} />
             <Route path="/account" element={<AccountScreen />} />
             {/* Staff-only; not linked from the student nav (see AdminScreen). */}
             <Route path="/admin" element={<AdminScreen />} />

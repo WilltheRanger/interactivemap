@@ -9,6 +9,7 @@ import { useTheme } from '../../data/useTheme';
 import { useDisplayPrefs } from '../../data/useDisplayPrefs';
 import { useMyLocker, useSchedule } from '../../data/usePersonal';
 import { clearAll } from '../../lib/personalStore';
+import { clearPlan } from '../../lib/fourYearPlanStore';
 import type { ThemePreference } from '../../lib/theme';
 import type { Contrast, TextSize } from '../../lib/displayPrefs';
 import { Segmented, type SegmentedOption } from './Segmented';
@@ -55,6 +56,7 @@ export function AccountScreen() {
 
   const handleClear = () => {
     clearAll();
+    clearPlan();
     setConfirmingClear(false);
     setJustCleared(true);
   };
@@ -175,7 +177,7 @@ export function AccountScreen() {
       <div className="account__card">
         {confirmingClear ? (
           <div role="group" aria-label="Confirm clearing your data">
-            <p className="account__row-label">Clear your schedule and locker?</p>
+            <p className="account__row-label">Clear your schedule, locker, and plan?</p>
             <p className="account__hint">
               This can&rsquo;t be undone. Your theme and future sign-in aren&rsquo;t affected.
             </p>
@@ -193,7 +195,9 @@ export function AccountScreen() {
             <div className="account__row">
               <div>
                 <p className="account__row-label">Clear my data</p>
-                <p className="account__hint">Removes your schedule and locker from this device.</p>
+                <p className="account__hint">
+                  Removes your schedule, locker, and 4-year plan from this device.
+                </p>
               </div>
               <Button
                 variant="secondary"
@@ -207,7 +211,7 @@ export function AccountScreen() {
             </div>
             {justCleared && (
               <p className="account__caption" role="status">
-                Your schedule and locker were cleared.
+                Your schedule, locker, and plan were cleared.
               </p>
             )}
           </>
