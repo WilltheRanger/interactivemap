@@ -177,13 +177,25 @@
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
 }
+/* Resolved teacher (rooms.id → teacher). Icon + name, tinted to the brand purple like other meta. */
+.map-screen__detail-teacher {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+}
 .map-screen__detail-close {
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  /* >= 44px tap target (DESIGN.md); negative margin keeps the card padding snug around it. */
+  width: var(--tap-target);
+  height: var(--tap-target);
+  margin: calc(-1 * var(--space-1)) calc(-1 * var(--space-1)) calc(-1 * var(--space-1)) 0;
   border: 0;
   border-radius: var(--radius-pill);
   background: var(--color-bg);

@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { motion } from 'framer-motion';
-import { X } from 'lucide-react';
+import { User, X } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { SearchInput } from '../../components/SearchInput';
+import { useRoomWithTeacher } from '../../data/hooks';
 import { MapControls } from './MapControls';
 import { fadeUpItem, staggerContainer } from '../../lib/motion';
 import { BUILDING_LABELS } from './buildingLabels';
@@ -24,6 +25,8 @@ interface RoomSelection {
   id: string;
   title: string;
   building: string;
+  /** Shape id to resolve against the `rooms` table for a teacher — null for whole-building groups. */
+  lookupId: string | null;
 }
 
 const MAX_SEARCH_RESULTS = 8;
@@ -142,8 +145,8 @@ export function MapScreen() {
           shape.classList.add('is-selected');
           const id = shape.getAttribute('id') ?? '';
           if (shape.tagName === 'g') {
-            // A whole building group.
-            setSelected({ id, title: BUILDING_LABELS[id] ?? id, building: '' });
+            // A whole building group — no single teacher to resolve.
+            setSelected({ id, title: BUILDING_LABELS[id] ?? id, building: '', lookupId: null });
             return;
           }
           const gid = shape.closest('g[id]')?.getAttribute('id');
@@ -152,9 +155,15 @@ export function MapScreen() {
               id,
               title: roomTitle(id),
               building: BUILDING_LABELS[gid as string] ?? (gid as string),
+              lookupId: id,
             });
           } else {
-            setSelected({ id, title: roomTitle(id), building: `${config.label} campus` });
+            setSelected({
+              id,
+              title: roomTitle(id),
+              building: `${config.label} campus`,
+              lookupId: id,
+            });
           }
         };
 
@@ -247,6 +256,11 @@ export function MapScreen() {
     return () => clearTimeout(t);
   }, [status, searchParams, rooms, level]);
 
+  // Resolve a tapped room to its teacher (rooms.id == the SVG shape id). Returns null where the
+  // room isn't in the directory yet — the card just omits the teacher line, never errors.
+  const roomLookup = useRoomWithTeacher(selected?.lookupId ?? null);
+  const teacherName = roomLookup.data?.teacher?.name ?? null;
+
   const q = query.trim().toLowerCase();
   const results = q
     ? (rooms ?? [])
@@ -308,11 +322,11 @@ export function MapScreen() {
         <motion.div variants={fadeUpItem}>
           <MapControls
             level={level}
-            onToggleLevel={() => {
+            onSelectLevel={(next) => {
+              if (next === level) return;
               clearSelection();
-              setLevel((l) => (l === 'upper' ? 'lower' : 'upper'));
+              setLevel(next);
             }}
-            period="3"
           />
         </motion.div>
       </motion.div>
@@ -331,6 +345,12 @@ export function MapScreen() {
           <div className="map-screen__detail-text">
             <p className="map-screen__detail-title">{selected.title}</p>
             {selected.building && <p className="map-screen__detail-sub">{selected.building}</p>}
+            {teacherName && (
+              <p className="map-screen__detail-teacher">
+                <User size={14} aria-hidden="true" />
+                {teacherName}
+              </p>
+            )}
           </div>
           <button
             type="button"

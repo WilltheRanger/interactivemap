@@ -101,17 +101,12 @@ export function AnnouncementsScreen() {
   return (
     <section className="screen" aria-labelledby="announcements-title">
       <h1 id="announcements-title" className="screen__title">
-        Announcements
+        News
       </h1>
       <p className="screen__sub">News and events from school staff.</p>
       <div className="screen__body">
         {announcements.isPending && (
-          <div
-            className="ann-list"
-            aria-busy="true"
-            role="status"
-            aria-label="Loading announcements"
-          >
+          <div className="ann-list" aria-busy="true" role="status" aria-label="Loading news">
             <Skeleton height={120} radius="var(--radius-lg)" />
             <Skeleton height={120} radius="var(--radius-lg)" />
             <Skeleton height={120} radius="var(--radius-lg)" />
@@ -120,7 +115,7 @@ export function AnnouncementsScreen() {
 
         {announcements.isError && (
           <div className="ann-panel ann-panel--error" role="alert">
-            <p className="ann-panel__title">Couldn&rsquo;t load announcements</p>
+            <p className="ann-panel__title">Couldn&rsquo;t load the news</p>
             <p>Check your connection and try again.</p>
             <Button variant="primary" onClick={() => void announcements.refetch()}>
               Try again
@@ -130,7 +125,7 @@ export function AnnouncementsScreen() {
 
         {announcements.isSuccess && announcements.data.length === 0 && (
           <div className="ann-panel" role="status">
-            <p className="ann-panel__title">No announcements yet</p>
+            <p className="ann-panel__title">No news yet</p>
             <p>News and events from school staff will show up here — check back soon.</p>
           </div>
         )}

@@ -26,7 +26,7 @@ export function SetClassesScreen() {
   return (
     <section className="screen" aria-labelledby="setclasses-title">
       <h1 id="setclasses-title" className="screen__title">
-        Set Classes
+        Schedule
       </h1>
       <p className="screen__sub">
         {count === 0
