@@ -13,6 +13,7 @@ import { clearPlan } from '../../lib/fourYearPlanStore';
 import type { ThemePreference } from '../../lib/theme';
 import type { Contrast, TextSize } from '../../lib/displayPrefs';
 import { Segmented, type SegmentedOption } from './Segmented';
+import { InstallSetting } from './InstallSetting';
 import './AccountScreen.css';
 
 const THEME_OPTIONS: SegmentedOption<ThemePreference>[] = [
@@ -113,6 +114,11 @@ export function AccountScreen() {
             <ChevronRight size={18} aria-hidden="true" />
           </span>
         </Link>
+      </div>
+
+      <h2 className="account__section-title">App</h2>
+      <div className="account__card">
+        <InstallSetting />
       </div>
 
       <h2 className="account__section-title">Appearance</h2>
