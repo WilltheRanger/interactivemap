@@ -294,9 +294,11 @@ export function PlanScreen() {
                   semesters planned — fill the rest for a complete picture.
                 </p>
               )}
-              <PathwayBar summary={summaries.graduation} />
-              <PathwayBar summary={summaries.uc} />
-              <PathwayBar summary={summaries.brahma_tech} />
+              <div className="plan-summary__bars">
+                <PathwayBar summary={summaries.graduation} />
+                <PathwayBar summary={summaries.uc} />
+                <PathwayBar summary={summaries.brahma_tech} />
+              </div>
             </aside>
           </div>
         )}
