@@ -22,6 +22,8 @@
   --color-border-subtle: #ededf1;
   --color-error: #c0392b;
   --color-on-error: #ffffff; /* text on a filled error/danger surface */
+  --color-success: #1d7a4d; /* status "on track" — text, icons, progress fill */
+  --color-warn: #b06a00; /* status "at risk" — text, icons */
 
   /* Spacing */
   --space-1: 4px;
@@ -88,6 +90,8 @@
   --color-border-subtle: #2a2c35;
   --color-error: #f08a7e;
   --color-on-error: #2a0f0c; /* dark text on the lightened error red */
+  --color-success: #58c08b; /* lightened for contrast on dark surfaces */
+  --color-warn: #e0a64e;
 
   /* Elevation — black shadows read on dark surfaces where the light ones vanish. */
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.45);
