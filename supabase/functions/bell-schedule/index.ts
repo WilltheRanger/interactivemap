@@ -11,8 +11,9 @@
  *   - todayKey  = upstream /schedule/ (plain text: "Regular", "LateStart", …; "" when no school)
  *   - schedules = upstream /_schedule.json (every variant)
  *
- * Deploy:  supabase functions deploy bell-schedule --no-verify-jwt
- *   (--no-verify-jwt because students aren't signed in; the data is public and read-only.)
+ * Deployed with verify_jwt=false: this is a public, read-only proxy of public bell-times (no secrets,
+ * no writes), and the browser's CORS preflight carries no auth — so JWT verification must be off.
+ *   supabase functions deploy bell-schedule --no-verify-jwt
  */
 
 const UPSTREAM = 'https://mrwai.com/dbhsbells';
