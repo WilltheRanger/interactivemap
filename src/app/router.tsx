@@ -5,6 +5,7 @@ import { pageVariants } from '../lib/motion';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { Header } from './Header';
 import { BottomNav } from './BottomNav';
+import { InstallPrompt } from './InstallPrompt';
 import { RequireAuth } from './RequireAuth';
 import { ScreenCrashCard } from './ErrorFallbacks';
 import { MapScreen } from '../features/map/MapScreen';
@@ -59,6 +60,7 @@ function AppShell({ children }: { children: ReactNode }) {
     <div className="app-shell">
       <Header />
       <main className="app-main">{children}</main>
+      <InstallPrompt />
       <BottomNav />
     </div>
   );
