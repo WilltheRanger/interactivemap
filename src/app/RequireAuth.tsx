@@ -10,6 +10,18 @@ import { duration, ease } from '../lib/motion';
 import './RequireAuth.css';
 
 /**
+ * If the OAuth provider bounced back with an error, it arrives in the URL hash
+ * (#error=...&error_description=...). Captured once at module load — before the Supabase client
+ * initializes and cleans the hash — so the gate can say WHY a sign-in failed instead of silently
+ * showing the sign-in button again.
+ */
+const initialAuthError = (() => {
+  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  const description = hash.get('error_description') ?? hash.get('error');
+  return description ? description.replace(/\+/g, ' ') : null;
+})();
+
+/**
  * Phase 09 auth gate: the whole app requires a school Google account
  * (@stu.wvusd.org / @wvusd.org — plus the announcement admins, see authPolicy.ts).
  *
@@ -59,6 +71,11 @@ export function RequireAuth({ children }: { children: ReactNode }) {
               Sign in with your school Google account (<strong>@stu.wvusd.org</strong>) to use the
               Wayfinder.
             </p>
+            {initialAuthError && (
+              <p className="auth-gate__error" role="alert">
+                Sign-in failed: {initialAuthError}
+              </p>
+            )}
             <Button variant="primary" icon={<LogIn size={18} />} onClick={signInWithGoogle}>
               Sign in with Google
             </Button>
