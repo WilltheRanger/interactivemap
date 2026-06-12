@@ -1,6 +1,7 @@
-import { CalendarOff, Hourglass, RefreshCw, WifiOff } from 'lucide-react';
+import { CalendarOff, FlaskConical, Hourglass, RefreshCw, WifiOff } from 'lucide-react';
 import { Skeleton } from '../../components';
 import { useBellFeed } from '../../data/useBellFeed';
+import { useBellSettings } from '../../data/useBellSettings';
 import { useNow } from '../../data/useNow';
 import { useSchedule } from '../../data/usePersonal';
 import { FALLBACK_SCHEDULES, FALLBACK_TODAY_KEY } from '../../data/regularBellSchedule';
@@ -15,6 +16,12 @@ import {
 } from '../../lib/bellSchedule';
 import './TodaySchedule.css';
 
+/** Preview override (dev/owner only) — pin a variant + a simulated clock so the highlight is visible. */
+export interface PreviewMode {
+  variantKey: string;
+  now: Date;
+}
+
 /** The student's saved class label for a bell row (class periods only), or null. */
 function classLabelFor(key: string, schedule: ReturnType<typeof useSchedule>): string | null {
   const periodId = periodIdForBellKey(key);
@@ -24,16 +31,21 @@ function classLabelFor(key: string, schedule: ReturnType<typeof useSchedule>): s
 
 /**
  * Today's bell schedule with the live period highlighted. Reads the proxied feed (falls back to the
- * bundled Regular times, clearly labeled, when it can't be reached), ticks once a second, and lines
- * the student's saved classes up against the active period — so the top banner answers "what class
- * am I in right now?" Overlapping periods (6 / 6A) both highlight, per the source app.
+ * bundled variants, clearly labeled, when it can't be reached), ticks once a second, and lines the
+ * student's saved classes up against the active period — so the top banner answers "what class am I
+ * in right now?" Overlapping periods (6 / 6A) both highlight, per the source app. Optional periods
+ * (0 / 1A / 6A) are hidden unless the student turns them on in settings. A preview override pins a
+ * variant + clock so the highlight can be demoed off-season.
  */
-export function TodaySchedule() {
-  const feed = useBellFeed();
-  const now = useNow();
+export function TodaySchedule({ preview }: { preview?: PreviewMode }) {
+  const settings = useBellSettings();
+  const feed = useBellFeed(settings);
+  const realNow = useNow();
   const schedule = useSchedule();
 
-  if (feed.isPending) {
+  const now = preview ? preview.now : realNow;
+
+  if (feed.isPending && !preview) {
     return (
       <div
         className="bell-loading"
@@ -51,11 +63,16 @@ export function TodaySchedule() {
   const live = feed.isSuccess && !!feedData && feedData.schedules.length > 0;
   const schedules: BellScheduleVariant[] =
     live && feedData ? feedData.schedules : FALLBACK_SCHEDULES;
-  const todayKey = live && feedData ? feedData.todayKey : FALLBACK_TODAY_KEY;
-  const variant = findVariant(schedules, todayKey);
+  const todayKey = preview
+    ? preview.variantKey
+    : live && feedData
+      ? feedData.todayKey
+      : FALLBACK_TODAY_KEY;
+  // Resolve against the loaded schedules, then the bundled set (so preview always finds its variant).
+  const variant = findVariant(schedules, todayKey) ?? findVariant(FALLBACK_SCHEDULES, todayKey);
 
   // Live feed, but today's key isn't a known schedule (empty / holiday / break) → no school.
-  if (live && !variant) {
+  if (!preview && live && !variant) {
     return (
       <div className="bell-card bell-empty" role="status">
         <CalendarOff size={22} aria-hidden="true" />
@@ -70,7 +87,6 @@ export function TodaySchedule() {
     );
   }
   if (!variant) {
-    // Fallback couldn't produce a variant either — shouldn't happen, but never show a blank.
     return (
       <div className="bell-card bell-empty" role="status">
         <CalendarOff size={22} aria-hidden="true" />
@@ -85,7 +101,16 @@ export function TodaySchedule() {
     );
   }
 
-  const timings = computeTimings(variant, now);
+  // Hide optional periods the student doesn't have (preview shows everything).
+  const showRow = (key: string): boolean => {
+    if (preview) return true;
+    if (key === '0') return settings.period0;
+    if (key === '1A') return settings.period1a;
+    if (key === '6A') return settings.period6a;
+    return true;
+  };
+
+  const timings = computeTimings(variant, now).filter((t) => showRow(t.period.key));
   const active = timings.filter((t) => t.active);
   // Headline = the in-session class period the student actually has, else any active class period,
   // else any active row (so a passing period or break still shows a countdown).
@@ -100,11 +125,17 @@ export function TodaySchedule() {
       <div className="bell-card__head">
         <div>
           <p className="bell-card__title">{variant.print}</p>
-          {!live && (
-            <p className="bell-card__offline">
-              <WifiOff size={12} aria-hidden="true" /> Standard times — couldn&rsquo;t reach live
-              data
+          {preview ? (
+            <p className="bell-card__preview">
+              <FlaskConical size={12} aria-hidden="true" /> Preview
             </p>
+          ) : (
+            !live && (
+              <p className="bell-card__offline">
+                <WifiOff size={12} aria-hidden="true" /> Standard times — couldn&rsquo;t reach live
+                data
+              </p>
+            )
           )}
         </div>
         <RefreshButton onClick={() => void feed.refetch()} busy={feed.isFetching} />
