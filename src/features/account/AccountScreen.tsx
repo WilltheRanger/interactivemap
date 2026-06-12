@@ -223,6 +223,16 @@ export function AccountScreen() {
           </>
         )}
       </div>
+
+      <h2 className="account__section-title">About</h2>
+      <div className="account__card">
+        <Link to="/tos" className="account__link-row">
+          <span className="account__row-label">Terms of Service</span>
+          <span className="account__row-value">
+            <ChevronRight size={18} aria-hidden="true" />
+          </span>
+        </Link>
+      </div>
     </section>
   );
 }
