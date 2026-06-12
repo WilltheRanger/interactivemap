@@ -1,5 +1,15 @@
 /* Terms of Service — a plain, scrollable text page + the first-launch banner. Token-only. */
 
+.tos__back {
+  margin-bottom: var(--space-4);
+}
+
+/* While the first-launch banner is showing it floats over the bottom ~200px of the viewport —
+   without this clearance the last sections could never scroll out from under it. */
+.tos--banner {
+  padding-bottom: 240px;
+}
+
 .tos__body {
   display: grid;
   gap: var(--space-5);
