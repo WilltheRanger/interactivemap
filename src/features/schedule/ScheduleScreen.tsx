@@ -1,8 +1,14 @@
+import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { ChevronDown, ChevronRight, FlaskConical, SlidersHorizontal } from 'lucide-react';
+import { Switch } from '../../components';
 import { Segmented, type SegmentedOption } from '../account/Segmented';
 import { PlanBody } from '../plan/PlanScreen';
 import { TodaySchedule } from './TodaySchedule';
 import { ClassList } from './ClassList';
+import { useBellSettings } from '../../data/useBellSettings';
+import { setBellSetting, type BellSettings } from '../../lib/bellSettings';
+import { FALLBACK_SCHEDULES } from '../../data/regularBellSchedule';
 import './Schedule.css';
 
 type View = 'year' | 'plan';
@@ -12,15 +18,26 @@ const VIEW_OPTIONS: SegmentedOption<View>[] = [
   { value: 'plan', label: '4-Year Plan' },
 ];
 
+const DAY_TOGGLES: { key: keyof BellSettings; label: string }[] = [
+  { key: 'pathwaysAcademy', label: 'Pathways Academy' },
+  { key: 'rallyScheduleB', label: 'Rally Schedule B' },
+];
+const PERIOD_TOGGLES: { key: keyof BellSettings; label: string }[] = [
+  { key: 'period0', label: 'Period 0' },
+  { key: 'period1a', label: 'Period 1A' },
+  { key: 'period6a', label: 'Period 6A' },
+];
+
 /**
  * The combined Schedule destination. "This Year" pairs the live bell schedule (today's variant, with
  * the current period + your class highlighted) with the per-period class editor. "4-Year Plan" is the
  * credit planner. The view is reflected in ?view= so the header/Account can deep-link straight to the
- * plan (the old /plan route redirects here).
+ * plan (the old /plan route redirects here). ?preview=1 reveals an owner-only schedule preview.
  */
 export function ScheduleScreen() {
   const [params, setParams] = useSearchParams();
   const view: View = params.get('view') === 'plan' ? 'plan' : 'year';
+  const previewing = params.get('preview') === '1';
 
   const setView = (next: View) => {
     const updated = new URLSearchParams(params);
@@ -47,7 +64,8 @@ export function ScheduleScreen() {
 
       {view === 'year' ? (
         <>
-          <TodaySchedule />
+          {previewing ? <PreviewPanel /> : <TodaySchedule />}
+          <ScheduleOptions />
           <h2 className="schedule__subhead">Your classes</h2>
           <ClassList />
         </>
@@ -55,5 +73,93 @@ export function ScheduleScreen() {
         <PlanBody />
       )}
     </section>
+  );
+}
+
+/** Collapsible toggles that tune the schedule feed + which optional periods show. */
+function ScheduleOptions() {
+  const settings = useBellSettings();
+  const [open, setOpen] = useState(false);
+
+  const renderRow = ({ key, label }: { key: keyof BellSettings; label: string }) => (
+    <div key={key} className="schedule__opt-row">
+      <span>{label}</span>
+      <Switch checked={settings[key]} onChange={(v) => setBellSetting(key, v)} label={label} />
+    </div>
+  );
+
+  return (
+    <div className="schedule__options">
+      <button
+        type="button"
+        className="schedule__options-toggle"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+      >
+        <SlidersHorizontal size={16} aria-hidden="true" />
+        <span>Schedule options</span>
+        <span className="schedule__options-chevron" aria-hidden="true">
+          {open ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+        </span>
+      </button>
+
+      {open && (
+        <div className="schedule__options-body">
+          <p className="schedule__opt-hint">
+            Pathways / Rally change which schedule the live feed returns. The period toggles show
+            the optional periods you have.
+          </p>
+          <p className="schedule__opt-group-title">Which day applies</p>
+          {DAY_TOGGLES.map(renderRow)}
+          <p className="schedule__opt-group-title">Show optional periods</p>
+          {PERIOD_TOGGLES.map(renderRow)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const pad = (n: number) => String(n).padStart(2, '0');
+
+/** Owner-only preview (via ?preview=1): pin a variant + time so the highlight/countdown is visible. */
+function PreviewPanel() {
+  const [variantKey, setVariantKey] = useState(FALLBACK_SCHEDULES[0].key);
+  const [time, setTime] = useState(() => {
+    const d = new Date();
+    return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  });
+
+  const [hh, mm] = time.split(':').map(Number);
+  const now = new Date();
+  now.setHours(Number.isFinite(hh) ? hh : 10, Number.isFinite(mm) ? mm : 0, 0, 0);
+
+  return (
+    <>
+      <div className="schedule__preview">
+        <p className="schedule__preview-title">
+          <FlaskConical size={14} aria-hidden="true" /> Preview — only visible with ?preview=1
+        </p>
+        <div className="schedule__preview-fields">
+          <label className="schedule__preview-field">
+            <span>Schedule</span>
+            <select value={variantKey} onChange={(e) => setVariantKey(e.target.value)}>
+              {FALLBACK_SCHEDULES.map((s) => (
+                <option key={s.key} value={s.key}>
+                  {s.print}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="schedule__preview-field">
+            <span>Time</span>
+            <input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+          </label>
+        </div>
+        <p className="schedule__opt-hint">
+          Frozen at the chosen time (the countdown doesn&rsquo;t tick here).
+        </p>
+      </div>
+      <TodaySchedule preview={{ variantKey, now }} />
+    </>
   );
 }

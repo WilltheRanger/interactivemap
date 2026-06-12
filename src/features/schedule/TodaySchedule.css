@@ -32,6 +32,15 @@
   color: var(--color-warn);
   font-size: var(--font-size-xs);
 }
+.bell-card__preview {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: 2px;
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+}
 
 /* Refresh icon button — 44px tap target, snug via negative margin. */
 .bell-refresh {
