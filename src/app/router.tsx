@@ -16,6 +16,8 @@ import { ScheduleScreen } from '../features/schedule/ScheduleScreen';
 import { BellNotifier } from '../features/schedule/BellNotifier';
 import { AccountScreen } from '../features/account/AccountScreen';
 import { AdminScreen } from '../features/admin/AdminScreen';
+import { TosScreen } from '../features/legal/TosScreen';
+import { TosBanner } from '../features/legal/TosBanner';
 
 /** Routed content with a fade + slight-rise transition between screens. */
 function AnimatedRoutes() {
@@ -46,6 +48,7 @@ function AnimatedRoutes() {
             {/* Plan now lives inside Schedule's "4-Year Plan" tab; keep the old path as a deep link. */}
             <Route path="/plan" element={<Navigate to="/set-classes?view=plan" replace />} />
             <Route path="/account" element={<AccountScreen />} />
+            <Route path="/tos" element={<TosScreen />} />
             {/* Staff-only; not linked from the student nav (see AdminScreen). */}
             <Route path="/admin" element={<AdminScreen />} />
             <Route path="*" element={<Navigate to="/map" replace />} />
@@ -62,6 +65,7 @@ function AppShell({ children }: { children: ReactNode }) {
       <Header />
       <main className="app-main">{children}</main>
       <BellNotifier />
+      <TosBanner />
       <InstallPrompt />
       <BottomNav />
     </div>
