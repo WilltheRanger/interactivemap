@@ -13,6 +13,7 @@ import { AnnouncementsScreen } from '../features/announcements/AnnouncementsScre
 import { LockersScreen } from '../features/locker/LockersScreen';
 import { LogScreen } from '../features/log/LogScreen';
 import { ScheduleScreen } from '../features/schedule/ScheduleScreen';
+import { BellNotifier } from '../features/schedule/BellNotifier';
 import { AccountScreen } from '../features/account/AccountScreen';
 import { AdminScreen } from '../features/admin/AdminScreen';
 
@@ -60,6 +61,7 @@ function AppShell({ children }: { children: ReactNode }) {
     <div className="app-shell">
       <Header />
       <main className="app-main">{children}</main>
+      <BellNotifier />
       <InstallPrompt />
       <BottomNav />
     </div>

@@ -122,3 +122,44 @@ export function formatRemaining(totalSeconds: number): string {
   if (h > 0) return `${h}h ${pad(m)}m ${pad(sec)}s`;
   return `${m}m ${pad(sec)}s`;
 }
+
+export interface BellReminder {
+  /** Period key the reminder is for (also used as a notification tag to de-dupe). */
+  key: string;
+  /** When to fire, epoch ms. */
+  fireAt: number;
+  title: string;
+  body: string;
+}
+
+/**
+ * Plan end-of-period reminders for today: `warningMinutes` before each period the student has a
+ * class in ends. Only future fire times (relative to `now`) are returned, so it's safe to re-run on
+ * every settings/schedule change. Pure — the hook turns these into timers + Notifications.
+ */
+export function planReminders(
+  variant: BellScheduleVariant,
+  warningMinutes: number,
+  classLabelFor: (periodKey: string) => string | null,
+  now: Date,
+): BellReminder[] {
+  const reminders: BellReminder[] = [];
+  const nowMs = now.getTime();
+  for (const period of variant.schedule) {
+    const label = classLabelFor(period.key);
+    if (!label) continue; // only periods the student actually has a class in
+    const endMinutes = militaryToMinutes(period.end);
+    if (endMinutes == null) continue;
+    const fire = new Date(now);
+    fire.setHours(0, endMinutes - warningMinutes, 0, 0);
+    const fireAt = fire.getTime();
+    if (fireAt <= nowMs) continue; // already passed today
+    reminders.push({
+      key: period.key,
+      fireAt,
+      title: label,
+      body: `${warningMinutes} min left in ${period.print}`,
+    });
+  }
+  return reminders;
+}

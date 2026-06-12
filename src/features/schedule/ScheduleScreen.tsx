@@ -7,7 +7,12 @@ import { PlanBody } from '../plan/PlanScreen';
 import { TodaySchedule } from './TodaySchedule';
 import { ClassList } from './ClassList';
 import { useBellSettings } from '../../data/useBellSettings';
-import { setBellSetting, type BellSettings } from '../../lib/bellSettings';
+import {
+  setBellSetting,
+  setWarningMinutes,
+  WARNING_MINUTE_CHOICES,
+  type BellBoolKey,
+} from '../../lib/bellSettings';
 import { FALLBACK_SCHEDULES } from '../../data/regularBellSchedule';
 import './Schedule.css';
 
@@ -18,15 +23,19 @@ const VIEW_OPTIONS: SegmentedOption<View>[] = [
   { value: 'plan', label: '4-Year Plan' },
 ];
 
-const DAY_TOGGLES: { key: keyof BellSettings; label: string }[] = [
+const DAY_TOGGLES: { key: BellBoolKey; label: string }[] = [
   { key: 'pathwaysAcademy', label: 'Pathways Academy' },
   { key: 'rallyScheduleB', label: 'Rally Schedule B' },
 ];
-const PERIOD_TOGGLES: { key: keyof BellSettings; label: string }[] = [
+const PERIOD_TOGGLES: { key: BellBoolKey; label: string }[] = [
   { key: 'period0', label: 'Period 0' },
   { key: 'period1a', label: 'Period 1A' },
   { key: 'period6a', label: 'Period 6A' },
 ];
+const WARNING_OPTIONS: SegmentedOption<string>[] = WARNING_MINUTE_CHOICES.map((m) => ({
+  value: String(m),
+  label: `${m} min`,
+}));
 
 /**
  * The combined Schedule destination. "This Year" pairs the live bell schedule (today's variant, with
@@ -76,17 +85,31 @@ export function ScheduleScreen() {
   );
 }
 
-/** Collapsible toggles that tune the schedule feed + which optional periods show. */
+/** Collapsible toggles that tune the schedule feed, which optional periods show, and reminders. */
 function ScheduleOptions() {
   const settings = useBellSettings();
   const [open, setOpen] = useState(false);
+  const [permission, setPermission] = useState<NotificationPermission | 'unsupported'>(() =>
+    typeof Notification === 'undefined' ? 'unsupported' : Notification.permission,
+  );
 
-  const renderRow = ({ key, label }: { key: keyof BellSettings; label: string }) => (
+  const renderRow = ({ key, label }: { key: BellBoolKey; label: string }) => (
     <div key={key} className="schedule__opt-row">
       <span>{label}</span>
       <Switch checked={settings[key]} onChange={(v) => setBellSetting(key, v)} label={label} />
     </div>
   );
+
+  const toggleNotifications = async (on: boolean) => {
+    if (on && typeof Notification !== 'undefined' && Notification.permission === 'default') {
+      try {
+        setPermission(await Notification.requestPermission());
+      } catch {
+        // permission prompt can reject in some contexts; the hint below covers it
+      }
+    }
+    setBellSetting('notificationsEnabled', on);
+  };
 
   return (
     <div className="schedule__options">
@@ -113,6 +136,43 @@ function ScheduleOptions() {
           {DAY_TOGGLES.map(renderRow)}
           <p className="schedule__opt-group-title">Show optional periods</p>
           {PERIOD_TOGGLES.map(renderRow)}
+
+          <p className="schedule__opt-group-title">Reminders</p>
+          <div className="schedule__opt-row">
+            <span>Class reminders</span>
+            <Switch
+              checked={settings.notificationsEnabled}
+              onChange={(v) => void toggleNotifications(v)}
+              label="Class reminders"
+            />
+          </div>
+          {settings.notificationsEnabled && (
+            <>
+              <div className="schedule__opt-row">
+                <span>Warn before class ends</span>
+                <Segmented
+                  ariaLabel="Reminder lead time"
+                  layoutId="warn-seg"
+                  value={String(settings.warningMinutes)}
+                  options={WARNING_OPTIONS}
+                  onChange={(v) => setWarningMinutes(Number(v))}
+                />
+              </div>
+              {permission === 'denied' && (
+                <p className="schedule__opt-hint">
+                  Notifications are blocked — enable them for this site in your browser settings.
+                </p>
+              )}
+              {permission === 'unsupported' && (
+                <p className="schedule__opt-hint">
+                  This browser doesn&rsquo;t support notifications.
+                </p>
+              )}
+              <p className="schedule__opt-hint">
+                Reminders fire only while the app is open in your browser.
+              </p>
+            </>
+          )}
         </div>
       )}
     </div>
