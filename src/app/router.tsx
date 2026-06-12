@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useRef, type ReactNode, type RefObject } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { pageVariants } from '../lib/motion';
@@ -20,10 +20,13 @@ import { TosScreen } from '../features/legal/TosScreen';
 import { TosBanner } from '../features/legal/TosBanner';
 
 /** Routed content with a fade + slight-rise transition between screens. */
-function AnimatedRoutes() {
+function AnimatedRoutes({ scrollRef }: { scrollRef: RefObject<HTMLElement | null> }) {
   const location = useLocation();
   return (
-    <AnimatePresence mode="wait">
+    // The shell's <main> is the scroll container (not the window), so the router never resets it —
+    // leaving a long page (e.g. /tos) scrolled meant the next screen opened mid-page. Reset once the
+    // old page finishes its exit, right before the new one enters.
+    <AnimatePresence mode="wait" onExitComplete={() => scrollRef.current?.scrollTo(0, 0)}>
       <motion.div
         key={location.pathname}
         className="page"
@@ -59,11 +62,19 @@ function AnimatedRoutes() {
   );
 }
 
-function AppShell({ children }: { children: ReactNode }) {
+function AppShell({
+  mainRef,
+  children,
+}: {
+  mainRef: RefObject<HTMLElement | null>;
+  children: ReactNode;
+}) {
   return (
     <div className="app-shell">
       <Header />
-      <main className="app-main">{children}</main>
+      <main className="app-main" ref={mainRef}>
+        {children}
+      </main>
       <BellNotifier />
       <TosBanner />
       <InstallPrompt />
@@ -73,10 +84,12 @@ function AppShell({ children }: { children: ReactNode }) {
 }
 
 export function AppRoutes() {
+  // Shared so route transitions can reset the shell's scroll container (see AnimatedRoutes).
+  const mainRef = useRef<HTMLElement | null>(null);
   return (
     <RequireAuth>
-      <AppShell>
-        <AnimatedRoutes />
+      <AppShell mainRef={mainRef}>
+        <AnimatedRoutes scrollRef={mainRef} />
       </AppShell>
     </RequireAuth>
   );

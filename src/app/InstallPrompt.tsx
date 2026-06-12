@@ -8,16 +8,22 @@ import {
   promptInstall,
   subscribeInstall,
 } from '../lib/pwaInstall';
+import { getTosAccepted, subscribeTos } from '../lib/tos';
 import './InstallPrompt.css';
 
 /**
  * First-run nudge to install the app to the home screen. On Chromium/Android the "Add" button opens
  * the native install dialog; on iOS Safari (no programmatic install) it shows the Share-sheet steps.
  * Hidden once installed or dismissed. Mounted in the app shell, fixed above the bottom nav.
+ *
+ * Waits for the Terms banner: both first-run surfaces share the same fixed slot above the nav, so
+ * they'd stack and cover each other's buttons. Terms come first; this shows after "I Understand."
  */
 export function InstallPrompt() {
   const state = useSyncExternalStore(subscribeInstall, getInstallSnapshot, getInstallSnapshot);
-  const show = !state.installed && !state.dismissed && (state.canInstall || state.iosInstall);
+  const tosAccepted = useSyncExternalStore(subscribeTos, getTosAccepted, getTosAccepted);
+  const show =
+    tosAccepted && !state.installed && !state.dismissed && (state.canInstall || state.iosInstall);
 
   return (
     <AnimatePresence>

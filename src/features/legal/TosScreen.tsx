@@ -1,3 +1,8 @@
+import { useSyncExternalStore } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '../../components';
+import { getTosAccepted, subscribeTos } from '../../lib/tos';
 import './Tos.css';
 
 /** Plain-English Terms of Service. Order + substance match the required points 1–7. */
@@ -33,8 +38,22 @@ const SECTIONS: { heading: string; body: string }[] = [
 ];
 
 export function TosScreen() {
+  const navigate = useNavigate();
+  // While the first-launch banner is still up it floats over the bottom of this page, so add
+  // clearance under the last section; once accepted the padding returns to normal.
+  const accepted = useSyncExternalStore(subscribeTos, getTosAccepted, getTosAccepted);
+
   return (
-    <section className="screen tos" aria-labelledby="tos-title">
+    <section className={`screen tos${accepted ? '' : ' tos--banner'}`} aria-labelledby="tos-title">
+      <div className="tos__back">
+        <Button
+          variant="secondary"
+          icon={<ArrowLeft size={16} />}
+          onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/map'))}
+        >
+          Back
+        </Button>
+      </div>
       <h1 id="tos-title" className="screen__title">
         Terms of Service
       </h1>
