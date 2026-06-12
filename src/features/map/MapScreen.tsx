@@ -2,12 +2,14 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { motion } from 'framer-motion';
-import { MapPin, User, X } from 'lucide-react';
+import { Hourglass, MapPin, User, X } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { SearchInput } from '../../components/SearchInput';
 import { useRoomWithTeacher } from '../../data/hooks';
-import { useCurrentClass } from '../../data/useCurrentClass';
+import { useCurrentPeriod, type CurrentPeriod } from '../../data/useCurrentPeriod';
+import { useNow } from '../../data/useNow';
 import { useResolvedEntry } from '../schedule/resolveEntry';
+import { formatRemaining, secondsSinceMidnight } from '../../lib/bellSchedule';
 import { MapControls } from './MapControls';
 import { fadeUpItem, staggerContainer } from '../../lib/motion';
 import { BUILDING_LABELS } from './buildingLabels';
@@ -263,10 +265,10 @@ export function MapScreen() {
   const roomLookup = useRoomWithTeacher(selected?.lookupId ?? null);
   const teacherName = roomLookup.data?.teacher?.name ?? null;
 
-  // "Where should I be now?" — the live current class → its room (rooms.id == a map shape id),
-  // matched against the room index to find which level it's on. Null until both resolve.
-  const currentClass = useCurrentClass();
-  const currentResolved = useResolvedEntry(currentClass?.entry ?? null);
+  // "School is live" status: the in-session period (with a countdown) and, if the student has a
+  // class then, its room (rooms.id == a map shape id) matched against the index to find its level.
+  const currentPeriod = useCurrentPeriod();
+  const currentResolved = useResolvedEntry(currentPeriod?.entry ?? null);
   const currentRoomId = currentResolved.data?.room?.id ?? null;
   const currentRoom = useMemo(
     () =>
@@ -362,31 +364,20 @@ export function MapScreen() {
           />
         </motion.div>
 
-        {currentClass &&
+        {currentPeriod &&
           (currentRoom ? (
             <motion.button
               type="button"
               className="map-screen__nowbar map-screen__nowbar--btn"
               variants={fadeUpItem}
+              aria-label={`Find your current class, ${currentPeriod.classLabel ?? currentPeriod.periodLabel}, on the map`}
               onClick={() => jumpToRoom(currentRoom)}
             >
-              <MapPin size={16} aria-hidden="true" className="map-screen__nowbar-pin" />
-              <span className="map-screen__nowbar-text">
-                <span className="map-screen__nowbar-label">Class now</span>
-                <span className="map-screen__nowbar-class">{currentClass.label}</span>
-              </span>
-              <span className="map-screen__nowbar-cta">Locate</span>
+              <NowBarContent period={currentPeriod} />
             </motion.button>
           ) : (
             <motion.div className="map-screen__nowbar" variants={fadeUpItem}>
-              <MapPin size={16} aria-hidden="true" className="map-screen__nowbar-pin" />
-              <span className="map-screen__nowbar-text">
-                <span className="map-screen__nowbar-label">Class now</span>
-                <span className="map-screen__nowbar-class">{currentClass.label}</span>
-              </span>
-              <span className="map-screen__nowbar-tbd">
-                {currentResolved.isPending ? 'Locating…' : 'Room TBD'}
-              </span>
+              <NowBarContent period={currentPeriod} />
             </motion.div>
           ))}
       </motion.div>
@@ -433,5 +424,34 @@ export function MapScreen() {
         </div>
       )}
     </div>
+  );
+}
+
+/** Contents of the "school is live" bar: the period/class + a live time-remaining countdown. */
+function NowBarContent({ period }: { period: CurrentPeriod }) {
+  return (
+    <>
+      <MapPin size={16} aria-hidden="true" className="map-screen__nowbar-pin" />
+      <span className="map-screen__nowbar-text">
+        <span className="map-screen__nowbar-label">
+          {period.entry ? 'Class now' : 'In session'}
+        </span>
+        <span className="map-screen__nowbar-class">{period.classLabel ?? period.periodLabel}</span>
+      </span>
+      <PeriodCountdown endMinutes={period.endMinutes} />
+    </>
+  );
+}
+
+/** Ticks once a second on its own, so only the countdown re-renders — not the whole map. */
+function PeriodCountdown({ endMinutes }: { endMinutes: number }) {
+  const now = useNow(1000);
+  const left = endMinutes * 60 - secondsSinceMidnight(now);
+  if (left <= 0) return null;
+  return (
+    <span className="map-screen__nowbar-time">
+      <Hourglass size={13} aria-hidden="true" />
+      {formatRemaining(left)} left
+    </span>
   );
 }
