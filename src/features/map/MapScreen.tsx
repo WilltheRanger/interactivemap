@@ -1,11 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { motion } from 'framer-motion';
-import { User, X } from 'lucide-react';
+import { MapPin, User, X } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { SearchInput } from '../../components/SearchInput';
 import { useRoomWithTeacher } from '../../data/hooks';
+import { useCurrentClass } from '../../data/useCurrentClass';
+import { useResolvedEntry } from '../schedule/resolveEntry';
 import { MapControls } from './MapControls';
 import { fadeUpItem, staggerContainer } from '../../lib/motion';
 import { BUILDING_LABELS } from './buildingLabels';
@@ -261,6 +263,36 @@ export function MapScreen() {
   const roomLookup = useRoomWithTeacher(selected?.lookupId ?? null);
   const teacherName = roomLookup.data?.teacher?.name ?? null;
 
+  // "Where should I be now?" — the live current class → its room (rooms.id == a map shape id),
+  // matched against the room index to find which level it's on. Null until both resolve.
+  const currentClass = useCurrentClass();
+  const currentResolved = useResolvedEntry(currentClass?.entry ?? null);
+  const currentRoomId = currentResolved.data?.room?.id ?? null;
+  const currentRoom = useMemo(
+    () =>
+      currentRoomId && rooms
+        ? (rooms.find((r) => r.id.toLowerCase() === currentRoomId.toLowerCase()) ?? null)
+        : null,
+    [currentRoomId, rooms],
+  );
+
+  // Auto-locate the current class once when the map is ready — unless a ?room= deep link takes over.
+  const autoLocatedRef = useRef(false);
+  useEffect(() => {
+    if (autoLocatedRef.current) return;
+    if (status !== 'ready' || !currentRoom || searchParams.get('room')) return;
+    autoLocatedRef.current = true;
+    const t = setTimeout(() => {
+      if (currentRoom.level === level) {
+        selectByIdRef.current?.(currentRoom.id);
+      } else {
+        pendingRoomRef.current = currentRoom.id;
+        setLevel(currentRoom.level);
+      }
+    }, 0);
+    return () => clearTimeout(t);
+  }, [status, currentRoom, searchParams, level]);
+
   const q = query.trim().toLowerCase();
   const results = q
     ? (rooms ?? [])
@@ -281,45 +313,45 @@ export function MapScreen() {
         initial="hidden"
         animate="show"
       >
-        <motion.div className="map-screen__search" variants={fadeUpItem}>
-          <SearchInput
-            placeholder="Search rooms…"
-            aria-label="Search rooms"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-          {q && (
-            <div className="map-screen__results" role="listbox" aria-label="Room results">
-              {rooms === null && <p className="map-screen__results-note">Loading rooms…</p>}
-              {rooms !== null && results.length === 0 && (
-                <p className="map-screen__results-note">No rooms match “{query.trim()}”.</p>
-              )}
-              {results.map((room) => {
-                const building =
-                  room.buildingId !== room.id
-                    ? (BUILDING_LABELS[room.buildingId] ?? room.buildingId)
-                    : null;
-                const where = `${CAMPUS_LEVELS[room.level].label} campus`;
-                return (
-                  <button
-                    key={`${room.level}-${room.id}`}
-                    type="button"
-                    role="option"
-                    aria-selected="false"
-                    className="map-screen__result"
-                    onClick={() => jumpToRoom(room)}
-                  >
-                    <span className="map-screen__result-title">{roomTitle(room.id)}</span>
-                    <span className="map-screen__result-sub">
-                      {building ? `${building} · ${where}` : where}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </motion.div>
-        <motion.div variants={fadeUpItem}>
+        <motion.div className="map-screen__controls" variants={fadeUpItem}>
+          <div className="map-screen__search">
+            <SearchInput
+              placeholder="Search rooms…"
+              aria-label="Search rooms"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            {q && (
+              <div className="map-screen__results" role="listbox" aria-label="Room results">
+                {rooms === null && <p className="map-screen__results-note">Loading rooms…</p>}
+                {rooms !== null && results.length === 0 && (
+                  <p className="map-screen__results-note">No rooms match “{query.trim()}”.</p>
+                )}
+                {results.map((room) => {
+                  const building =
+                    room.buildingId !== room.id
+                      ? (BUILDING_LABELS[room.buildingId] ?? room.buildingId)
+                      : null;
+                  const where = `${CAMPUS_LEVELS[room.level].label} campus`;
+                  return (
+                    <button
+                      key={`${room.level}-${room.id}`}
+                      type="button"
+                      role="option"
+                      aria-selected="false"
+                      className="map-screen__result"
+                      onClick={() => jumpToRoom(room)}
+                    >
+                      <span className="map-screen__result-title">{roomTitle(room.id)}</span>
+                      <span className="map-screen__result-sub">
+                        {building ? `${building} · ${where}` : where}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
           <MapControls
             level={level}
             onSelectLevel={(next) => {
@@ -329,6 +361,34 @@ export function MapScreen() {
             }}
           />
         </motion.div>
+
+        {currentClass &&
+          (currentRoom ? (
+            <motion.button
+              type="button"
+              className="map-screen__nowbar map-screen__nowbar--btn"
+              variants={fadeUpItem}
+              onClick={() => jumpToRoom(currentRoom)}
+            >
+              <MapPin size={16} aria-hidden="true" className="map-screen__nowbar-pin" />
+              <span className="map-screen__nowbar-text">
+                <span className="map-screen__nowbar-label">Class now</span>
+                <span className="map-screen__nowbar-class">{currentClass.label}</span>
+              </span>
+              <span className="map-screen__nowbar-cta">Locate</span>
+            </motion.button>
+          ) : (
+            <motion.div className="map-screen__nowbar" variants={fadeUpItem}>
+              <MapPin size={16} aria-hidden="true" className="map-screen__nowbar-pin" />
+              <span className="map-screen__nowbar-text">
+                <span className="map-screen__nowbar-label">Class now</span>
+                <span className="map-screen__nowbar-class">{currentClass.label}</span>
+              </span>
+              <span className="map-screen__nowbar-tbd">
+                {currentResolved.isPending ? 'Locating…' : 'Room TBD'}
+              </span>
+            </motion.div>
+          ))}
       </motion.div>
 
       <div ref={containerRef} key={level} className="map-screen__canvas" aria-label="Campus map" />
