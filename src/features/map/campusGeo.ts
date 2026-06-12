@@ -3,8 +3,9 @@
  * pair rendered from the same plan (so the invisible SVG tap targets sit exactly on the drawn
  * walls). svgToImage maps SVG coords → image pixels (image = a + s·svg); fitted per level by
  * chamfer-matching every traced shape boundary against the illustration's edges
- * (`scripts/fit-level.mjs`; mean boundary error upper ≈0.9px, lower ≈0.1px). Re-run that script
- * if any asset is re-exported.
+ * (`scripts/fit-level.mjs`). Fitted to the high-res 1500px art (mean boundary error upper ≈1.8px,
+ * lower ≈2.0px — within the highlight's blur tolerance). Re-run that script if any asset is
+ * re-exported.
  */
 export type CampusLevel = 'upper' | 'lower';
 
@@ -21,15 +22,15 @@ export const CAMPUS_LEVELS: Record<CampusLevel, LevelConfig> = {
     label: 'Upper',
     svgUrl: `${import.meta.env.BASE_URL}campus-upper.svg`,
     imageUrl: `${import.meta.env.BASE_URL}campus-map.webp`,
-    imageSize: { w: 767, h: 463 },
-    svgToImage: { ax: 7, sx: 0.4093, ay: 33, sy: 0.3955 },
+    imageSize: { w: 1500, h: 905 },
+    svgToImage: { ax: 20, sx: 0.8004, ay: 57, sy: 0.7822 },
   },
   lower: {
     label: 'Lower',
     svgUrl: `${import.meta.env.BASE_URL}campus-lower.svg`,
     imageUrl: `${import.meta.env.BASE_URL}campus-map-lower.webp`,
-    imageSize: { w: 670, h: 408 },
-    svgToImage: { ax: 4, sx: 0.3447, ay: 20, sy: 0.3422 },
+    imageSize: { w: 1500, h: 910 },
+    svgToImage: { ax: -9, sx: 0.8111, ay: 15, sy: 0.7822 },
   },
 };
 
