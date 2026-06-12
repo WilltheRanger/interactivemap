@@ -1,9 +1,9 @@
 /**
- * Bell-schedule settings — the student's toggles that tune the schedule feed, persisted to
- * localStorage only (same external-store shape as displayPrefs/personalStore so React reads it via
- * useSyncExternalStore and other tabs stay in sync). pathwaysAcademy/rallyScheduleB change which
- * daily variant the proxy returns; period0/1a/6a flag the optional periods a student actually has,
- * so the schedule can hide the rows that don't apply to them.
+ * Bell-schedule settings — the student's toggles that tune the schedule feed + class reminders,
+ * persisted to localStorage only (same external-store shape as displayPrefs/personalStore so React
+ * reads it via useSyncExternalStore and other tabs stay in sync). pathwaysAcademy/rallyScheduleB
+ * change which daily variant the proxy returns; period0/1a/6a flag the optional periods a student
+ * has (so unused rows hide); notificationsEnabled + warningMinutes drive the end-of-period reminders.
  */
 export interface BellSettings {
   pathwaysAcademy: boolean;
@@ -11,17 +11,25 @@ export interface BellSettings {
   period0: boolean;
   period1a: boolean;
   period6a: boolean;
+  notificationsEnabled: boolean;
+  warningMinutes: number;
 }
 
 export const BELL_SETTINGS_KEY = 'dbhs-wayfinder:bell-settings:v1';
 
-export const BELL_SETTING_KEYS = [
+const BOOL_KEYS = [
   'pathwaysAcademy',
   'rallyScheduleB',
   'period0',
   'period1a',
   'period6a',
+  'notificationsEnabled',
 ] as const;
+export type BellBoolKey = (typeof BOOL_KEYS)[number];
+
+/** Allowed reminder lead times (minutes before a class ends). */
+export const WARNING_MINUTE_CHOICES = [2, 5, 10] as const;
+const DEFAULT_WARNING = 5;
 
 function defaults(): BellSettings {
   return {
@@ -30,6 +38,8 @@ function defaults(): BellSettings {
     period0: false,
     period1a: false,
     period6a: false,
+    notificationsEnabled: false,
+    warningMinutes: DEFAULT_WARNING,
   };
 }
 
@@ -37,13 +47,18 @@ function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null;
 }
 
-/** Normalize any stored/unknown blob into valid settings; unknown fields fall back to false. */
+function isWarningChoice(v: unknown): v is number {
+  return typeof v === 'number' && (WARNING_MINUTE_CHOICES as readonly number[]).includes(v);
+}
+
+/** Normalize any stored/unknown blob into valid settings; unknown fields fall back to defaults. */
 export function migrateBellSettings(raw: unknown): BellSettings {
   const out = defaults();
   if (!isRecord(raw)) return out;
-  for (const key of BELL_SETTING_KEYS) {
+  for (const key of BOOL_KEYS) {
     if (raw[key] === true) out[key] = true;
   }
+  if (isWarningChoice(raw.warningMinutes)) out.warningMinutes = raw.warningMinutes;
   return out;
 }
 
@@ -96,7 +111,13 @@ export function getBellSettingsSnapshot(): BellSettings {
   return current;
 }
 
-export function setBellSetting(key: keyof BellSettings, value: boolean): void {
+export function setBellSetting(key: BellBoolKey, value: boolean): void {
   if (current[key] === value) return;
   persist({ ...current, [key]: value });
+}
+
+export function setWarningMinutes(minutes: number): void {
+  const next = isWarningChoice(minutes) ? minutes : DEFAULT_WARNING;
+  if (current.warningMinutes === next) return;
+  persist({ ...current, warningMinutes: next });
 }

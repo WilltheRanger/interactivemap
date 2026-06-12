@@ -6,6 +6,7 @@ import {
   isClassPeriod,
   militaryToMinutes,
   periodIdForBellKey,
+  planReminders,
   secondsSinceMidnight,
   type BellScheduleVariant,
 } from './bellSchedule';
@@ -120,5 +121,28 @@ describe('formatRemaining', () => {
     expect(formatRemaining(13)).toBe('0m 13s');
     expect(formatRemaining(3913)).toBe('1h 05m 13s');
     expect(formatRemaining(-5)).toBe('0m 00s');
+  });
+});
+
+describe('planReminders', () => {
+  // Only Period 1 + Period 6 have a class; reminders fire `warning` min before each ends.
+  const hasClass = (key: string) => (key === '1' || key === '6' ? 'My Class' : null);
+
+  it('schedules a reminder before each class period ends, future-only', () => {
+    const reminders = planReminders(regular, 5, hasClass, at(8, 0, 0)); // before school
+    // Period 1 ends 09:26 → fire 09:21; Period 6 ends 15:30 → fire 15:25. (2/6A excluded: no class.)
+    expect(reminders.map((r) => r.key)).toEqual(['1', '6']);
+    const fire1 = new Date(reminders[0].fireAt);
+    expect([fire1.getHours(), fire1.getMinutes()]).toEqual([9, 21]);
+    expect(reminders[0].body).toContain('5 min left');
+  });
+
+  it('drops reminders whose fire time already passed', () => {
+    const reminders = planReminders(regular, 5, hasClass, at(10, 0, 0)); // after P1's 09:21 fire
+    expect(reminders.map((r) => r.key)).toEqual(['6']);
+  });
+
+  it('returns nothing when the student has no classes in the variant', () => {
+    expect(planReminders(regular, 5, () => null, at(8, 0, 0))).toEqual([]);
   });
 });

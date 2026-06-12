@@ -4,34 +4,54 @@ import {
   getBellSettingsSnapshot,
   migrateBellSettings,
   setBellSetting,
+  setWarningMinutes,
   subscribeBellSettings,
 } from './bellSettings';
 
-const ALL_OFF = {
+const DEFAULTS = {
   pathwaysAcademy: false,
   rallyScheduleB: false,
   period0: false,
   period1a: false,
   period6a: false,
+  notificationsEnabled: false,
+  warningMinutes: 5,
 };
 
 beforeEach(() => {
   localStorage.clear();
   // Reset the module singleton to defaults.
-  for (const k of Object.keys(ALL_OFF) as (keyof typeof ALL_OFF)[]) setBellSetting(k, false);
+  setBellSetting('pathwaysAcademy', false);
+  setBellSetting('rallyScheduleB', false);
+  setBellSetting('period0', false);
+  setBellSetting('period1a', false);
+  setBellSetting('period6a', false);
+  setBellSetting('notificationsEnabled', false);
+  setWarningMinutes(5);
 });
 afterEach(() => localStorage.clear());
 
 describe('migrateBellSettings', () => {
-  it('defaults everything off for non-objects / missing data', () => {
+  it('returns defaults for non-objects / missing data', () => {
     for (const raw of [null, undefined, 'nope', 42, []]) {
-      expect(migrateBellSettings(raw)).toEqual(ALL_OFF);
+      expect(migrateBellSettings(raw)).toEqual(DEFAULTS);
     }
   });
-  it('keeps only the true booleans, ignoring junk', () => {
+  it('keeps only the true booleans + a valid warningMinutes, ignoring junk', () => {
     expect(
-      migrateBellSettings({ period0: true, period6a: 'yes', rallyScheduleB: 1, extra: true }),
-    ).toEqual({ ...ALL_OFF, period0: true });
+      migrateBellSettings({
+        period0: true,
+        period6a: 'yes',
+        rallyScheduleB: 1,
+        notificationsEnabled: true,
+        warningMinutes: 10,
+        extra: true,
+      }),
+    ).toEqual({ ...DEFAULTS, period0: true, notificationsEnabled: true, warningMinutes: 10 });
+  });
+  it('falls back to the default warningMinutes when it is not an allowed choice', () => {
+    expect(migrateBellSettings({ warningMinutes: 7 }).warningMinutes).toBe(5);
+    expect(migrateBellSettings({ warningMinutes: '5' }).warningMinutes).toBe(5);
   });
 });
 
@@ -51,5 +71,14 @@ describe('setBellSetting', () => {
     expect(calls).toBe(1);
 
     unsubscribe();
+  });
+});
+
+describe('setWarningMinutes', () => {
+  it('accepts allowed choices and ignores others', () => {
+    setWarningMinutes(10);
+    expect(getBellSettingsSnapshot().warningMinutes).toBe(10);
+    setWarningMinutes(7); // not allowed → clamps to default
+    expect(getBellSettingsSnapshot().warningMinutes).toBe(5);
   });
 });
