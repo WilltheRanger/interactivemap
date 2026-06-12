@@ -18,8 +18,8 @@ const OUT = '/tmp/map-calib';
 mkdirSync(OUT, { recursive: true });
 
 const LEVELS = {
-  upper: { svg: 'public/campus-upper.svg', img: 'public/campus-map.webp' },
-  lower: { svg: 'public/campus-lower.svg', img: 'public/campus-map-lower.webp' },
+  upper: { svg: 'public/campus-upper.svg', img: 'public/campus-map-upper-v2.webp' },
+  lower: { svg: 'public/campus-lower.svg', img: 'public/campus-map-lower-v2.webp' },
 };
 
 const level = process.argv[2] ?? 'upper';

@@ -21,14 +21,16 @@ export const CAMPUS_LEVELS: Record<CampusLevel, LevelConfig> = {
   upper: {
     label: 'Upper',
     svgUrl: `${import.meta.env.BASE_URL}campus-upper.svg`,
-    imageUrl: `${import.meta.env.BASE_URL}campus-map.webp`,
+    // "-v2" = the high-res re-export. public/ assets keep stable URLs, so a rename is the manual
+    // cache-bust — bump it again if the art is ever replaced.
+    imageUrl: `${import.meta.env.BASE_URL}campus-map-upper-v2.webp`,
     imageSize: { w: 1500, h: 905 },
     svgToImage: { ax: 20, sx: 0.8004, ay: 57, sy: 0.7822 },
   },
   lower: {
     label: 'Lower',
     svgUrl: `${import.meta.env.BASE_URL}campus-lower.svg`,
-    imageUrl: `${import.meta.env.BASE_URL}campus-map-lower.webp`,
+    imageUrl: `${import.meta.env.BASE_URL}campus-map-lower-v2.webp`,
     imageSize: { w: 1500, h: 910 },
     svgToImage: { ax: -9, sx: 0.8111, ay: 15, sy: 0.7822 },
   },
