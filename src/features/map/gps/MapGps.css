@@ -1,9 +1,10 @@
-/* "Find Me" control cluster — floats bottom-right, above the room detail card. Token-only. */
+/* "Find Me" control cluster — floats bottom-right, just above the bottom nav. Sits *below* the room
+   detail card (z-index), so an opaque card simply covers it when a room is open. Token-only. */
 .map-gps {
   position: absolute;
   right: var(--space-4);
-  bottom: 112px;
-  z-index: 1200;
+  bottom: var(--space-4);
+  z-index: 900;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -26,6 +27,31 @@
 .gps-dot-icon {
   background: transparent;
   border: 0;
+}
+
+/* Facing cone — a wrapper centered on the dot, rotated to the heading; shown only when known. */
+.gps-dot__heading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  display: none;
+  transform: translate(-50%, -50%) rotate(var(--gps-heading, 0deg));
+}
+.gps-dot-icon.has-heading .gps-dot__heading {
+  display: block;
+}
+.gps-dot__cone {
+  position: absolute;
+  left: 50%;
+  bottom: 5px;
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 11px solid var(--color-primary);
+  transform: translateX(-50%);
 }
 .gps-dot__core,
 .gps-dot__pulse {

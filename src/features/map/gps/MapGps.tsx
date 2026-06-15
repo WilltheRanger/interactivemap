@@ -3,7 +3,8 @@ import L from 'leaflet';
 import { LocateFixed } from 'lucide-react';
 import { Button } from '../../../components';
 import { useGeolocation } from './useGeolocation';
-import { accuracyToMapRadius, gpsToMapPoint, type ImageSize } from './georef';
+import { useDeviceHeading } from './useDeviceHeading';
+import { accuracyToMapRadius, gpsToMapPoint, headingToMapRotation, type ImageSize } from './georef';
 import './MapGps.css';
 
 interface MapGpsProps {
@@ -14,21 +15,26 @@ interface MapGpsProps {
 
 const DOT_ICON = L.divIcon({
   className: 'gps-dot-icon',
-  html: '<span class="gps-dot__pulse"></span><span class="gps-dot__core"></span>',
+  html:
+    '<span class="gps-dot__heading"><span class="gps-dot__cone"></span></span>' +
+    '<span class="gps-dot__pulse"></span><span class="gps-dot__core"></span>',
   iconSize: [16, 16],
   iconAnchor: [8, 8],
 });
 
 /**
- * "You Are Here" — a user-initiated GPS dot + accuracy circle on the 2D map. Self-contained: owns its
- * geolocation lifecycle and its Leaflet layers, and adds/removes them on the map passed in. Deleting
- * this folder + its one line in MapScreen removes the feature with no other side effects.
+ * "You Are Here" — a user-initiated GPS dot (with a facing cone) + accuracy circle on the 2D map.
+ * Self-contained: owns its geolocation + compass lifecycles and its Leaflet layers, adding/removing
+ * them on the map passed in. Deleting this folder + its one line in MapScreen removes the feature
+ * with no other side effects.
  */
 export function MapGps({ map, imageSize }: MapGpsProps) {
   const { status, position, active, start, stop } = useGeolocation();
+  const { heading, enable: enableHeading, stop: stopHeading } = useDeviceHeading();
   const markerRef = useRef<L.Marker | null>(null);
   const circleRef = useRef<L.Circle | null>(null);
 
+  // Place / update the dot + accuracy circle while a fix is available.
   useEffect(() => {
     const remove = () => {
       markerRef.current?.remove();
@@ -66,10 +72,33 @@ export function MapGps({ map, imageSize }: MapGpsProps) {
     return remove;
   }, [map, status, position, imageSize]);
 
+  // Rotate the facing cone to the compass heading (mapped into this rotated map's frame).
+  useEffect(() => {
+    const el = markerRef.current?.getElement();
+    if (!el) return;
+    if (heading != null && status === 'active' && position) {
+      const rot = headingToMapRotation(position.coords.latitude, heading);
+      el.style.setProperty('--gps-heading', `${rot}deg`);
+      el.classList.add('has-heading');
+    } else {
+      el.classList.remove('has-heading');
+    }
+  }, [heading, position, status]);
+
   const offCampus =
     status === 'active' && position
       ? !gpsToMapPoint(position.coords.latitude, position.coords.longitude, imageSize).onMap
       : false;
+
+  const toggle = () => {
+    if (active) {
+      stop();
+      stopHeading();
+    } else {
+      start();
+      enableHeading();
+    }
+  };
 
   return (
     <div className="map-gps">
@@ -91,7 +120,7 @@ export function MapGps({ map, imageSize }: MapGpsProps) {
       <Button
         variant={active ? 'primary' : 'secondary'}
         icon={<LocateFixed size={16} />}
-        onClick={active ? stop : start}
+        onClick={toggle}
         aria-pressed={active}
       >
         {status === 'locating' ? 'Locating…' : active ? 'Stop' : 'Find Me'}
