@@ -97,6 +97,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
     });
   }
 
+  // The feed answers a month with no published menu (summer / out of range) with a 400 — that's
+  // "no menu", not an error, so report it as an empty month (the card shows "No lunch menu today").
+  if (res.status === 400) {
+    return json({ menuId, year, month, days: {}, fetchedAt: new Date().toISOString() }, 200, {
+      'cache-control': 'public, max-age=3600',
+    });
+  }
+
   if (!res.ok) {
     const detail = await res.text().catch(() => '');
     console.error('[school-menu] upstream not ok', res.status, detail.slice(0, 300));
