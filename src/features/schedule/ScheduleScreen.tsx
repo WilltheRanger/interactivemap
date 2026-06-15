@@ -5,6 +5,7 @@ import { Switch } from '../../components';
 import { Segmented, type SegmentedOption } from '../account/Segmented';
 import { PlanBody } from '../plan/PlanScreen';
 import { TodaySchedule } from './TodaySchedule';
+import { LunchCard } from './LunchCard';
 import { ClassList } from './ClassList';
 import { useBellSettings } from '../../data/useBellSettings';
 import {
@@ -74,6 +75,7 @@ export function ScheduleScreen() {
       {view === 'year' ? (
         <>
           {previewing ? <PreviewPanel /> : <TodaySchedule />}
+          <LunchCard />
           <ScheduleOptions />
           <h2 className="schedule__subhead">Your classes</h2>
           <ClassList />
