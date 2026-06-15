@@ -8,9 +8,9 @@
  *
  * Request body (or query): { year, month, menuId? }  — defaults to the DBHS lunch menu.
  * Response: { menuId, year, month, days: { "YYYY-MM-DD": string[] }, fetchedAt }
+ * Add ?debug=1 to get the raw upstream status/body instead (for diagnosing failures).
  *
- * Deploy with verify_jwt=false (public, read-only; the browser CORS preflight carries no auth):
- *   supabase functions deploy school-menu --no-verify-jwt
+ * Deployed with verify_jwt=false (public, read-only; the browser CORS preflight carries no auth).
  */
 
 const BASE = 'https://menus.healthepro.com/api';
@@ -71,17 +71,39 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const year = num('year', now.getUTCFullYear());
   const month = num('month', now.getUTCMonth() + 1);
   const menuId = num('menuId', DEFAULT_MENU);
+  const debug = url.searchParams.get('debug') != null || body.debug === true;
+
+  const target = `${BASE}/organizations/${ORG}/menus/${menuId}/year/${year}/month/${month}/date_overwrites`;
+
+  let res: Response;
+  try {
+    res = await fetch(target, { headers: UPSTREAM_HEADERS });
+  } catch (err) {
+    if (debug) return json({ debug: true, target, fetchError: String(err) });
+    console.error('[school-menu] fetch failed', err);
+    return json({ error: `Failed to reach the menu feed: ${String(err)}` }, 502);
+  }
+
+  if (debug) {
+    const bodySnippet = (await res.text().catch(() => '')).slice(0, 600);
+    return json({
+      debug: true,
+      target,
+      status: res.status,
+      statusText: res.statusText,
+      ok: res.ok,
+      contentType: res.headers.get('content-type'),
+      bodySnippet,
+    });
+  }
+
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '');
+    console.error('[school-menu] upstream not ok', res.status, detail.slice(0, 300));
+    return json({ error: `Upstream menu ${res.status}` }, 502);
+  }
 
   try {
-    const res = await fetch(
-      `${BASE}/organizations/${ORG}/menus/${menuId}/year/${year}/month/${month}/date_overwrites`,
-      { headers: UPSTREAM_HEADERS },
-    );
-    if (!res.ok) {
-      const detail = await res.text().catch(() => '');
-      console.error('[school-menu] upstream not ok', res.status, detail.slice(0, 300));
-      return json({ error: `Upstream menu ${res.status}` }, 502);
-    }
     const payload = await res.json();
     const entries = Array.isArray(payload?.data) ? payload.data : [];
 
@@ -112,7 +134,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       'cache-control': 'public, max-age=3600',
     });
   } catch (err) {
-    console.error('[school-menu] fetch failed', err);
-    return json({ error: `Failed to reach the menu feed: ${String(err)}` }, 502);
+    console.error('[school-menu] parse failed', err);
+    return json({ error: `Failed to parse the menu feed: ${String(err)}` }, 502);
   }
 });
