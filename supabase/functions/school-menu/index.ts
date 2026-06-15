@@ -18,6 +18,13 @@ const BASE = 'https://menus.healthepro.com/api';
 const ORG = 3101;
 const DEFAULT_MENU = 118393;
 
+// The upstream rejects requests with no browser-like headers, so send the ones its site uses.
+const UPSTREAM_HEADERS: Record<string, string> = {
+  Accept: 'application/json',
+  'User-Agent':
+    'Mozilla/5.0 (compatible; DBHSWayfinder/1.0; +https://willtheranger.github.io/interactivemap/)',
+};
+
 const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -68,8 +75,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
   try {
     const res = await fetch(
       `${BASE}/organizations/${ORG}/menus/${menuId}/year/${year}/month/${month}/date_overwrites`,
+      { headers: UPSTREAM_HEADERS },
     );
-    if (!res.ok) return json({ error: `Upstream menu ${res.status}` }, 502);
+    if (!res.ok) {
+      const detail = await res.text().catch(() => '');
+      console.error('[school-menu] upstream not ok', res.status, detail.slice(0, 300));
+      return json({ error: `Upstream menu ${res.status}` }, 502);
+    }
     const payload = await res.json();
     const entries = Array.isArray(payload?.data) ? payload.data : [];
 
@@ -100,6 +112,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       'cache-control': 'public, max-age=3600',
     });
   } catch (err) {
+    console.error('[school-menu] fetch failed', err);
     return json({ error: `Failed to reach the menu feed: ${String(err)}` }, 502);
   }
 });
