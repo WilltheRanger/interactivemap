@@ -11,6 +11,7 @@ import { useNow } from '../../data/useNow';
 import { useResolvedEntry } from '../schedule/resolveEntry';
 import { formatRemaining, secondsSinceMidnight } from '../../lib/bellSchedule';
 import { MapControls } from './MapControls';
+import { MapGps } from './gps/MapGps';
 import { fadeUpItem, staggerContainer } from '../../lib/motion';
 import { BUILDING_LABELS } from './buildingLabels';
 import {
@@ -65,6 +66,8 @@ export function MapScreen() {
   const status: MapStatus = mapState.level === level ? mapState.status : 'loading';
   const [selected, setSelected] = useState<RoomSelection | null>(null);
   const [rooms, setRooms] = useState<CampusRoom[] | null>(null);
+  // Exposed so the self-contained GPS layer can draw on the live Leaflet map (see <MapGps/>).
+  const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
   const [query, setQuery] = useState('');
 
   const clearSelection = () => {
@@ -130,6 +133,7 @@ export function MapScreen() {
           maxBoundsViscosity: 1,
         });
         map = localMap;
+        setMapInstance(localMap);
 
         L.imageOverlay(config.imageUrl, imageBounds).addTo(localMap);
         svg.removeAttribute('width');
@@ -227,6 +231,7 @@ export function MapScreen() {
       svgRef.current = null;
       selectByIdRef.current = null;
       map?.remove();
+      setMapInstance(null);
     };
   }, [level]);
 
@@ -383,6 +388,8 @@ export function MapScreen() {
       </motion.div>
 
       <div ref={containerRef} key={level} className="map-screen__canvas" aria-label="Campus map" />
+
+      <MapGps map={mapInstance} imageSize={CAMPUS_LEVELS[level].imageSize} />
 
       {selected && (
         <motion.div

@@ -1,0 +1,101 @@
+import { useEffect, useRef } from 'react';
+import L from 'leaflet';
+import { LocateFixed } from 'lucide-react';
+import { Button } from '../../../components';
+import { useGeolocation } from './useGeolocation';
+import { accuracyToMapRadius, gpsToMapPoint, type ImageSize } from './georef';
+import './MapGps.css';
+
+interface MapGpsProps {
+  /** The live Leaflet map for the displayed level (null briefly while a level reloads). */
+  map: L.Map | null;
+  imageSize: ImageSize;
+}
+
+const DOT_ICON = L.divIcon({
+  className: 'gps-dot-icon',
+  html: '<span class="gps-dot__pulse"></span><span class="gps-dot__core"></span>',
+  iconSize: [16, 16],
+  iconAnchor: [8, 8],
+});
+
+/**
+ * "You Are Here" — a user-initiated GPS dot + accuracy circle on the 2D map. Self-contained: owns its
+ * geolocation lifecycle and its Leaflet layers, and adds/removes them on the map passed in. Deleting
+ * this folder + its one line in MapScreen removes the feature with no other side effects.
+ */
+export function MapGps({ map, imageSize }: MapGpsProps) {
+  const { status, position, active, start, stop } = useGeolocation();
+  const markerRef = useRef<L.Marker | null>(null);
+  const circleRef = useRef<L.Circle | null>(null);
+
+  useEffect(() => {
+    const remove = () => {
+      markerRef.current?.remove();
+      markerRef.current = null;
+      circleRef.current?.remove();
+      circleRef.current = null;
+    };
+    if (!map || status !== 'active' || !position) {
+      remove();
+      return;
+    }
+    const { latitude, longitude, accuracy } = position.coords;
+    const { latlng } = gpsToMapPoint(latitude, longitude, imageSize);
+    const radius = accuracyToMapRadius(latitude, longitude, accuracy);
+    if (markerRef.current && circleRef.current) {
+      markerRef.current.setLatLng(latlng);
+      circleRef.current.setLatLng(latlng);
+      circleRef.current.setRadius(radius);
+    } else {
+      circleRef.current = L.circle(latlng, {
+        radius,
+        interactive: false,
+        color: '#582c83',
+        weight: 1,
+        fillColor: '#582c83',
+        fillOpacity: 0.12,
+      }).addTo(map);
+      markerRef.current = L.marker(latlng, {
+        icon: DOT_ICON,
+        interactive: false,
+        keyboard: false,
+        zIndexOffset: 1000,
+      }).addTo(map);
+    }
+    return remove;
+  }, [map, status, position, imageSize]);
+
+  const offCampus =
+    status === 'active' && position
+      ? !gpsToMapPoint(position.coords.latitude, position.coords.longitude, imageSize).onMap
+      : false;
+
+  return (
+    <div className="map-gps">
+      {status === 'denied' && (
+        <p className="map-gps__msg" role="alert">
+          Location access was denied. Enable it in your browser settings to use this feature.
+        </p>
+      )}
+      {status === 'unavailable' && (
+        <p className="map-gps__msg" role="alert">
+          Couldn&rsquo;t get your location. Check your connection and try again.
+        </p>
+      )}
+      {offCampus && (
+        <p className="map-gps__msg" role="status">
+          You appear to be off campus.
+        </p>
+      )}
+      <Button
+        variant={active ? 'primary' : 'secondary'}
+        icon={<LocateFixed size={16} />}
+        onClick={active ? stop : start}
+        aria-pressed={active}
+      >
+        {status === 'locating' ? 'Locating…' : active ? 'Stop' : 'Find Me'}
+      </Button>
+    </div>
+  );
+}
