@@ -36,6 +36,17 @@ interface RoomSelection {
 
 const MAX_SEARCH_RESULTS = 8;
 
+/** Locker-overlay placement: image px = a + s·svgCoord, per axis (see CAMPUS_LEVELS.lockerSvgToImage). */
+type LockerTransform = { ax: number; sx: number; ay: number; sy: number };
+
+/** Leaflet bounds that place a locker SVG (viewBox [vw,vh]) on the image via the transform. */
+function lockerBounds(t: LockerTransform, vw: number, vh: number, H: number) {
+  return L.latLngBounds([
+    [H - (t.ay + t.sy * vh), t.ax],
+    [H - t.ay, t.ax + t.sx * vw],
+  ]);
+}
+
 /** Display title for a shape id ("461" → "Room 461", "RR_2" → "Restroom", names pass through). */
 function roomTitle(id: string): string {
   if (/^RR(_\d+)?$/.test(id)) return 'Restroom';
@@ -69,6 +80,14 @@ export function MapScreen() {
   // Exposed so the self-contained GPS layer can draw on the live Leaflet map (see <MapGps/>).
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
   const [query, setQuery] = useState('');
+
+  // Locker-overlay calibration (dev tool). The locker SVGs are from a separate artboard, so their
+  // placement is tuned by eye: open /map?calibrate=1 for an on-screen panel that nudges the transform
+  // live (setBounds, no reload). Paste the values into CAMPUS_LEVELS.lockerSvgToImage to bake them in.
+  const lockerLayerRef = useRef<L.SVGOverlay | null>(null);
+  const lockerVbRef = useRef<[number, number]>([0, 0]);
+  const [lockerT, setLockerT] = useState<LockerTransform | null>(null);
+  const calibrating = new URLSearchParams(window.location.search).get('calibrate') === '1';
 
   const clearSelection = () => {
     svgRef.current
@@ -150,20 +169,19 @@ export function MapScreen() {
 
         // Visible locker overlay: a separate SVG of the locker banks, drawn on top of the
         // illustration (NOT made invisible like the room shapes). It's traced on a different artboard,
-        // so it gets its own placement transform. Calibrate live without a redeploy via query params
-        // (e.g. /map?lax=20&lsx=0.65&lay=57&lsy=0.57) for the current level; non-interactive so room
-        // taps pass through.
+        // so it gets its own placement transform — seeded here, then tunable live (see the calibration
+        // panel + the [lockerT] effect). Non-interactive so room taps pass through.
         const params = new URLSearchParams(window.location.search);
         const override = (key: string, fallback: number) => {
           const value = Number(params.get(key));
           return params.has(key) && Number.isFinite(value) ? value : fallback;
         };
-        const baseT = config.lockerSvgToImage;
-        const lockerT = {
-          ax: override('lax', baseT.ax),
-          sx: override('lsx', baseT.sx),
-          ay: override('lay', baseT.ay),
-          sy: override('lsy', baseT.sy),
+        const base = config.lockerSvgToImage;
+        const seedT: LockerTransform = {
+          ax: override('lax', base.ax),
+          sx: override('lsx', base.sx),
+          ay: override('lay', base.ay),
+          sy: override('lsy', base.sy),
         };
         fetch(config.lockerSvgUrl)
           .then((res) => (res.ok ? res.text() : Promise.reject(new Error('no lockers'))))
@@ -179,11 +197,11 @@ export function MapScreen() {
             lockerSvg.setAttribute('preserveAspectRatio', 'none');
             lockerSvg.classList.add('locker-svg');
             const lvb = (lockerSvg.getAttribute('viewBox') ?? `0 0 ${W} ${H}`).split(/\s+/).map(Number);
-            const lockerBounds = L.latLngBounds([
-              [H - (lockerT.ay + lockerT.sy * lvb[3]), lockerT.ax],
-              [H - lockerT.ay, lockerT.ax + lockerT.sx * lvb[2]],
-            ]);
-            L.svgOverlay(lockerSvg, lockerBounds, { interactive: false }).addTo(localMap);
+            lockerVbRef.current = [lvb[2], lvb[3]];
+            lockerLayerRef.current = L.svgOverlay(lockerSvg, lockerBounds(seedT, lvb[2], lvb[3], H), {
+              interactive: false,
+            }).addTo(localMap);
+            setLockerT(seedT); // mirror into state so the calibration panel starts from the seed
           })
           .catch(() => {
             // Lockers are an optional overlay — ignore if the file is missing or fails to parse.
@@ -271,10 +289,19 @@ export function MapScreen() {
       cancelled = true;
       svgRef.current = null;
       selectByIdRef.current = null;
+      lockerLayerRef.current = null; // removed with the map below
       map?.remove();
       setMapInstance(null);
     };
   }, [level]);
+
+  // Calibration: reposition the locker overlay live as the panel edits the transform (no reload).
+  useEffect(() => {
+    const layer = lockerLayerRef.current;
+    if (!layer || !lockerT) return;
+    const [vw, vh] = lockerVbRef.current;
+    layer.setBounds(lockerBounds(lockerT, vw, vh, CAMPUS_LEVELS[level].imageSize.h));
+  }, [lockerT, level]);
 
   /** Jump to a room, switching levels first when needed. */
   const jumpToRoom = (room: CampusRoom) => {
@@ -473,6 +500,69 @@ export function MapScreen() {
           </p>
         </div>
       )}
+
+      {calibrating && lockerT && (
+        <LockerCalibPanel value={lockerT} level={level} onChange={setLockerT} />
+      )}
+    </div>
+  );
+}
+
+/**
+ * Dev-only locker-overlay calibration panel (shown with ?calibrate=1). Nudges the placement transform
+ * live — the map's [lockerT] effect repositions the overlay on every change. Copy the printed values
+ * into CAMPUS_LEVELS.lockerSvgToImage (campusGeo.ts) to make them permanent.
+ */
+function LockerCalibPanel({
+  value,
+  level,
+  onChange,
+}: {
+  value: LockerTransform;
+  level: CampusLevel;
+  onChange: (next: LockerTransform) => void;
+}) {
+  const round = (n: number) => Math.round(n * 10000) / 10000;
+  const rows: { key: keyof LockerTransform; label: string; step: number }[] = [
+    { key: 'ax', label: 'X move', step: 5 },
+    { key: 'ay', label: 'Y move', step: 5 },
+    { key: 'sx', label: 'X scale', step: 0.01 },
+    { key: 'sy', label: 'Y scale', step: 0.01 },
+  ];
+  return (
+    <div className="locker-calib" role="group" aria-label="Locker overlay calibration">
+      <p className="locker-calib__title">Locker calibration · {level}</p>
+      {rows.map(({ key, label, step }) => (
+        <div className="locker-calib__row" key={key}>
+          <span className="locker-calib__label">{label}</span>
+          <button
+            type="button"
+            className="locker-calib__btn"
+            aria-label={`Decrease ${label}`}
+            onClick={() => onChange({ ...value, [key]: round(value[key] - step) })}
+          >
+            −
+          </button>
+          <input
+            className="locker-calib__input"
+            type="number"
+            step={step}
+            value={value[key]}
+            onChange={(e) => onChange({ ...value, [key]: Number(e.target.value) })}
+            aria-label={label}
+          />
+          <button
+            type="button"
+            className="locker-calib__btn"
+            aria-label={`Increase ${label}`}
+            onClick={() => onChange({ ...value, [key]: round(value[key] + step) })}
+          >
+            +
+          </button>
+        </div>
+      ))}
+      <code className="locker-calib__out">{`ax:${round(value.ax)} sx:${round(value.sx)} ay:${round(value.ay)} sy:${round(value.sy)}`}</code>
+      <p className="locker-calib__hint">Tune until the gold banks sit on the walls, then send me these 4 numbers.</p>
     </div>
   );
 }
