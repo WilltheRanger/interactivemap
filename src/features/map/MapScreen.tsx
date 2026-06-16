@@ -148,6 +148,44 @@ export function MapScreen() {
         }
         L.svgOverlay(svg, svgBounds, { interactive: false }).addTo(localMap);
 
+        // Visible locker overlay: a separate SVG of the locker banks, drawn on top of the
+        // illustration (NOT made invisible like the room shapes). It's traced on a different artboard,
+        // so it gets its own placement transform. Calibrate live without a redeploy via query params
+        // (e.g. /map?lax=20&lsx=0.65&lay=57&lsy=0.57) for the current level; non-interactive so room
+        // taps pass through.
+        const params = new URLSearchParams(window.location.search);
+        const override = (key: string, fallback: number) => {
+          const value = Number(params.get(key));
+          return params.has(key) && Number.isFinite(value) ? value : fallback;
+        };
+        const baseT = config.lockerSvgToImage;
+        const lockerT = {
+          ax: override('lax', baseT.ax),
+          sx: override('lsx', baseT.sx),
+          ay: override('lay', baseT.ay),
+          sy: override('lsy', baseT.sy),
+        };
+        fetch(config.lockerSvgUrl)
+          .then((res) => (res.ok ? res.text() : Promise.reject(new Error('no lockers'))))
+          .then((lockerText) => {
+            if (cancelled) return;
+            const lockerSvg = new DOMParser().parseFromString(lockerText, 'image/svg+xml')
+              .documentElement as unknown as SVGSVGElement;
+            if (lockerSvg.nodeName !== 'svg') return;
+            lockerSvg.removeAttribute('width');
+            lockerSvg.removeAttribute('height');
+            lockerSvg.classList.add('locker-svg');
+            const lvb = (lockerSvg.getAttribute('viewBox') ?? `0 0 ${W} ${H}`).split(/\s+/).map(Number);
+            const lockerBounds = L.latLngBounds([
+              [H - (lockerT.ay + lockerT.sy * lvb[3]), lockerT.ax],
+              [H - lockerT.ay, lockerT.ax + lockerT.sx * lvb[2]],
+            ]);
+            L.svgOverlay(lockerSvg, lockerBounds, { interactive: false }).addTo(localMap);
+          })
+          .catch(() => {
+            // Lockers are an optional overlay — ignore if the file is missing or fails to parse.
+          });
+
         const selectShapeEl = (shape: SVGGraphicsElement) => {
           svg.querySelectorAll('.is-selected').forEach((s) => s.classList.remove('is-selected'));
           shape.classList.add('is-selected');

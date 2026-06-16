@@ -15,6 +15,11 @@ export interface LevelConfig {
   imageUrl: string;
   imageSize: { w: number; h: number };
   svgToImage: { ax: number; sx: number; ay: number; sy: number };
+  /** Visible locker overlay. Traced on a separate artboard, so it gets its own placement transform.
+   *  These values are a rough seed — tune live via /map?lax=&lsx=&lay=&lsy= (see MapScreen), or, if
+   *  the lockers are re-exported inside the campus frame, set this equal to svgToImage for an exact fit. */
+  lockerSvgUrl: string;
+  lockerSvgToImage: { ax: number; sx: number; ay: number; sy: number };
 }
 
 export const CAMPUS_LEVELS: Record<CampusLevel, LevelConfig> = {
@@ -26,6 +31,8 @@ export const CAMPUS_LEVELS: Record<CampusLevel, LevelConfig> = {
     imageUrl: `${import.meta.env.BASE_URL}campus-map-upper-v2.webp`,
     imageSize: { w: 1500, h: 905 },
     svgToImage: { ax: 20, sx: 0.8004, ay: 57, sy: 0.7822 },
+    lockerSvgUrl: `${import.meta.env.BASE_URL}lockers-upper.svg`,
+    lockerSvgToImage: { ax: 20, sx: 0.6498, ay: 57, sy: 0.5707 },
   },
   lower: {
     label: 'Lower',
@@ -33,6 +40,8 @@ export const CAMPUS_LEVELS: Record<CampusLevel, LevelConfig> = {
     imageUrl: `${import.meta.env.BASE_URL}campus-map-lower-v2.webp`,
     imageSize: { w: 1500, h: 910 },
     svgToImage: { ax: -9, sx: 0.8111, ay: 15, sy: 0.7822 },
+    lockerSvgUrl: `${import.meta.env.BASE_URL}lockers-lower.svg`,
+    lockerSvgToImage: { ax: -9, sx: 0.6855, ay: 15, sy: 0.578 },
   },
 };
 

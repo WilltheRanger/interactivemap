@@ -166,6 +166,22 @@
   padding: var(--space-3) var(--space-4);
 }
 
+/* ── Locker overlay (drawn ON the map, deliberately visible) ──────────────── */
+/* Non-interactive so taps fall through to the room shapes beneath. Locker banks are filled with the
+   gold accent + a dark outline so they read clearly over the illustration (unlike the invisible room
+   shapes). vector-effect keeps the outline crisp at every zoom. */
+.locker-svg {
+  pointer-events: none;
+}
+.locker-svg rect,
+.locker-svg path {
+  fill: var(--color-accent);
+  fill-opacity: 0.92;
+  stroke: #3a2a00;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
 /* ── Campus plan SVG (aligned over the illustration) ─────────────────────── */
 /* The <svg> itself ignores pointer events so map gaps pan/deselect; only rooms capture taps. */
 .campus-svg {
