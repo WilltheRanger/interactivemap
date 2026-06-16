@@ -1,0 +1,198 @@
+/* Locker finder. Token-only. The .pano* viewer-shell styles live here (not in the lazy
+   PanoramaViewer chunk) so the Suspense fallback + loading shells are styled immediately and the
+   viewer has its styles the moment its chunk mounts. */
+
+/* ── Number entry ─────────────────────────────────────────────────────────────── */
+.locker-entry {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.locker-entry__label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+.locker-entry__input {
+  width: 100%;
+  min-height: var(--tap-target);
+  padding: 0 var(--space-3);
+  font: inherit;
+  font-size: var(--font-size-md);
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+.locker-entry__input:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+.locker-entry__error {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-error);
+}
+.locker-entry__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+/* ── Resolved-section result ──────────────────────────────────────────────────── */
+.locker-result__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+.locker-result__badge {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 56px;
+  height: 44px;
+  padding: 0 var(--space-3);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-on-accent);
+  background: var(--color-accent);
+  border-radius: var(--radius-md);
+}
+.locker-result__title {
+  margin: 0;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+.locker-result__sub {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+.locker-result__note {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  align-self: center;
+}
+.locker-result__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* ── Full-screen 360° viewer shell ────────────────────────────────────────────── */
+.pano {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+}
+.pano__bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: calc(env(safe-area-inset-top, 0px) + var(--space-3)) var(--space-4) var(--space-3);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+.pano__title {
+  margin: 0;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+.pano__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--tap-target);
+  height: var(--tap-target);
+  margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-2)) calc(-1 * var(--space-2)) 0;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: none;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-md);
+  cursor: pointer;
+}
+.pano__close:hover {
+  background: var(--color-primary-weak);
+  color: var(--color-text);
+}
+.pano__stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.pano__canvas {
+  position: absolute;
+  inset: 0;
+}
+.pano__overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  text-align: center;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.65);
+}
+.pano__msg {
+  margin: 0;
+  font-size: var(--font-size-sm);
+}
+.pano__spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(255, 255, 255, 0.25);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: pano-spin 0.8s linear infinite;
+}
+@keyframes pano-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pano__spinner {
+    animation-duration: 2s;
+  }
+}
+
+/* ── Locker pin (Pannellum hotspot) ───────────────────────────────────────────── */
+/* Pannellum positions the hotspot div (it adds .pnlm-hotspot-base: position:absolute); we draw a
+   gold dot with a floating label above it. */
+.pano-pin {
+  width: 22px;
+  height: 22px;
+  margin: -11px 0 0 -11px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  border: 3px solid #fff;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
+}
+.pano-pin__label {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 6px);
+  transform: translateX(-50%);
+  white-space: nowrap;
+  padding: 2px 8px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-on-accent);
+  background: var(--color-accent);
+  border-radius: var(--radius-pill);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
