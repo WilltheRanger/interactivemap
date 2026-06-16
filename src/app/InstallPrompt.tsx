@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Download, Share, X } from 'lucide-react';
+import { Download, X } from 'lucide-react';
 import { Button } from '../components';
 import {
   dismissInstall,
@@ -12,9 +12,10 @@ import { getTosAccepted, subscribeTos } from '../lib/tos';
 import './InstallPrompt.css';
 
 /**
- * First-run nudge to install the app to the home screen. On Chromium/Android the "Add" button opens
- * the native install dialog; on iOS Safari (no programmatic install) it shows the Share-sheet steps.
- * Hidden once installed or dismissed. Mounted in the app shell, fixed above the bottom nav.
+ * First-run nudge to install the app to the home screen on Chromium/Android, where the "Add" button
+ * opens the native install dialog. A floating card above the bottom nav, hidden once installed or
+ * dismissed. iOS Safari has no programmatic install, so its first-run prompt is the InstallModal
+ * walkthrough (Share → Add to Home Screen) instead of this banner.
  *
  * Waits for the Terms banner: both first-run surfaces share the same fixed slot above the nav, so
  * they'd stack and cover each other's buttons. Terms come first; this shows after "I Understand."
@@ -22,8 +23,7 @@ import './InstallPrompt.css';
 export function InstallPrompt() {
   const state = useSyncExternalStore(subscribeInstall, getInstallSnapshot, getInstallSnapshot);
   const tosAccepted = useSyncExternalStore(subscribeTos, getTosAccepted, getTosAccepted);
-  const show =
-    tosAccepted && !state.installed && !state.dismissed && (state.canInstall || state.iosInstall);
+  const show = tosAccepted && !state.installed && !state.dismissed && state.canInstall;
 
   return (
     <AnimatePresence>
@@ -41,29 +41,19 @@ export function InstallPrompt() {
             <p id="install-prompt-title" className="install-prompt__title">
               Add Wayfinder to your home screen
             </p>
-            {state.iosInstall ? (
-              <p className="install-prompt__text">
-                In Safari, tap Share{' '}
-                <Share size={13} aria-hidden="true" className="install-prompt__inline-icon" /> then
-                “Add to Home Screen.”
-              </p>
-            ) : (
-              <p className="install-prompt__text">
-                Install it like an app for one-tap access — no App Store needed.
-              </p>
-            )}
+            <p className="install-prompt__text">
+              Install it like an app for one-tap access — no App Store needed.
+            </p>
           </div>
 
           <div className="install-prompt__actions">
-            {state.canInstall && (
-              <Button
-                variant="primary"
-                icon={<Download size={16} />}
-                onClick={() => void promptInstall()}
-              >
-                Add
-              </Button>
-            )}
+            <Button
+              variant="primary"
+              icon={<Download size={16} />}
+              onClick={() => void promptInstall()}
+            >
+              Add
+            </Button>
             <button
               type="button"
               className="install-prompt__dismiss"

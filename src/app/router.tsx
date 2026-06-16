@@ -6,6 +6,7 @@ import { ErrorBoundary } from '../components/ErrorBoundary';
 import { Header } from './Header';
 import { BottomNav } from './BottomNav';
 import { InstallPrompt } from './InstallPrompt';
+import { InstallModal } from './InstallModal';
 import { RequireAuth } from './RequireAuth';
 import { ScreenCrashCard } from './ErrorFallbacks';
 import { MapScreen } from '../features/map/MapScreen';
@@ -78,6 +79,7 @@ function AppShell({
       <BellNotifier />
       <TosBanner />
       <InstallPrompt />
+      <InstallModal />
       <BottomNav />
     </div>
   );
