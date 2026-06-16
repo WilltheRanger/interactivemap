@@ -1,6 +1,7 @@
 import { lazy, Suspense, useState, type FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Compass, MapPin, Pencil, Search } from 'lucide-react';
-import { Button, Card, LinkButton, Skeleton } from '../../components';
+import { Button, Card, Skeleton } from '../../components';
 import { useLockerSection, useLockersBySection, usePanorama } from '../../data/hooks';
 import { useMyLocker } from '../../data/usePersonal';
 import { setMyLocker } from '../../lib/personalStore';
@@ -115,6 +116,7 @@ function LockerResult({
   onChange: () => void;
 }) {
   const section = useLockerSection(lockerNumber);
+  const navigate = useNavigate();
   const [viewing, setViewing] = useState(false);
 
   if (section.isPending) {
@@ -170,24 +172,31 @@ function LockerResult({
 
         <div className="locker-result__actions">
           {found.panorama_id ? (
-            <Button variant="primary" icon={<Compass size={16} />} onClick={() => setViewing(true)}>
+            <Button
+              className="locker-result__cta"
+              variant="primary"
+              icon={<Compass size={16} />}
+              onClick={() => setViewing(true)}
+            >
               View 360°
             </Button>
           ) : (
             <p className="locker-result__note">No 360° photo for this bank yet.</p>
           )}
-          {found.building_id && (
-            <LinkButton
-              variant="secondary"
-              icon={<MapPin size={16} />}
-              to={`/map?room=${encodeURIComponent(found.building_id)}`}
-            >
-              Show on map
-            </LinkButton>
-          )}
-          <Button variant="secondary" icon={<Pencil size={16} />} onClick={onChange}>
-            Change number
-          </Button>
+          <div className="locker-result__secondary">
+            {found.building_id && (
+              <Button
+                variant="secondary"
+                icon={<MapPin size={16} />}
+                onClick={() => navigate(`/map?room=${encodeURIComponent(found.building_id as string)}`)}
+              >
+                Show on map
+              </Button>
+            )}
+            <Button variant="secondary" icon={<Pencil size={16} />} onClick={onChange}>
+              Change number
+            </Button>
+          </div>
         </div>
       </Card>
 

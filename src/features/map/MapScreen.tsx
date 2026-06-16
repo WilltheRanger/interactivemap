@@ -303,6 +303,8 @@ export function MapScreen() {
   const q = query.trim().toLowerCase();
   const results = q
     ? (rooms ?? [])
+        // Building-group index entries are for deep-link highlighting only — keep them out of search.
+        .filter((room) => !room.isBuilding)
         .filter(
           (room) =>
             room.id.toLowerCase().includes(q) ||
