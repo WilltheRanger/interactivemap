@@ -87,6 +87,7 @@ export function MapScreen() {
   const lockerLayerRef = useRef<L.SVGOverlay | null>(null);
   const lockerVbRef = useRef<[number, number]>([0, 0]);
   const [lockerT, setLockerT] = useState<LockerTransform | null>(null);
+  const [lockerAnchor, setLockerAnchor] = useState<[number, number]>([0, 0]);
   const calibrating = new URLSearchParams(window.location.search).get('calibrate') === '1';
 
   const clearSelection = () => {
@@ -201,6 +202,20 @@ export function MapScreen() {
             lockerLayerRef.current = L.svgOverlay(lockerSvg, lockerBounds(seedT, lvb[2], lvb[3], H), {
               interactive: false,
             }).addTo(localMap);
+            // Anchor for "scale in place" calibration: the locker cluster's centre (bbox once it's in
+            // the DOM, else the viewBox centre).
+            let cx = lvb[2] / 2;
+            let cy = lvb[3] / 2;
+            try {
+              const bb = lockerSvg.getBBox();
+              if (bb.width && bb.height) {
+                cx = bb.x + bb.width / 2;
+                cy = bb.y + bb.height / 2;
+              }
+            } catch {
+              // getBBox can throw if not yet laid out — the viewBox centre fallback is fine.
+            }
+            setLockerAnchor([cx, cy]);
             setLockerT(seedT); // mirror into state so the calibration panel starts from the seed
           })
           .catch(() => {
@@ -502,7 +517,12 @@ export function MapScreen() {
       )}
 
       {calibrating && lockerT && (
-        <LockerCalibPanel value={lockerT} level={level} onChange={setLockerT} />
+        <LockerCalibPanel
+          value={lockerT}
+          level={level}
+          anchor={lockerAnchor}
+          onChange={setLockerT}
+        />
       )}
     </div>
   );
@@ -512,34 +532,50 @@ export function MapScreen() {
  * Dev-only locker-overlay calibration panel (shown with ?calibrate=1). Nudges the placement transform
  * live — the map's [lockerT] effect repositions the overlay on every change. Copy the printed values
  * into CAMPUS_LEVELS.lockerSvgToImage (campusGeo.ts) to make them permanent.
+ *
+ * "Move" translates; "scale" stretches AROUND the locker cluster centre (anchor) so it grows/shrinks
+ * in place instead of sliding away (image px = a + s·coord, so scaling about coord=0 would also shift
+ * everything by s·anchor — we compensate `a` to keep the centre fixed).
  */
 function LockerCalibPanel({
   value,
   level,
+  anchor,
   onChange,
 }: {
   value: LockerTransform;
   level: CampusLevel;
+  anchor: [number, number];
   onChange: (next: LockerTransform) => void;
 }) {
   const round = (n: number) => Math.round(n * 10000) / 10000;
-  const rows: { key: keyof LockerTransform; label: string; step: number }[] = [
-    { key: 'ax', label: 'X move', step: 5 },
-    { key: 'ay', label: 'Y move', step: 5 },
-    { key: 'sx', label: 'X scale', step: 0.01 },
-    { key: 'sy', label: 'Y scale', step: 0.01 },
+  const move = (key: 'ax' | 'ay', delta: number) =>
+    onChange({ ...value, [key]: round(value[key] + delta) });
+  const setScale = (sKey: 'sx' | 'sy', aKey: 'ax' | 'ay', anchorCoord: number, nextS: number) =>
+    onChange({
+      ...value,
+      [sKey]: round(nextS),
+      [aKey]: round(value[aKey] + (value[sKey] - nextS) * anchorCoord),
+    });
+
+  const rows = [
+    { label: 'X move', step: 10, val: value.ax, bump: (d: number) => move('ax', d), set: (v: number) => onChange({ ...value, ax: v }) },
+    { label: 'Y move', step: 10, val: value.ay, bump: (d: number) => move('ay', d), set: (v: number) => onChange({ ...value, ay: v }) },
+    { label: 'X scale', step: 0.02, val: value.sx, bump: (d: number) => setScale('sx', 'ax', anchor[0], value.sx + d), set: (v: number) => setScale('sx', 'ax', anchor[0], v) },
+    { label: 'Y scale', step: 0.02, val: value.sy, bump: (d: number) => setScale('sy', 'ay', anchor[1], value.sy + d), set: (v: number) => setScale('sy', 'ay', anchor[1], v) },
   ];
+
   return (
     <div className="locker-calib" role="group" aria-label="Locker overlay calibration">
       <p className="locker-calib__title">Locker calibration · {level}</p>
-      {rows.map(({ key, label, step }) => (
-        <div className="locker-calib__row" key={key}>
+      {rows.map(({ label, step, val, bump, set }) => (
+        <div className="locker-calib__row" key={label}>
           <span className="locker-calib__label">{label}</span>
           <button
             type="button"
             className="locker-calib__btn"
             aria-label={`Decrease ${label}`}
-            onClick={() => onChange({ ...value, [key]: round(value[key] - step) })}
+            onClick={() => bump(-step)}
           >
             −
           </button>
@@ -547,15 +583,15 @@ function LockerCalibPanel({
             className="locker-calib__input"
             type="number"
             step={step}
-            value={value[key]}
-            onChange={(e) => onChange({ ...value, [key]: Number(e.target.value) })}
+            value={val}
+            onChange={(e) => set(Number(e.target.value))}
             aria-label={label}
           />
           <button
             type="button"
             className="locker-calib__btn"
             aria-label={`Increase ${label}`}
-            onClick={() => onChange({ ...value, [key]: round(value[key] + step) })}
+            onClick={() => bump(step)}
           >
             +
           </button>
