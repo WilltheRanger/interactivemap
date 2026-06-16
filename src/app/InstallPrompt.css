@@ -34,9 +34,6 @@
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
 }
-.install-prompt__inline-icon {
-  vertical-align: -2px;
-}
 
 .install-prompt__actions {
   flex: 0 0 auto;
