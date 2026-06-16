@@ -32,9 +32,11 @@ export const CAMPUS_LEVELS: Record<CampusLevel, LevelConfig> = {
     imageSize: { w: 1500, h: 905 },
     svgToImage: { ax: 20, sx: 0.8004, ay: 57, sy: 0.7822 },
     lockerSvgUrl: `${import.meta.env.BASE_URL}lockers-upper.svg`,
-    // Seed from matching locker colours to campus building colours (scripts removed; re-derive if the
-    // art changes). Approximate — banks land near their buildings but not exactly on the walls.
-    lockerSvgToImage: { ax: -362.52, sx: 1.0539, ay: -36.71, sy: 0.7093 },
+    // Exact: lockers-upper.svg is the "Upper Lockers" group exported from the same Figma "Upper" frame
+    // as the campus map, so it shares the campus coordinate space. The group sits at frame X 348.47,
+    // Y 136, so lockerSvgToImage = campus svgToImage shifted by that offset:
+    //   ax = 20 + 0.8004·348.47, sx = 0.8004,  ay = 57 + 0.7822·136, sy = 0.7822.
+    lockerSvgToImage: { ax: 298.92, sx: 0.8004, ay: 163.38, sy: 0.7822 },
   },
   lower: {
     label: 'Lower',

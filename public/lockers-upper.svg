@@ -1,39 +1,57 @@
-<svg width="1962" height="1364" viewBox="0 0 1962 1364" fill="none" xmlns="http://www.w3.org/2000/svg">
-<rect x="1090.5" y="942.5" width="53" height="7" fill="#D4AA8F" stroke="black"/>
-<rect x="1097.51" y="920.501" width="56.9988" height="8.00021" transform="rotate(-90.0122 1097.51 920.501)" fill="#D4AA8F" stroke="black"/>
-<path d="M1063.63 849.5L1074.5 852.529V855.5H1017.5V849.5H1063.63Z" fill="#D4AA8F" stroke="black"/>
-<rect x="574.5" y="492.5" width="57" height="8" fill="#A8C5DA" stroke="black"/>
-<rect x="726.5" y="492.5" width="25" height="8" fill="#A8C5DA" stroke="black"/>
-<rect x="664.5" y="492.5" width="32" height="8" fill="#A8C5DA" stroke="black"/>
-<rect x="778.5" y="492.587" width="23" height="8" fill="#A8C5DA" stroke="black"/>
-<rect x="811.5" y="492.587" width="23" height="8" fill="#A8C5DA" stroke="black"/>
-<rect x="849.5" y="492.587" width="23" height="8" fill="#A8C5DA" stroke="black"/>
-<rect x="0.499906" y="-0.500195" width="60.9142" height="7.98831" transform="matrix(-0.000188813 -1 1 -0.000389719 891.012 417.917)" fill="#A8C5DA" stroke="black"/>
-<rect x="0.499906" y="-0.500195" width="47.9655" height="7.98831" transform="matrix(-0.000188813 -1 1 -0.000389719 891.009 479.469)" fill="#A8C5DA" stroke="black"/>
-<rect x="963.5" y="359.5" width="43" height="8" fill="#D4C98A" stroke="black"/>
-<rect x="1012.5" y="359.5" width="31" height="8" fill="#D4C98A" stroke="black"/>
-<rect x="1094.5" y="838.5" width="32" height="4" fill="#D4AA8F" stroke="black"/>
-<rect x="988.618" y="744.651" width="77.9524" height="5.97149" transform="rotate(90.8379 988.618 744.651)" fill="#D4AA8F" stroke="black"/>
-<rect x="1169.63" y="661.502" width="75.1021" height="5.31571" transform="rotate(179.762 1169.63 661.502)" fill="#D4AA8F" stroke="black"/>
-<rect x="1137.5" y="836.5" width="36" height="6" fill="#D4AA8F" stroke="black"/>
-<rect x="693.5" y="923.5" width="8" height="65" fill="#D4A5A5" stroke="black"/>
-<rect x="731.5" y="641.5" width="43" height="3" fill="#D4A5A5" stroke="black"/>
-<rect x="780.5" y="647.5" width="3" height="28" fill="#D4A5A5" stroke="black"/>
-<rect x="780.5" y="682.5" width="3" height="35" fill="#D4A5A5" stroke="black"/>
-<rect x="780.5" y="726.5" width="3" height="35" fill="#D4A5A5" stroke="black"/>
-<rect x="780.5" y="770.5" width="3" height="35" fill="#D4A5A5" stroke="black"/>
-<rect x="780.5" y="814.5" width="3" height="35" fill="#D4A5A5" stroke="black"/>
-<rect x="722.5" y="645.5" width="3" height="37" fill="#D4A5A5" stroke="black"/>
-<rect x="722.5" y="692.5" width="3" height="37" fill="#D4A5A5" stroke="black"/>
-<rect x="722.5" y="738.5" width="3" height="37" fill="#D4A5A5" stroke="black"/>
-<rect x="722.5" y="785.5" width="3" height="37" fill="#D4A5A5" stroke="black"/>
-<rect x="726.518" y="857.678" width="3" height="35" transform="rotate(-90.2868 726.518 857.678)" fill="#D4A5A5" stroke="black"/>
-<rect x="769.694" y="858.875" width="3" height="12.6242" transform="rotate(-110.504 769.694 858.875)" fill="#D4A5A5" stroke="black"/>
-<rect x="634.5" y="640.5" width="56" height="4" fill="#D4A5A5" stroke="black"/>
-<rect x="691.5" y="647.5" width="6" height="38" fill="#D4A5A5" stroke="black"/>
-<rect x="694.5" y="686.5" width="5" height="45" fill="#D4A5A5" stroke="black"/>
-<rect x="648.5" y="730.5" width="45" height="5" fill="#D4A5A5" stroke="black"/>
-<rect x="642.5" y="740.5" width="5" height="93" fill="#D4A5A5" stroke="black"/>
-<rect x="653.5" y="837.5" width="39" height="4" fill="#D4A5A5" stroke="black"/>
-<rect x="694.5" y="848.5" width="7" height="58" fill="#D4A5A5" stroke="black"/>
+<svg width="501" height="548" viewBox="0 0 501 548" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Upper Lockers">
+<g id="Upper 900 Art Bld">
+<path id="001-060" d="M475.458 507.687H431.218V513.745H475.458V507.687Z" fill="#D4AA8F" stroke="black"/>
+<path id="140-178" d="M437.059 439.314L437.069 488.647L443.747 488.645L443.737 439.312L437.059 439.314Z" fill="#D4AA8F" stroke="black"/>
+<path id="061-138" d="M408.789 427.195L417.862 429.816V432.388H370.283V427.195H408.789Z" fill="#D4AA8F" stroke="black"/>
+</g>
+<g id="Upper 400 Bld LFT side">
+<path id="1471-1515" d="M48.0793 118.209H0.5V125.133H48.0793V118.209Z" fill="#A8C5DA" stroke="black"/>
+<path id="1381-1425" d="M148.246 118.209H127.378V125.133H148.246V118.209Z" fill="#A8C5DA" stroke="black"/>
+<path id="1444-1470" d="M102.336 118.209H75.6252V125.133H102.336V118.209Z" fill="#A8C5DA" stroke="black"/>
+</g>
+<g id="Upper 400 Bld Library side">
+<path id="322-381" d="M189.982 118.284H170.784V125.208H189.982V118.284Z" fill="#A8C5DA" stroke="black"/>
+<path id="382-435" d="M217.528 118.284H198.33V125.208H217.528V118.284Z" fill="#A8C5DA" stroke="black"/>
+<path id="436-492" d="M249.248 118.284H230.049V125.208H249.248V118.284Z" fill="#A8C5DA" stroke="black"/>
+<path id="553-582" d="M264.273 0.502895L264.283 53.2245L270.951 53.2218L270.941 0.500201L264.273 0.502895Z" fill="#A8C5DA" stroke="black"/>
+<path id="493-552" d="M264.273 64.9837L264.28 106.498L270.948 106.495L270.941 64.981L264.273 64.9837Z" fill="#A8C5DA" stroke="black"/>
+</g>
+<g id="Upper 500 Bld">
+<path id="157-216" d="M361.101 3.09671H325.208V10.0208H361.101V3.09671Z" fill="#D4C98A" stroke="black"/>
+<path id="217-252" d="M391.986 3.09671H366.109V10.0208H391.986V3.09671Z" fill="#D4C98A" stroke="black"/>
+</g>
+<g id="Upper 900 Theater Bld">
+<path id="205-258" d="M461.268 417.674H434.557V421.136H461.268V417.674Z" fill="#D4AA8F" stroke="black"/>
+<path id="151-204" d="M345.223 403.908L346.174 336.447L341.19 336.372L340.239 403.833L345.223 403.908Z" fill="#D4AA8F" stroke="black"/>
+<path id="094-150" d="M434.581 264.751L497.27 264.481L497.251 259.881L434.562 260.151L434.581 264.751Z" fill="#D4AA8F" stroke="black"/>
+<path id="001-093" d="M500.5 415.943H470.45V421.136H500.5V415.943Z" fill="#D4AA8F" stroke="black"/>
+</g>
+<g id="Upper 200 Bld &#34;BA&#34; lockers">
+<path id="001-075" d="M106.51 491.242H99.8322V547.5H106.51V491.242Z" fill="#D4A5A5" stroke="black"/>
+</g>
+<g id="Upper 200 Bld">
+<path id="406-435" d="M167.445 247.17H131.552V249.766H167.445V247.17Z" fill="#D4A5A5" stroke="black"/>
+<path id="436-459" d="M174.957 252.363H172.453V276.597H174.957V252.363Z" fill="#D4A5A5" stroke="black"/>
+<path id="493-540" d="M174.957 282.655H172.453V312.948H174.957V282.655Z" fill="#D4A5A5" stroke="black"/>
+<path id="541-591" d="M174.957 320.738H172.453V351.03H174.957V320.738Z" fill="#D4A5A5" stroke="black"/>
+<path id="592-639" d="M174.957 358.82H172.453V389.113H174.957V358.82Z" fill="#D4A5A5" stroke="black"/>
+<path id="640-663" d="M174.957 396.902H172.453V427.195H174.957V396.902Z" fill="#D4A5A5" stroke="black"/>
+<path id="364-405" d="M126.543 250.632H124.039V282.655H126.543V250.632Z" fill="#D4A5A5" stroke="black"/>
+<path id="871-903" d="M126.543 291.31H124.039V323.334H126.543V291.31Z" fill="#D4A5A5" stroke="black"/>
+<path id="823-870" d="M126.543 331.124H124.039V363.147H126.543V331.124Z" fill="#D4A5A5" stroke="black"/>
+<path id="796-822" d="M126.543 371.802H124.039V403.826H126.543V371.802Z" fill="#D4A5A5" stroke="black"/>
+<path id="688-795" d="M127.381 431.676L127.393 434.273L156.608 434.121L156.596 431.525L127.381 431.676Z" fill="#D4A5A5" stroke="black"/>
+<path id="664-687" d="M162.556 432.877L163.433 435.309L173.303 431.482L172.426 429.05L162.556 432.877Z" fill="#D4A5A5" stroke="black"/>
+</g>
+<g id="Upper 200 Hallway">
+<path id="340-363" d="M97.328 246.304H50.5834V249.766H97.328V246.304Z" fill="#D4A5A5" stroke="black"/>
+<path id="310-339" d="M103.171 252.363H98.1628V285.252H103.171V252.363Z" fill="#D4A5A5" stroke="black"/>
+<path id="235-279" d="M104.841 286.117H100.667V325.065H104.841V286.117Z" fill="#D4A5A5" stroke="black"/>
+<path id="055-099" d="M99.8322 324.2H62.2696V328.527H99.8322V324.2Z" fill="#D4A5A5" stroke="black"/>
+<path id="181-234" d="M61.4349 332.855H57.2613V413.347H61.4349V332.855Z" fill="#D4A5A5" stroke="black"/>
+<path id="100-144" d="M98.9975 416.809H66.4432V420.271H98.9975V416.809Z" fill="#D4A5A5" stroke="black"/>
+<path id="145-180" d="M106.51 426.329H100.667V476.529H106.51V426.329Z" fill="#D4A5A5" stroke="black"/>
+</g>
+</g>
 </svg>
