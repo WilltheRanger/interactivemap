@@ -81,8 +81,13 @@
   font-size: var(--font-size-sm);
   color: var(--color-text);
 }
-.install-modal__inline-icon {
-  vertical-align: -2px;
+/* Keep "Share" + its icon on one line and vertically centered together (inline-flex baseline-aligns
+   the word with the surrounding text; align-items centers the icon against it). */
+.install-modal__share {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  white-space: nowrap;
 }
 
 .install-modal__cta {
