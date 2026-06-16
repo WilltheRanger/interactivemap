@@ -174,6 +174,9 @@ export function MapScreen() {
             if (lockerSvg.nodeName !== 'svg') return;
             lockerSvg.removeAttribute('width');
             lockerSvg.removeAttribute('height');
+            // The fitted bounds can have a different aspect than the locker viewBox, so stretch the
+            // SVG to fill them exactly (otherwise Leaflet would letterbox and the fit wouldn't apply).
+            lockerSvg.setAttribute('preserveAspectRatio', 'none');
             lockerSvg.classList.add('locker-svg');
             const lvb = (lockerSvg.getAttribute('viewBox') ?? `0 0 ${W} ${H}`).split(/\s+/).map(Number);
             const lockerBounds = L.latLngBounds([

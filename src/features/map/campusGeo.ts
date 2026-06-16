@@ -32,7 +32,9 @@ export const CAMPUS_LEVELS: Record<CampusLevel, LevelConfig> = {
     imageSize: { w: 1500, h: 905 },
     svgToImage: { ax: 20, sx: 0.8004, ay: 57, sy: 0.7822 },
     lockerSvgUrl: `${import.meta.env.BASE_URL}lockers-upper.svg`,
-    lockerSvgToImage: { ax: 20, sx: 0.6498, ay: 57, sy: 0.5707 },
+    // Seed from matching locker colours to campus building colours (scripts removed; re-derive if the
+    // art changes). Approximate — banks land near their buildings but not exactly on the walls.
+    lockerSvgToImage: { ax: -362.52, sx: 1.0539, ay: -36.71, sy: 0.7093 },
   },
   lower: {
     label: 'Lower',
@@ -41,7 +43,7 @@ export const CAMPUS_LEVELS: Record<CampusLevel, LevelConfig> = {
     imageSize: { w: 1500, h: 910 },
     svgToImage: { ax: -9, sx: 0.8111, ay: 15, sy: 0.7822 },
     lockerSvgUrl: `${import.meta.env.BASE_URL}lockers-lower.svg`,
-    lockerSvgToImage: { ax: -9, sx: 0.6855, ay: 15, sy: 0.578 },
+    lockerSvgToImage: { ax: -245.13, sx: 1.1171, ay: -358.73, sy: 1.1716 },
   },
 };
 
