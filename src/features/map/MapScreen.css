@@ -169,9 +169,11 @@
 /* ── Locker overlay calibration panel (dev tool, ?calibrate=1) ───────────── */
 .locker-calib {
   position: absolute;
-  top: calc(var(--space-3) + 96px);
+  bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
   left: var(--space-3);
-  z-index: 900;
+  z-index: 1001; /* above the search/now bar (1000) so it's never covered */
+  max-height: 72vh;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
