@@ -58,6 +58,8 @@ export interface CampusRoom {
   /** Owning building group id, or the shape's own id for standalone places. */
   buildingId: string;
   level: CampusLevel;
+  /** True for whole-building group entries (e.g. "bldg400-upper") — kept out of the room search. */
+  isBuilding?: boolean;
 }
 
 const roomsCache = new Map<CampusLevel, Promise<CampusRoom[]>>();
@@ -76,6 +78,13 @@ export function loadCampusRooms(level: CampusLevel): Promise<CampusRoom[]> {
           if (!id) return;
           const gid = el.closest('g[id]')?.getAttribute('id');
           rooms.push({ id, buildingId: isWrapperGroupId(gid) ? id : (gid as string), level });
+        });
+        // Also index the building groups themselves so a deep link (e.g. the locker "Show on map",
+        // /map?room=bldg400-upper) can highlight a whole building. Flagged so the room search skips them.
+        doc.querySelectorAll('g[id]').forEach((el) => {
+          const id = el.getAttribute('id');
+          if (!id || isWrapperGroupId(id)) return;
+          rooms.push({ id, buildingId: id, level, isBuilding: true });
         });
         return rooms;
       });
