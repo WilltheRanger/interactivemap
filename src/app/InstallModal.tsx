@@ -101,9 +101,12 @@ function InstallModalDialog() {
         />
 
         <p id="install-modal-steps" className="install-modal__steps">
-          In Safari, tap Share{' '}
-          <Share size={14} aria-hidden="true" className="install-modal__inline-icon" /> then “Add to
-          Home Screen.”
+          In Safari, tap{' '}
+          <span className="install-modal__share">
+            Share
+            <Share size={14} aria-hidden="true" />
+          </span>{' '}
+          then “Add to Home Screen.”
         </p>
 
         <Button variant="primary" className="install-modal__cta" onClick={dismissInstall}>
