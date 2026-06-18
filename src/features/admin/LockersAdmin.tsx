@@ -1,12 +1,15 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Pencil, Plus } from 'lucide-react';
+import { Camera, Pencil, Plus } from 'lucide-react';
 import { Button, Card } from '../../components';
 import { useBuildings, useLockerSections, useLockersBySection } from '../../data/hooks';
 import type { LockerSection } from '../../lib/refData';
 import { getSupabase } from '../../lib/supabase';
 import { ConfirmDeleteButton, Field, MutationStatus, SectionStates } from './shared';
 import { slugify } from './slugify';
+
+// Pannellum + the panorama image are heavy and admin-only, so the visual tagger is code-split.
+const LockerTagger = lazy(() => import('./LockerTagger'));
 
 interface SectionFormState {
   label: string;
@@ -210,6 +213,7 @@ function HotspotEditor({ section }: { section: LockerSection }) {
   const [yaw, setYaw] = useState('');
   const [pitch, setPitch] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
+  const [tagging, setTagging] = useState(false);
 
   const invalidate = () =>
     void queryClient.invalidateQueries({ queryKey: ['lockers', section.id] });
@@ -260,6 +264,18 @@ function HotspotEditor({ section }: { section: LockerSection }) {
         Per-locker pins{' '}
         <span className="admin-row__sub">(optional — yaw/pitch in the panorama)</span>
       </h4>
+      {section.panorama_id ? (
+        <Button variant="secondary" icon={<Camera size={16} />} onClick={() => setTagging(true)}>
+          Tag in 360°
+        </Button>
+      ) : (
+        <p className="admin-row__sub">Add a panorama URL (Edit) to tag pins visually.</p>
+      )}
+      {tagging && (
+        <Suspense fallback={null}>
+          <LockerTagger section={section} onClose={() => setTagging(false)} />
+        </Suspense>
+      )}
       <SectionStates
         isPending={lockers.isPending}
         isError={lockers.isError}

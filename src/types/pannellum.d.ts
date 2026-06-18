@@ -13,11 +13,17 @@ declare global {
     destroy(): void;
     getYaw(): number;
     getPitch(): number;
+    /** Convert a mouse/pointer event to the panorama angle under the cursor: [pitch, yaw]. */
+    mouseEventToCoords(event: MouseEvent): [number, number];
+    addHotSpot(hotSpot: PannellumHotSpot, sceneId?: string): PannellumViewer;
+    removeHotSpot(hotSpotId: string, sceneId?: string): boolean;
   }
 
   interface PannellumHotSpot {
     pitch: number;
     yaw: number;
+    /** Stable id — required to remove the hot spot later (used by the admin tagger). */
+    id?: string;
     cssClass?: string;
     createTooltipFunc?: (hotSpotDiv: HTMLElement, args?: unknown) => void;
     createTooltipArgs?: unknown;
