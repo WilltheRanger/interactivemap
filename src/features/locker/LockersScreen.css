@@ -204,15 +204,18 @@
 
 /* ── Locker pin (Pannellum hotspot) ───────────────────────────────────────────── */
 /* Pannellum positions the hotspot div (it adds .pnlm-hotspot-base: position:absolute); we draw a
-   gold dot with a floating label above it. */
+   small gold ring (hollow, so the locker stays visible through it) with a floating label above. */
 .pano-pin {
-  width: 22px;
-  height: 22px;
-  margin: -11px 0 0 -11px;
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
   border-radius: 50%;
-  background: var(--color-accent);
-  border: 3px solid #fff;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
+  background: transparent;
+  border: 2.5px solid var(--color-accent);
+  /* dark halo so the gold ring reads on light walls; soft drop shadow for depth */
+  box-shadow:
+    0 0 0 1.5px rgba(0, 0, 0, 0.45),
+    0 1px 4px rgba(0, 0, 0, 0.5);
 }
 .pano-pin__label {
   position: absolute;

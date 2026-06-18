@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '../../components';
 import { useLockersBySection, usePanorama } from '../../data/hooks';
-import type { LockerSection } from '../../lib/refData';
+import type { Locker, LockerSection } from '../../lib/refData';
 import { getSupabase } from '../../lib/supabase';
 import { ConfirmDeleteButton } from './shared';
 import PanoramaViewer, { type PanoPin } from '../locker/PanoramaViewer';
@@ -33,10 +33,15 @@ export default function LockerTagger({
   const [number, setNumber] = useState('');
   const [error, setError] = useState<string | null>(null);
 
+  // The number in the form. When it matches an existing pin, Save updates that pin in place.
+  const editingNum = number.trim() && Number.isInteger(Number(number)) ? Number(number) : null;
+  const isUpdate = (lockers.data ?? []).some((l) => l.number === editingNum);
+
   // Existing tagged lockers as pins, plus the just-clicked point so you can see what you're saving.
+  // The locker being edited is shown only as the live "pending" pin (so it isn't drawn twice).
   const pins = useMemo<PanoPin[]>(() => {
     const existing = (lockers.data ?? [])
-      .filter((l) => l.hotspot_yaw != null && l.hotspot_pitch != null)
+      .filter((l) => l.hotspot_yaw != null && l.hotspot_pitch != null && l.number !== editingNum)
       .map((l) => ({
         id: `locker-${l.number}`,
         yaw: l.hotspot_yaw as number,
@@ -44,10 +49,15 @@ export default function LockerTagger({
         label: `#${l.number}`,
       }));
     if (captured) {
-      existing.push({ id: 'pending', yaw: captured.yaw, pitch: captured.pitch, label: 'New pin' });
+      existing.push({
+        id: 'pending',
+        yaw: captured.yaw,
+        pitch: captured.pitch,
+        label: editingNum ? `#${editingNum}` : 'New pin',
+      });
     }
     return existing;
-  }, [lockers.data, captured]);
+  }, [lockers.data, captured, editingNum]);
 
   const invalidate = () =>
     void queryClient.invalidateQueries({ queryKey: ['lockers', section.id] });
@@ -108,6 +118,22 @@ export default function LockerTagger({
     savePin.mutate();
   };
 
+  // Load an existing pin back into the form so it can be moved/retagged (Save upserts the same row).
+  const startEdit = (l: Locker) => {
+    setNumber(String(l.number));
+    setCaptured(
+      l.hotspot_yaw != null && l.hotspot_pitch != null
+        ? { yaw: l.hotspot_yaw, pitch: l.hotspot_pitch }
+        : null,
+    );
+    setError(null);
+  };
+  const clearForm = () => {
+    setNumber('');
+    setCaptured(null);
+    setError(null);
+  };
+
   const title = `Tag · ${section.label ?? section.id}`;
 
   // Loading / missing panorama: a minimal full-screen shell (no Pannellum) with a close button.
@@ -153,8 +179,10 @@ export default function LockerTagger({
       <div className="locker-tagger" role="group" aria-label="Locker pin tagger">
         <p className="locker-tagger__coords">
           {captured
-            ? `Captured · yaw ${round(captured.yaw)} · pitch ${round(captured.pitch)}`
-            : 'Tap a locker in the photo to capture its position.'}
+            ? `${isUpdate ? `Editing #${editingNum}` : 'Captured'} · yaw ${round(captured.yaw)} · pitch ${round(captured.pitch)}`
+            : isUpdate
+              ? `Editing #${editingNum} — tap the photo to move its pin.`
+              : 'Tap a locker in the photo to capture its position.'}
         </p>
         <div className="locker-tagger__form">
           <input
@@ -170,8 +198,13 @@ export default function LockerTagger({
             }}
           />
           <Button variant="primary" onClick={save} disabled={savePin.isPending || !captured}>
-            {savePin.isPending ? 'Saving…' : 'Save pin'}
+            {savePin.isPending ? 'Saving…' : isUpdate ? 'Update pin' : 'Save pin'}
           </Button>
+          {(number.trim() || captured) && (
+            <Button variant="secondary" onClick={clearForm} disabled={savePin.isPending}>
+              Clear
+            </Button>
+          )}
         </div>
         <Button
           variant="secondary"
@@ -199,11 +232,16 @@ export default function LockerTagger({
                 <span>
                   #{l.number} · yaw {l.hotspot_yaw ?? '—'} · pitch {l.hotspot_pitch ?? '—'}
                 </span>
-                <ConfirmDeleteButton
-                  label={`pin ${l.number}`}
-                  pending={removePin.isPending && removePin.variables === l.id}
-                  onConfirm={() => removePin.mutate(l.id)}
-                />
+                <span className="locker-tagger__rowactions">
+                  <Button variant="secondary" onClick={() => startEdit(l)}>
+                    Edit
+                  </Button>
+                  <ConfirmDeleteButton
+                    label={`pin ${l.number}`}
+                    pending={removePin.isPending && removePin.variables === l.id}
+                    onConfirm={() => removePin.mutate(l.id)}
+                  />
+                </span>
               </li>
             ))}
           </ul>
