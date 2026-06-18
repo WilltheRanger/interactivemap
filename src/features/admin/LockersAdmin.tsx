@@ -1,8 +1,10 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Camera, Pencil, Plus } from 'lucide-react';
+import { Camera, Pencil, Plus, Upload } from 'lucide-react';
 import { Button, Card } from '../../components';
 import { useBuildings, useLockerSections, useLockersBySection } from '../../data/hooks';
+import { config } from '../../lib/config';
+import { uploadPanorama } from '../../lib/cloudinary';
 import type { LockerSection } from '../../lib/refData';
 import { getSupabase } from '../../lib/supabase';
 import { ConfirmDeleteButton, Field, MutationStatus, SectionStates } from './shared';
@@ -48,10 +50,29 @@ function SectionForm({
   const [form, setForm] = useState<SectionFormState>(fromSection(editing, panoramaUrl));
   const [errors, setErrors] = useState<Partial<Record<keyof SectionFormState, string>>>({});
   const [saved, setSaved] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const set = <K extends keyof SectionFormState>(key: K, value: string) => {
     setForm((f) => ({ ...f, [key]: value }));
     setSaved(false);
+  };
+
+  // Admin-friendly upload: pick a photo → Cloudinary (CORS + auto-resize) → fill the URL automatically.
+  const onPickFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // let the same file be re-picked after an error
+    if (!file) return;
+    setUploadError(null);
+    setUploading(true);
+    try {
+      set('panorama_url', await uploadPanorama(file));
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Upload failed.');
+    } finally {
+      setUploading(false);
+    }
   };
 
   const save = useMutation({
@@ -163,11 +184,48 @@ function SectionForm({
             aria-invalid={!!errors.number_end}
           />
         </Field>
-        <Field label="360° panorama image URL (optional)">
+        <Field label="360° panorama photo (optional)">
+          {config.isCloudinaryConfigured && (
+            <div className="admin-upload">
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={onPickFile}
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                icon={<Upload size={16} />}
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading}
+              >
+                {uploading ? 'Uploading…' : form.panorama_url ? 'Replace photo' : 'Upload photo'}
+              </Button>
+              {form.panorama_url && !uploading && (
+                <a
+                  className="admin-upload__preview"
+                  href={form.panorama_url}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Uploaded ✓ — preview
+                </a>
+              )}
+              {uploadError && (
+                <span className="admin-status admin-status--error" role="alert">
+                  {uploadError}
+                </span>
+              )}
+            </div>
+          )}
           <input
             className="admin-input"
             type="url"
-            placeholder="https://…"
+            placeholder={
+              config.isCloudinaryConfigured ? 'Filled in automatically when you upload' : 'https://…'
+            }
             value={form.panorama_url}
             onChange={(e) => set('panorama_url', e.target.value)}
           />
