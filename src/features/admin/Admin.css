@@ -297,6 +297,20 @@
   width: 110px;
 }
 
+/* In-admin panorama upload (Cloudinary) — a friendly "Upload photo" button + status. */
+.admin-upload {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+.admin-upload__preview {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+}
+
 /* ── Locker 360° tagger panel (floats over the full-screen Pannellum viewer) ──── */
 .locker-tagger {
   position: fixed;

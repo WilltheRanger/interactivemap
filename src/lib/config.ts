@@ -11,18 +11,27 @@ export interface AppConfig {
   isSupabaseConfigured: boolean;
   /** Where "Report wrong info" sends mail. Set VITE_FEEDBACK_EMAIL to a real address before launch. */
   feedbackEmail: string;
+  /** Cloudinary (optional) — powers in-admin panorama photo uploads. Both values are public. */
+  cloudinaryCloudName: string;
+  cloudinaryUploadPreset: string;
+  isCloudinaryConfigured: boolean;
 }
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL ?? '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? '';
 // `.example` is a reserved placeholder TLD (RFC 2606) — clearly not a real inbox until configured.
 const feedbackEmail = import.meta.env.VITE_FEEDBACK_EMAIL ?? 'wayfinder@dbhs.example';
+const cloudinaryCloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME ?? '';
+const cloudinaryUploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET ?? '';
 
 export const config: AppConfig = {
   supabaseUrl,
   supabaseAnonKey,
   isSupabaseConfigured: Boolean(supabaseUrl && supabaseAnonKey),
   feedbackEmail,
+  cloudinaryCloudName,
+  cloudinaryUploadPreset,
+  isCloudinaryConfigured: Boolean(cloudinaryCloudName && cloudinaryUploadPreset),
 };
 
 export function assertSupabaseConfig(): void {
