@@ -55,6 +55,23 @@ function roomTitle(id: string): string {
   return BUILDING_LABELS[id] ?? id;
 }
 
+/** Locker-bank id (a number range like "001-060" or "1471-1515") → "Lockers 1–60". */
+function lockerTitle(id: string): string {
+  const m = id.match(/^(\d+)\s*-\s*(\d+)/);
+  return m ? `Lockers ${parseInt(m[1], 10)}–${parseInt(m[2], 10)}` : 'Lockers';
+}
+
+/** Building label for a locker bank, from its sub-group id ("Upper 400 Bld Library side" → its
+ *  building label). Falls back to the campus name when no building number is in the group id. */
+function lockerBuilding(groupId: string | null, levelLabel: string): string {
+  const num = groupId?.match(/[1-9]00/)?.[0];
+  if (num) {
+    const key = [`bldg${num}-upper`, `bldg${num}`].find((k) => k in BUILDING_LABELS);
+    return key ? BUILDING_LABELS[key] : `${num}s building`;
+  }
+  return `${levelLabel} campus`;
+}
+
 /**
  * Map screen: per-level campus illustration (raster underlay) with the traced plan SVG aligned
  * invisibly on top — every named room shape is directly tappable (highlight + detail card).
@@ -167,14 +184,9 @@ export function MapScreen() {
             el.setAttribute('transform', `translate(${dx},${dy})`);
           }
         }
-        // Combined-mode lockers live inside this SVG's locker group: paint them gold in place (they
-        // already sit at the rooms' coordinates) and leave them non-interactive so taps fall through.
+        // Combined-mode lockers live inside this SVG's locker group. They get the .campus-locker class
+        // below (invisible at rest, but tappable) — wired alongside the room shapes.
         const lockerGroupId = config.lockerGroupId;
-        if (lockerGroupId) {
-          svg
-            .querySelectorAll<SVGGraphicsElement>(`g[id="${lockerGroupId}"] rect, g[id="${lockerGroupId}"] path`)
-            .forEach((shape) => shape.classList.add('locker-shape'));
-        }
         L.svgOverlay(svg, svgBounds, { interactive: false }).addTo(localMap);
 
         // Fitted-mode levels keep a *separate* visible locker overlay: an SVG of the locker banks
@@ -241,6 +253,18 @@ export function MapScreen() {
           svg.querySelectorAll('.is-selected').forEach((s) => s.classList.remove('is-selected'));
           shape.classList.add('is-selected');
           const id = shape.getAttribute('id') ?? '';
+          // A locker bank: invisible until tapped. Its id is a number range; show that + its building.
+          // No teacher to resolve (lookupId null).
+          if (isInLockerGroup(shape, lockerGroupId)) {
+            const lgid = shape.closest('g[id]')?.getAttribute('id') ?? null;
+            setSelected({
+              id,
+              title: lockerTitle(id),
+              building: lockerBuilding(lgid, config.label),
+              lookupId: null,
+            });
+            return;
+          }
           if (shape.tagName === 'g') {
             // A whole building group — no single teacher to resolve.
             setSelected({ id, title: BUILDING_LABELS[id] ?? id, building: '', lookupId: null });
@@ -264,11 +288,10 @@ export function MapScreen() {
           }
         };
 
-        // Each room shape becomes a tappable button (click, not mousedown — dragging still pans).
-        // Locker shapes (combined mode) are skipped — they're gold visuals, not tappable rooms.
+        // Each shape becomes a tappable button (click, not mousedown — dragging still pans). Rooms get
+        // .campus-room; locker banks get .campus-locker (invisible at rest, gold highlight on select).
         svg.querySelectorAll<SVGGraphicsElement>('rect[id], path[id]').forEach((shape) => {
-          if (isInLockerGroup(shape, lockerGroupId)) return;
-          shape.classList.add('campus-room');
+          shape.classList.add(isInLockerGroup(shape, lockerGroupId) ? 'campus-locker' : 'campus-room');
           shape.addEventListener('click', (event) => {
             event.stopPropagation();
             selectShapeEl(shape);

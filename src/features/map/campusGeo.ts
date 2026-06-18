@@ -20,8 +20,9 @@ export interface LevelConfig {
   imageUrl: string;
   imageSize: { w: number; h: number };
   svgToImage: { ax: number; sx: number; ay: number; sy: number };
-  /** Combined mode: id of the locker group *inside* `svgUrl`. When set, its shapes are drawn gold in
-   *  place (sharing the rooms' transform) and kept out of the room index; no separate locker overlay. */
+  /** Combined mode: id of the locker group *inside* `svgUrl`. When set, its shapes are tappable locker
+   *  banks (invisible at rest, gold highlight on select) and left out of the room search index; no
+   *  separate locker overlay. */
   lockerGroupId?: string;
   /** Fitted mode: a separate visible locker overlay SVG + its own placement transform. Tune live via
    *  /map?lax=&lsx=&lay=&lsy= (see MapScreen). Unused when `lockerGroupId` is set. */
