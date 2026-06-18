@@ -259,6 +259,16 @@
 .campus-svg {
   pointer-events: none;
 }
+/* Combined-mode lockers: locker shapes living inside the campus SVG's locker group, painted gold in
+   place (same look as the separate .locker-svg overlay). Non-interactive — taps fall through to the
+   room beneath — since they don't get the .campus-room class. */
+.campus-svg .locker-shape {
+  fill: var(--color-accent);
+  fill-opacity: 0.92;
+  stroke: #3a2a00;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
 /* The illustration has the room lines baked in, so rooms are invisible at rest — the SVG only
    provides the tap targets and paints the hover/selected highlight. */
 .campus-svg .campus-room {

@@ -1,5 +1,5 @@
 /**
- * Friendly labels for the building groups (the `<g id>`s) in public/campus-upper.svg, plus the two
+ * Friendly labels for the building groups (the `<g id>`s) in public/upper-combined.svg, plus the two
  * standalone shapes (aquatics, music). Used by the map detail card. These ids come from the owner's
  * Figma export; the room numbers inside each group are the real DBHS numbers.
  */

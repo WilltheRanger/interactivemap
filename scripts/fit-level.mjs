@@ -2,8 +2,10 @@
  * Per-level map calibration: fit one global affine mapping an SVG overlay's coords onto its
  * illustration, by chamfer-matching every traced shape boundary against the image's edges.
  *
- *   node scripts/fit-level.mjs upper   → prints SVG_TO_IMAGE for the upper level + writes a composite
- *   node scripts/fit-level.mjs lower
+ *   node scripts/fit-level.mjs lower   → prints SVG_TO_IMAGE for the lower level + writes a composite
+ *
+ * Only fitted-mode levels need this. Upper is now a combined SVG over a matching-frame illustration
+ * (identity transform — see campusGeo.ts), so it isn't listed here.
  *
  * Dev-only; needs sharp (`npm i --no-save sharp`).
  */
@@ -18,11 +20,10 @@ const OUT = '/tmp/map-calib';
 mkdirSync(OUT, { recursive: true });
 
 const LEVELS = {
-  upper: { svg: 'public/campus-upper.svg', img: 'public/campus-map-upper-v2.webp' },
   lower: { svg: 'public/campus-lower.svg', img: 'public/campus-map-lower-v2.webp' },
 };
 
-const level = process.argv[2] ?? 'upper';
+const level = process.argv[2] ?? 'lower';
 const { svg: SVG_PATH, img: IMG_PATH } = LEVELS[level];
 
 const svgText = readFileSync(`${ROOT}${SVG_PATH}`, 'utf8');

@@ -6,9 +6,11 @@ import L from 'leaflet';
  * and a side building. Affine: image-pixel = M · (lng, lat); near-isotropic (~4.1 px/m), so the
  * stylized illustration is close enough to scale for building-level placement.
  *
- * Calibrated on the UPPER illustration (1500×905) and reused for the lower level (near-identical
- * framing) — GPS is approximate (~5–10 m) anyway. Self-contained: the whole gps/ folder is a clean
- * deletion if the feature is dropped.
+ * Calibrated on the ORIGINAL upper illustration (1500×905). The upper map was since redrawn on a new
+ * frame whose layout this affine no longer fits (would need fresh control points), so upper now sets
+ * `gpsCalibrated: false` and hides its "Find Me" layer; this georef currently serves the lower level
+ * only (near-identical framing) — GPS is approximate (~5–10 m) anyway. Self-contained: the whole gps/
+ * folder is a clean deletion if the feature is dropped.
  */
 const GEOREF = {
   a: -361902.53295107797,

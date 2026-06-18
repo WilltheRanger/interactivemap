@@ -1,11 +1,16 @@
 /**
- * Campus map geometry + room index — two campus levels, each an illustration + traced-plan SVG
- * pair rendered from the same plan (so the invisible SVG tap targets sit exactly on the drawn
- * walls). svgToImage maps SVG coords → image pixels (image = a + s·svg); fitted per level by
- * chamfer-matching every traced shape boundary against the illustration's edges
- * (`scripts/fit-level.mjs`). Fitted to the high-res 1500px art (mean boundary error upper ≈1.8px,
- * lower ≈2.0px — within the highlight's blur tolerance). Re-run that script if any asset is
- * re-exported.
+ * Campus map geometry + room index. Each level pairs a campus illustration (raster underlay) with a
+ * traced-plan SVG aligned on top, so the invisible SVG tap targets sit on the drawn walls.
+ *
+ * Two placement styles:
+ *  - Combined (upper): the SVG and the illustration are exported from the *same* Figma frame, so they
+ *    share one coordinate space and overlay 1:1 — svgToImage is the identity. The SVG carries both the
+ *    rooms (building groups) and the lockers (the `lockerGroupId` group), so the lockers inherit the
+ *    rooms' placement for free; no separate locker overlay or fit.
+ *  - Fitted (lower): the SVG was traced on a different frame than the art, so svgToImage maps SVG
+ *    coords → image pixels (image = a + s·svg), fitted by chamfer-matching every traced boundary
+ *    against the illustration's edges (`scripts/fit-level.mjs`, mean ≈2px). The lockers are a separate
+ *    overlay with their own transform. Re-run the fit script if a fitted asset is re-exported.
  */
 export type CampusLevel = 'upper' | 'lower';
 
@@ -15,28 +20,32 @@ export interface LevelConfig {
   imageUrl: string;
   imageSize: { w: number; h: number };
   svgToImage: { ax: number; sx: number; ay: number; sy: number };
-  /** Visible locker overlay. Traced on a separate artboard, so it gets its own placement transform.
-   *  These values are a rough seed — tune live via /map?lax=&lsx=&lay=&lsy= (see MapScreen), or, if
-   *  the lockers are re-exported inside the campus frame, set this equal to svgToImage for an exact fit. */
-  lockerSvgUrl: string;
-  lockerSvgToImage: { ax: number; sx: number; ay: number; sy: number };
+  /** Combined mode: id of the locker group *inside* `svgUrl`. When set, its shapes are drawn gold in
+   *  place (sharing the rooms' transform) and kept out of the room index; no separate locker overlay. */
+  lockerGroupId?: string;
+  /** Fitted mode: a separate visible locker overlay SVG + its own placement transform. Tune live via
+   *  /map?lax=&lsx=&lay=&lsy= (see MapScreen). Unused when `lockerGroupId` is set. */
+  lockerSvgUrl?: string;
+  lockerSvgToImage?: { ax: number; sx: number; ay: number; sy: number };
+  /** Whether the GPS georeference (gps/georef.ts) matches this level's illustration. The georef was
+   *  calibrated on the old upper art; the redrawn upper map needs fresh control points, so its
+   *  "Find Me" dot is hidden until recalibrated. Lower still uses the original (approximate) art. */
+  gpsCalibrated?: boolean;
 }
 
 export const CAMPUS_LEVELS: Record<CampusLevel, LevelConfig> = {
   upper: {
     label: 'Upper',
-    svgUrl: `${import.meta.env.BASE_URL}campus-upper.svg`,
-    // "-v2" = the high-res re-export. public/ assets keep stable URLs, so a rename is the manual
+    // Combined export: rooms + the "Upper Lockers" group in one SVG, sharing the illustration's frame.
+    svgUrl: `${import.meta.env.BASE_URL}upper-combined.svg`,
+    // "-v3" = the redrawn flat-frame illustration (trees/parking/courts), exported at the SVG's exact
+    // 1382×863 frame so it overlays 1:1. public/ assets keep stable URLs, so a rename is the manual
     // cache-bust — bump it again if the art is ever replaced.
-    imageUrl: `${import.meta.env.BASE_URL}campus-map-upper-v2.webp`,
-    imageSize: { w: 1500, h: 905 },
-    svgToImage: { ax: 20, sx: 0.8004, ay: 57, sy: 0.7822 },
-    lockerSvgUrl: `${import.meta.env.BASE_URL}lockers-upper.svg`,
-    // Exact: lockers-upper.svg is the "Upper Lockers" group exported from the same Figma "Upper" frame
-    // as the campus map, so it shares the campus coordinate space. The group sits at frame X 348.47,
-    // Y 136, so lockerSvgToImage = campus svgToImage shifted by that offset:
-    //   ax = 20 + 0.8004·348.47, sx = 0.8004,  ay = 57 + 0.7822·136, sy = 0.7822.
-    lockerSvgToImage: { ax: 298.92, sx: 0.8004, ay: 163.38, sy: 0.7822 },
+    imageUrl: `${import.meta.env.BASE_URL}campus-map-upper-v3.webp`,
+    imageSize: { w: 1382, h: 863 },
+    svgToImage: { ax: 0, sx: 1, ay: 0, sy: 1 }, // identity — SVG and art share the frame
+    lockerGroupId: 'Upper Lockers',
+    gpsCalibrated: false, // redrawn art invalidated the old georef — see gps/georef.ts
   },
   lower: {
     label: 'Lower',
@@ -46,6 +55,7 @@ export const CAMPUS_LEVELS: Record<CampusLevel, LevelConfig> = {
     svgToImage: { ax: -9, sx: 0.8111, ay: 15, sy: 0.7822 },
     lockerSvgUrl: `${import.meta.env.BASE_URL}lockers-lower.svg`,
     lockerSvgToImage: { ax: -245.13, sx: 1.1171, ay: -358.73, sy: 1.1716 },
+    gpsCalibrated: true,
   },
 };
 
@@ -65,6 +75,11 @@ export function isWrapperGroupId(id: string | null | undefined): boolean {
   return !id || WRAPPER_IDS.has(id);
 }
 
+/** True when an element is the locker group or lives inside it (combined-mode levels). */
+export function isInLockerGroup(el: Element, lockerGroupId: string | undefined): boolean {
+  return !!lockerGroupId && !!el.closest(`g[id="${lockerGroupId}"]`);
+}
+
 export interface CampusRoom {
   /** Shape id — a room number ("461") or a place name ("Aquatics center", "RR_2"). */
   id: string;
@@ -81,6 +96,7 @@ const roomsCache = new Map<CampusLevel, Promise<CampusRoom[]>>();
 export function loadCampusRooms(level: CampusLevel): Promise<CampusRoom[]> {
   let cached = roomsCache.get(level);
   if (!cached) {
+    const lockerGroupId = CAMPUS_LEVELS[level].lockerGroupId;
     cached = fetch(CAMPUS_LEVELS[level].svgUrl)
       .then((res) => (res.ok ? res.text() : Promise.reject(new Error('campus svg missing'))))
       .then((text) => {
@@ -88,7 +104,8 @@ export function loadCampusRooms(level: CampusLevel): Promise<CampusRoom[]> {
         const rooms: CampusRoom[] = [];
         doc.querySelectorAll('rect[id], path[id]').forEach((el) => {
           const id = el.getAttribute('id');
-          if (!id) return;
+          // Lockers live in the same combined SVG but aren't rooms — keep them out of the index.
+          if (!id || isInLockerGroup(el, lockerGroupId)) return;
           const gid = el.closest('g[id]')?.getAttribute('id');
           rooms.push({ id, buildingId: isWrapperGroupId(gid) ? id : (gid as string), level });
         });
@@ -96,7 +113,7 @@ export function loadCampusRooms(level: CampusLevel): Promise<CampusRoom[]> {
         // /map?room=bldg400-upper) can highlight a whole building. Flagged so the room search skips them.
         doc.querySelectorAll('g[id]').forEach((el) => {
           const id = el.getAttribute('id');
-          if (!id || isWrapperGroupId(id)) return;
+          if (!id || isWrapperGroupId(id) || isInLockerGroup(el, lockerGroupId)) return;
           rooms.push({ id, buildingId: id, level, isBuilding: true });
         });
         return rooms;
