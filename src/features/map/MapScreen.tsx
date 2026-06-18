@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { motion } from 'framer-motion';
-import { Hourglass, MapPin, User, X } from 'lucide-react';
+import { Camera, Hourglass, MapPin, User, X } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { SearchInput } from '../../components/SearchInput';
-import { useRoomWithTeacher } from '../../data/hooks';
+import { useLockerSection, usePanorama, useRoomWithTeacher } from '../../data/hooks';
 import { useCurrentPeriod, type CurrentPeriod } from '../../data/useCurrentPeriod';
 import { useNow } from '../../data/useNow';
 import { useResolvedEntry } from '../schedule/resolveEntry';
@@ -25,6 +25,10 @@ import {
 } from './campusGeo';
 import './MapScreen.css';
 
+// The 360° viewer (Pannellum + the large image) is code-split — it loads only when a student opens a
+// locker bank's panorama from the map. Shares the chunk with the Lockers screen's viewer.
+const PanoramaViewer = lazy(() => import('../locker/PanoramaViewer'));
+
 type MapStatus = 'loading' | 'ready' | 'missing';
 
 interface RoomSelection {
@@ -33,6 +37,8 @@ interface RoomSelection {
   building: string;
   /** Shape id to resolve against the `rooms` table for a teacher — null for whole-building groups. */
   lookupId: string | null;
+  /** Locker banks only: the bank's first locker number, used to resolve its section → panorama. */
+  lockerStart?: number | null;
 }
 
 const MAX_SEARCH_RESULTS = 8;
@@ -59,6 +65,12 @@ function roomTitle(id: string): string {
 function lockerTitle(id: string): string {
   const m = id.match(/^(\d+)\s*-\s*(\d+)/);
   return m ? `Lockers ${parseInt(m[1], 10)}–${parseInt(m[2], 10)}` : 'Lockers';
+}
+
+/** The bank's first locker number (e.g. "001-060" → 1), used to resolve it to a DB section. */
+function lockerStartNumber(id: string): number | null {
+  const n = parseInt(id, 10);
+  return Number.isFinite(n) ? n : null;
 }
 
 /** Building label for a locker bank, from its sub-group id ("Upper 400 Bld Library side" → its
@@ -98,6 +110,8 @@ export function MapScreen() {
   // Exposed so the self-contained GPS layer can draw on the live Leaflet map (see <MapGps/>).
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
   const [query, setQuery] = useState('');
+  // A tapped locker bank's 360° panorama (opened from its detail card), when one exists.
+  const [panoOpen, setPanoOpen] = useState(false);
 
   // Locker-overlay calibration (dev tool). The locker SVGs are from a separate artboard, so their
   // placement is tuned by eye: open /map?calibrate=1 for an on-screen panel that nudges the transform
@@ -113,6 +127,7 @@ export function MapScreen() {
       ?.querySelectorAll('.is-selected')
       .forEach((s) => s.classList.remove('is-selected'));
     setSelected(null);
+    setPanoOpen(false);
   };
 
   // Search index: every room on both levels (independent of which level is showing).
@@ -262,6 +277,7 @@ export function MapScreen() {
               title: lockerTitle(id),
               building: lockerBuilding(lgid, config.label),
               lookupId: null,
+              lockerStart: lockerStartNumber(id),
             });
             return;
           }
@@ -392,6 +408,12 @@ export function MapScreen() {
   // room isn't in the directory yet — the card just omits the teacher line, never errors.
   const roomLookup = useRoomWithTeacher(selected?.lookupId ?? null);
   const teacherName = roomLookup.data?.teacher?.name ?? null;
+
+  // Resolve a tapped locker bank → its DB section (by its first number) → its 360° panorama, so the
+  // card can offer "View 360°". No match (e.g. section ranges not entered yet) → no button, no error.
+  const lockerSection = useLockerSection(selected?.lockerStart ?? null);
+  const lockerPanorama = usePanorama(lockerSection.data?.panorama_id ?? null);
+  const bankPanorama = selected?.lockerStart != null ? (lockerPanorama.data ?? null) : null;
 
   // "School is live" status: the in-session period (with a countdown) and, if the student has a
   // class then, its room (rooms.id == a map shape id) matched against the index to find its level.
@@ -538,6 +560,16 @@ export function MapScreen() {
                 {teacherName}
               </p>
             )}
+            {bankPanorama && (
+              <button
+                type="button"
+                className="map-screen__detail-360"
+                onClick={() => setPanoOpen(true)}
+              >
+                <Camera size={14} aria-hidden="true" />
+                View 360°
+              </button>
+            )}
           </div>
           <button
             type="button"
@@ -548,6 +580,20 @@ export function MapScreen() {
             <X size={18} aria-hidden="true" />
           </button>
         </motion.div>
+      )}
+
+      {panoOpen && bankPanorama && (
+        <Suspense fallback={null}>
+          <PanoramaViewer
+            imageUrl={bankPanorama.image_url}
+            label={selected?.title ?? 'Lockers'}
+            lockerNumber={0}
+            initialYaw={bankPanorama.initial_yaw}
+            initialPitch={bankPanorama.initial_pitch}
+            hfov={bankPanorama.hfov}
+            onClose={() => setPanoOpen(false)}
+          />
+        </Suspense>
       )}
 
       {status !== 'ready' && (
