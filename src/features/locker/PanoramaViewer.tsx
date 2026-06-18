@@ -5,6 +5,15 @@ import 'pannellum'; // side effect: defines window.pannellum
 // Shell / pin / spinner styles live in LockersScreen.css (loaded eagerly with the screen) so they're
 // already present when this lazy chunk mounts — see the note there.
 
+/** A pin to render in the panorama (admin tagger passes several; the student view uses the single
+ *  hotspot props below). */
+export interface PanoPin {
+  id: string;
+  yaw: number;
+  pitch: number;
+  label: string;
+}
+
 interface PanoramaViewerProps {
   imageUrl: string;
   label: string;
@@ -16,19 +25,26 @@ interface PanoramaViewerProps {
   /** Per-locker pin angle; when both are set, a pin is drawn and the view opens facing it. */
   hotspotYaw?: number | null;
   hotspotPitch?: number | null;
+  /** Admin tagger: render these pins (managed live, no reload) instead of the single hotspot. */
+  pins?: PanoPin[];
+  /** Admin tagger: enable click-to-capture — a tap on the photo reports the angle under the cursor. */
+  onPick?: (coords: { yaw: number; pitch: number }) => void;
+  /** Admin tagger: hand the live viewer to the parent (e.g. to read the current view for a default). */
+  onReady?: (viewer: PannellumViewer) => void;
   onClose: () => void;
 }
 
 type Status = 'loading' | 'ready' | 'error';
 
 /**
- * Full-screen Pannellum 360° viewer for a locker bank. Lazy-loaded (React.lazy in LockersScreen) so
- * the Pannellum library and the large equirectangular image stay out of the main bundle and download
- * only when a student opens their locker.
+ * Full-screen Pannellum 360° viewer for a locker bank. Lazy-loaded (React.lazy in LockersScreen and
+ * the admin LockerTagger) so the Pannellum library and the large equirectangular image stay out of
+ * the main bundle and download only when a student opens their locker — or an admin tags one.
  *
- * A pin marks the locker: the per-locker yaw/pitch if it was tagged in /admin, otherwise the
- * panorama's default view. A loader covers the canvas until the image finishes (never a blank
- * screen); a failed load shows an error.
+ * Student view: a pin marks the locker (the per-locker yaw/pitch tagged in /admin, else the
+ * panorama's default view). Admin tagger: `pins` are drawn and managed live, and `onPick` turns a
+ * tap into the {yaw, pitch} under the cursor. A loader covers the canvas until the image finishes; a
+ * failed load shows an error.
  */
 export default function PanoramaViewer({
   imageUrl,
@@ -39,12 +55,28 @@ export default function PanoramaViewer({
   hfov,
   hotspotYaw,
   hotspotPitch,
+  pins,
+  onPick,
+  onReady,
   onClose,
 }: PanoramaViewerProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
+  const viewerRef = useRef<PannellumViewer | null>(null);
+  const addedPinIdsRef = useRef<string[]>([]);
   const [status, setStatus] = useState<Status>('loading');
 
-  const hasPin = typeof hotspotYaw === 'number' && typeof hotspotPitch === 'number';
+  // Latest callbacks kept in refs so the viewer-creation effect doesn't rebuild (and re-download the
+  // image) when a parent re-renders with new callback identities. Updated after each render (the
+  // viewer's async 'load' + pointer handlers read them well after).
+  const onPickRef = useRef(onPick);
+  const onReadyRef = useRef(onReady);
+  useEffect(() => {
+    onPickRef.current = onPick;
+    onReadyRef.current = onReady;
+  });
+
+  const tagging = !!onPick;
+  const hasPin = !tagging && typeof hotspotYaw === 'number' && typeof hotspotPitch === 'number';
 
   useEffect(() => {
     const el = canvasRef.current;
@@ -64,6 +96,7 @@ export default function PanoramaViewer({
       yaw: (hasPin ? hotspotYaw : initialYaw) ?? 0,
       pitch: (hasPin ? hotspotPitch : initialPitch) ?? 0,
       hfov: hfov ?? 100,
+      // Tagger pins are added by the sync effect below (so saving one doesn't rebuild the viewer).
       hotSpots: hasPin
         ? [
             {
@@ -80,10 +113,38 @@ export default function PanoramaViewer({
           ]
         : [],
     });
-    viewer.on('load', () => setStatus('ready'));
+    viewerRef.current = viewer;
+    viewer.on('load', () => {
+      setStatus('ready');
+      onReadyRef.current?.(viewer);
+    });
     viewer.on('error', () => setStatus('error'));
 
+    // Click-to-capture (tagger). A near-stationary pointerup is a tap (a moved one was a pan/drag).
+    let downX = 0;
+    let downY = 0;
+    const onDown = (e: PointerEvent) => {
+      downX = e.clientX;
+      downY = e.clientY;
+    };
+    const onUp = (e: PointerEvent) => {
+      const pick = onPickRef.current;
+      if (!pick || Math.hypot(e.clientX - downX, e.clientY - downY) > 8) return;
+      try {
+        const [pitch, yaw] = viewer.mouseEventToCoords(e);
+        pick({ yaw, pitch });
+      } catch {
+        // mouseEventToCoords can throw before the scene is ready — ignore.
+      }
+    };
+    el.addEventListener('pointerdown', onDown);
+    el.addEventListener('pointerup', onUp);
+
     return () => {
+      el.removeEventListener('pointerdown', onDown);
+      el.removeEventListener('pointerup', onUp);
+      viewerRef.current = null;
+      addedPinIdsRef.current = [];
       try {
         viewer.destroy();
       } catch {
@@ -91,6 +152,40 @@ export default function PanoramaViewer({
       }
     };
   }, [imageUrl, lockerNumber, initialYaw, initialPitch, hfov, hotspotYaw, hotspotPitch, hasPin]);
+
+  // Tagger: sync the live pin set onto the viewer without rebuilding it (remove the previous set,
+  // add the current one). No-op for the student view, which passes no `pins`.
+  useEffect(() => {
+    const viewer = viewerRef.current;
+    if (!viewer || status !== 'ready' || !pins) return;
+    for (const id of addedPinIdsRef.current) {
+      try {
+        viewer.removeHotSpot(id);
+      } catch {
+        // already gone — ignore
+      }
+    }
+    addedPinIdsRef.current = [];
+    for (const p of pins) {
+      try {
+        viewer.addHotSpot({
+          id: p.id,
+          yaw: p.yaw,
+          pitch: p.pitch,
+          cssClass: 'pano-pin',
+          createTooltipFunc: (div) => {
+            const tag = document.createElement('span');
+            tag.className = 'pano-pin__label';
+            tag.textContent = p.label;
+            div.appendChild(tag);
+          },
+        });
+        addedPinIdsRef.current.push(p.id);
+      } catch {
+        // ignore a pin that fails to add
+      }
+    }
+  }, [pins, status]);
 
   // Escape closes; lock the page scroll behind the full-screen viewer.
   useEffect(() => {
@@ -117,7 +212,15 @@ export default function PanoramaViewer({
       </div>
 
       <div className="pano__stage">
-        <div ref={canvasRef} className="pano__canvas" />
+        <div
+          ref={canvasRef}
+          className={tagging ? 'pano__canvas pano__canvas--pick' : 'pano__canvas'}
+        />
+        {tagging && status === 'ready' && (
+          <p className="pano__pickhint" role="note">
+            Tap a locker to capture its position
+          </p>
+        )}
         {status === 'loading' && (
           <div className="pano__overlay" role="status">
             <span className="pano__spinner" aria-hidden="true" />
