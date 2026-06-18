@@ -366,6 +366,26 @@
   font-weight: var(--font-weight-medium);
   color: var(--color-primary);
 }
+/* "View 360°" — shown on a locker bank's card when its section has a panorama. Small gold pill CTA. */
+.map-screen__detail-360 {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  min-height: var(--tap-target);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+}
+.map-screen__detail-360:hover {
+  background: var(--color-accent-strong);
+}
 .map-screen__detail-close {
   flex: 0 0 auto;
   display: inline-flex;
