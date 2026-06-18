@@ -17,6 +17,7 @@ import { BUILDING_LABELS } from './buildingLabels';
 import {
   CAMPUS_LEVELS,
   GROUP_ADJUST,
+  isInLockerGroup,
   isWrapperGroupId,
   loadAllCampusRooms,
   type CampusLevel,
@@ -166,61 +167,75 @@ export function MapScreen() {
             el.setAttribute('transform', `translate(${dx},${dy})`);
           }
         }
+        // Combined-mode lockers live inside this SVG's locker group: paint them gold in place (they
+        // already sit at the rooms' coordinates) and leave them non-interactive so taps fall through.
+        const lockerGroupId = config.lockerGroupId;
+        if (lockerGroupId) {
+          svg
+            .querySelectorAll<SVGGraphicsElement>(`g[id="${lockerGroupId}"] rect, g[id="${lockerGroupId}"] path`)
+            .forEach((shape) => shape.classList.add('locker-shape'));
+        }
         L.svgOverlay(svg, svgBounds, { interactive: false }).addTo(localMap);
 
-        // Visible locker overlay: a separate SVG of the locker banks, drawn on top of the
-        // illustration (NOT made invisible like the room shapes). It's traced on a different artboard,
-        // so it gets its own placement transform — seeded here, then tunable live (see the calibration
-        // panel + the [lockerT] effect). Non-interactive so room taps pass through.
-        const params = new URLSearchParams(window.location.search);
-        const override = (key: string, fallback: number) => {
-          const value = Number(params.get(key));
-          return params.has(key) && Number.isFinite(value) ? value : fallback;
-        };
-        const base = config.lockerSvgToImage;
-        const seedT: LockerTransform = {
-          ax: override('lax', base.ax),
-          sx: override('lsx', base.sx),
-          ay: override('lay', base.ay),
-          sy: override('lsy', base.sy),
-        };
-        fetch(config.lockerSvgUrl)
-          .then((res) => (res.ok ? res.text() : Promise.reject(new Error('no lockers'))))
-          .then((lockerText) => {
-            if (cancelled) return;
-            const lockerSvg = new DOMParser().parseFromString(lockerText, 'image/svg+xml')
-              .documentElement as unknown as SVGSVGElement;
-            if (lockerSvg.nodeName !== 'svg') return;
-            lockerSvg.removeAttribute('width');
-            lockerSvg.removeAttribute('height');
-            // The fitted bounds can have a different aspect than the locker viewBox, so stretch the
-            // SVG to fill them exactly (otherwise Leaflet would letterbox and the fit wouldn't apply).
-            lockerSvg.setAttribute('preserveAspectRatio', 'none');
-            lockerSvg.classList.add('locker-svg');
-            const lvb = (lockerSvg.getAttribute('viewBox') ?? `0 0 ${W} ${H}`).split(/\s+/).map(Number);
-            lockerVbRef.current = [lvb[2], lvb[3]];
-            lockerLayerRef.current = L.svgOverlay(lockerSvg, lockerBounds(seedT, lvb[2], lvb[3], H), {
-              interactive: false,
-            }).addTo(localMap);
-            // Anchor for "scale in place" calibration: the locker cluster's centre (bbox once it's in
-            // the DOM, else the viewBox centre).
-            let cx = lvb[2] / 2;
-            let cy = lvb[3] / 2;
-            try {
-              const bb = lockerSvg.getBBox();
-              if (bb.width && bb.height) {
-                cx = bb.x + bb.width / 2;
-                cy = bb.y + bb.height / 2;
+        // Fitted-mode levels keep a *separate* visible locker overlay: an SVG of the locker banks
+        // traced on a different artboard, so it gets its own placement transform — seeded here, then
+        // tunable live (see the calibration panel + the [lockerT] effect). Non-interactive so room
+        // taps pass through. Combined-mode levels (lockerGroupId set) skip this entirely.
+        if (!lockerGroupId && config.lockerSvgUrl && config.lockerSvgToImage) {
+          const params = new URLSearchParams(window.location.search);
+          const override = (key: string, fallback: number) => {
+            const value = Number(params.get(key));
+            return params.has(key) && Number.isFinite(value) ? value : fallback;
+          };
+          const base = config.lockerSvgToImage;
+          const seedT: LockerTransform = {
+            ax: override('lax', base.ax),
+            sx: override('lsx', base.sx),
+            ay: override('lay', base.ay),
+            sy: override('lsy', base.sy),
+          };
+          fetch(config.lockerSvgUrl)
+            .then((res) => (res.ok ? res.text() : Promise.reject(new Error('no lockers'))))
+            .then((lockerText) => {
+              if (cancelled) return;
+              const lockerSvg = new DOMParser().parseFromString(lockerText, 'image/svg+xml')
+                .documentElement as unknown as SVGSVGElement;
+              if (lockerSvg.nodeName !== 'svg') return;
+              lockerSvg.removeAttribute('width');
+              lockerSvg.removeAttribute('height');
+              // The fitted bounds can have a different aspect than the locker viewBox, so stretch the
+              // SVG to fill them exactly (otherwise Leaflet would letterbox and the fit wouldn't apply).
+              lockerSvg.setAttribute('preserveAspectRatio', 'none');
+              lockerSvg.classList.add('locker-svg');
+              const lvb = (lockerSvg.getAttribute('viewBox') ?? `0 0 ${W} ${H}`)
+                .split(/\s+/)
+                .map(Number);
+              lockerVbRef.current = [lvb[2], lvb[3]];
+              lockerLayerRef.current = L.svgOverlay(
+                lockerSvg,
+                lockerBounds(seedT, lvb[2], lvb[3], H),
+                { interactive: false },
+              ).addTo(localMap);
+              // Anchor for "scale in place" calibration: the locker cluster's centre (bbox once it's
+              // in the DOM, else the viewBox centre).
+              let cx = lvb[2] / 2;
+              let cy = lvb[3] / 2;
+              try {
+                const bb = lockerSvg.getBBox();
+                if (bb.width && bb.height) {
+                  cx = bb.x + bb.width / 2;
+                  cy = bb.y + bb.height / 2;
+                }
+              } catch {
+                // getBBox can throw if not yet laid out — the viewBox centre fallback is fine.
               }
-            } catch {
-              // getBBox can throw if not yet laid out — the viewBox centre fallback is fine.
-            }
-            setLockerAnchor([cx, cy]);
-            setLockerT(seedT); // mirror into state so the calibration panel starts from the seed
-          })
-          .catch(() => {
-            // Lockers are an optional overlay — ignore if the file is missing or fails to parse.
-          });
+              setLockerAnchor([cx, cy]);
+              setLockerT(seedT); // mirror into state so the calibration panel starts from the seed
+            })
+            .catch(() => {
+              // Lockers are an optional overlay — ignore if the file is missing or fails to parse.
+            });
+        }
 
         const selectShapeEl = (shape: SVGGraphicsElement) => {
           svg.querySelectorAll('.is-selected').forEach((s) => s.classList.remove('is-selected'));
@@ -250,7 +265,9 @@ export function MapScreen() {
         };
 
         // Each room shape becomes a tappable button (click, not mousedown — dragging still pans).
+        // Locker shapes (combined mode) are skipped — they're gold visuals, not tappable rooms.
         svg.querySelectorAll<SVGGraphicsElement>('rect[id], path[id]').forEach((shape) => {
+          if (isInLockerGroup(shape, lockerGroupId)) return;
           shape.classList.add('campus-room');
           shape.addEventListener('click', (event) => {
             event.stopPropagation();
@@ -474,7 +491,11 @@ export function MapScreen() {
 
       <div ref={containerRef} key={level} className="map-screen__canvas" aria-label="Campus map" />
 
-      <MapGps map={mapInstance} imageSize={CAMPUS_LEVELS[level].imageSize} />
+      {/* GPS "Find Me" only where the georef matches the art (gps/georef.ts). The redrawn upper map
+          needs fresh control points, so its layer stays hidden until recalibrated. */}
+      {CAMPUS_LEVELS[level].gpsCalibrated && (
+        <MapGps map={mapInstance} imageSize={CAMPUS_LEVELS[level].imageSize} />
+      )}
 
       {selected && (
         <motion.div
