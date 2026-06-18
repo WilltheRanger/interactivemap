@@ -12,6 +12,8 @@ export interface PanoPin {
   yaw: number;
   pitch: number;
   label: string;
+  /** Tagger: tapping this pin's marker selects it (e.g. to edit it). */
+  onSelect?: () => void;
 }
 
 interface PanoramaViewerProps {
@@ -130,6 +132,8 @@ export default function PanoramaViewer({
     const onUp = (e: PointerEvent) => {
       const pick = onPickRef.current;
       if (!pick || Math.hypot(e.clientX - downX, e.clientY - downY) > 8) return;
+      // A tap on an existing pin selects it (its own click handler runs) — don't also capture a point.
+      if ((e.target as Element | null)?.closest?.('.pnlm-hotspot-base')) return;
       try {
         const [pitch, yaw] = viewer.mouseEventToCoords(e);
         pick({ yaw, pitch });
@@ -179,6 +183,7 @@ export default function PanoramaViewer({
             tag.textContent = p.label;
             div.appendChild(tag);
           },
+          clickHandlerFunc: p.onSelect ? () => p.onSelect?.() : undefined,
         });
         addedPinIdsRef.current.push(p.id);
       } catch {

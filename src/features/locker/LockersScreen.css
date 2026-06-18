@@ -212,6 +212,7 @@
   border-radius: 50%;
   background: transparent;
   border: 2.5px solid var(--color-accent);
+  cursor: pointer;
   /* dark halo so the gold ring reads on light walls; soft drop shadow for depth */
   box-shadow:
     0 0 0 1.5px rgba(0, 0, 0, 0.45),
