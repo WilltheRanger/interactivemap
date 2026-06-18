@@ -259,15 +259,33 @@
 .campus-svg {
   pointer-events: none;
 }
-/* Combined-mode lockers: locker shapes living inside the campus SVG's locker group, painted gold in
-   place (same look as the separate .locker-svg overlay). Non-interactive — taps fall through to the
-   room beneath — since they don't get the .campus-room class. */
-.campus-svg .locker-shape {
+/* Combined-mode lockers: locker banks living inside the campus SVG's locker group. Invisible at rest
+   (fill/stroke forced off here to override the shapes' own exported colors), but tappable — a tap
+   lights the bank up in gold and opens its detail card. Gold (vs the rooms' purple) marks them as
+   lockers. Strokes scale with the map at rest so a hair of drift can't register against the art. */
+.campus-svg .campus-locker {
+  pointer-events: all; /* tappable even while fully transparent */
+  cursor: pointer;
   fill: var(--color-accent);
-  fill-opacity: 0.92;
-  stroke: #3a2a00;
-  stroke-width: 1.5;
+  fill-opacity: 0;
+  stroke: none;
   vector-effect: non-scaling-stroke;
+  transition:
+    fill-opacity 0.12s ease,
+    stroke 0.12s ease,
+    filter 0.12s ease;
+}
+.campus-svg .campus-locker:hover {
+  fill-opacity: 0.3;
+  filter: blur(1px);
+}
+.campus-svg .campus-locker.is-selected {
+  fill-opacity: 0.5;
+  stroke: var(--color-accent-strong);
+  stroke-width: 3;
+  stroke-opacity: 0.85;
+  vector-effect: none;
+  filter: blur(1px);
 }
 /* The illustration has the room lines baked in, so rooms are invisible at rest — the SVG only
    provides the tap targets and paints the hover/selected highlight. */
