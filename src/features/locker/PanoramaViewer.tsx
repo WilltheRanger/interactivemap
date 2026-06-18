@@ -39,6 +39,18 @@ interface PanoramaViewerProps {
 type Status = 'loading' | 'ready' | 'error';
 
 /**
+ * WebGL needs the panorama served with CORS (we load it `crossOrigin: 'anonymous'`). Supabase's CDN
+ * can cache a copy *without* the CORS header if the URL was ever fetched with no Origin (e.g. opened
+ * directly in a browser tab), then serve that stale copy to the viewer's CORS request → load fails.
+ * A stable extra query param gives the viewer's request its own cache entry, first populated by a
+ * CORS request (which carries an Origin) so it's cached *with* the header. Harmless on other hosts.
+ */
+function corsSafe(url: string): string {
+  if (!/^https?:/i.test(url)) return url;
+  return url + (url.includes('?') ? '&' : '?') + 'cors=1';
+}
+
+/**
  * Full-screen Pannellum 360° viewer for a locker bank. Lazy-loaded (React.lazy in LockersScreen and
  * the admin LockerTagger) so the Pannellum library and the large equirectangular image stay out of
  * the main bundle and download only when a student opens their locker — or an admin tags one.
@@ -90,7 +102,7 @@ export default function PanoramaViewer({
 
     const viewer = pannellum.viewer(el, {
       type: 'equirectangular',
-      panorama: imageUrl,
+      panorama: corsSafe(imageUrl),
       autoLoad: true,
       showZoomCtrl: true,
       showFullscreenCtrl: false,
