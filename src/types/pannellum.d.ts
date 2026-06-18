@@ -27,6 +27,8 @@ declare global {
     cssClass?: string;
     createTooltipFunc?: (hotSpotDiv: HTMLElement, args?: unknown) => void;
     createTooltipArgs?: unknown;
+    clickHandlerFunc?: (event: MouseEvent, args?: unknown) => void;
+    clickHandlerArgs?: unknown;
   }
 
   interface PannellumConfig {

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '../../components';
 import { useLockersBySection, usePanorama } from '../../data/hooks';
@@ -33,20 +33,33 @@ export default function LockerTagger({
   const [number, setNumber] = useState('');
   const [error, setError] = useState<string | null>(null);
 
+  // Load an existing pin back into the form so it can be moved/retagged (Save upserts the same row).
+  // Stable so the pins memo can wire it as each marker's click handler without re-adding hot spots.
+  const startEdit = useCallback((l: Locker) => {
+    setNumber(String(l.number));
+    setCaptured(
+      l.hotspot_yaw != null && l.hotspot_pitch != null
+        ? { yaw: l.hotspot_yaw, pitch: l.hotspot_pitch }
+        : null,
+    );
+    setError(null);
+  }, []);
+
   // The number in the form. When it matches an existing pin, Save updates that pin in place.
   const editingNum = number.trim() && Number.isInteger(Number(number)) ? Number(number) : null;
   const isUpdate = (lockers.data ?? []).some((l) => l.number === editingNum);
 
-  // Existing tagged lockers as pins, plus the just-clicked point so you can see what you're saving.
-  // The locker being edited is shown only as the live "pending" pin (so it isn't drawn twice).
+  // Existing tagged lockers as pins (tap a marker to edit it), plus the just-clicked point so you can
+  // see what you're saving. The locker being edited shows only as the live "pending" pin (not twice).
   const pins = useMemo<PanoPin[]>(() => {
-    const existing = (lockers.data ?? [])
+    const existing: PanoPin[] = (lockers.data ?? [])
       .filter((l) => l.hotspot_yaw != null && l.hotspot_pitch != null && l.number !== editingNum)
       .map((l) => ({
         id: `locker-${l.number}`,
         yaw: l.hotspot_yaw as number,
         pitch: l.hotspot_pitch as number,
         label: `#${l.number}`,
+        onSelect: () => startEdit(l),
       }));
     if (captured) {
       existing.push({
@@ -57,7 +70,7 @@ export default function LockerTagger({
       });
     }
     return existing;
-  }, [lockers.data, captured, editingNum]);
+  }, [lockers.data, captured, editingNum, startEdit]);
 
   const invalidate = () =>
     void queryClient.invalidateQueries({ queryKey: ['lockers', section.id] });
@@ -118,16 +131,6 @@ export default function LockerTagger({
     savePin.mutate();
   };
 
-  // Load an existing pin back into the form so it can be moved/retagged (Save upserts the same row).
-  const startEdit = (l: Locker) => {
-    setNumber(String(l.number));
-    setCaptured(
-      l.hotspot_yaw != null && l.hotspot_pitch != null
-        ? { yaw: l.hotspot_yaw, pitch: l.hotspot_pitch }
-        : null,
-    );
-    setError(null);
-  };
   const clearForm = () => {
     setNumber('');
     setCaptured(null);
