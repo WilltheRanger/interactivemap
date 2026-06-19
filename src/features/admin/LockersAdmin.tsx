@@ -1,8 +1,8 @@
 import { lazy, Suspense, useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Camera, Pencil, Plus, Upload } from 'lucide-react';
-import { Button, Card } from '../../components';
-import { useBuildings, useLockerSections, useLockersBySection } from '../../data/hooks';
+import { Button, Card, Skeleton } from '../../components';
+import { useBuildings, useLockerSections, useLockersBySection, usePanorama } from '../../data/hooks';
 import { config } from '../../lib/config';
 import { uploadPanorama } from '../../lib/cloudinary';
 import type { LockerSection } from '../../lib/refData';
@@ -263,71 +263,35 @@ function SectionForm({
   );
 }
 
-/** Per-locker hotspot editor (yaw/pitch) for one section — optional fine-tuning. */
+/**
+ * Per-locker pins for one section: the read-only list (with delete) + the visual "Tag in 360°" tool,
+ * which is the single way to add/move pins (no more raw yaw/pitch typing).
+ */
 function HotspotEditor({ section }: { section: LockerSection }) {
   const lockers = useLockersBySection(section.id);
   const queryClient = useQueryClient();
-  const [number, setNumber] = useState('');
-  const [yaw, setYaw] = useState('');
-  const [pitch, setPitch] = useState('');
-  const [formError, setFormError] = useState<string | null>(null);
   const [tagging, setTagging] = useState(false);
 
-  const invalidate = () =>
-    void queryClient.invalidateQueries({ queryKey: ['lockers', section.id] });
-
-  const add = useMutation({
-    mutationFn: async () => {
-      const { error } = await getSupabase()
-        .from('lockers')
-        .insert({
-          id: `${section.id}-${number}`,
-          section_id: section.id,
-          number: Number(number),
-          hotspot_yaw: yaw.trim() ? Number(yaw) : null,
-          hotspot_pitch: pitch.trim() ? Number(pitch) : null,
-        });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      invalidate();
-      setNumber('');
-      setYaw('');
-      setPitch('');
-    },
-  });
   const remove = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await getSupabase().from('lockers').delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: invalidate,
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['lockers', section.id] }),
   });
-
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const n = Number(number);
-    if (!number.trim() || !Number.isInteger(n)) return setFormError('Enter a locker number.');
-    if (n < section.number_start || n > section.number_end)
-      return setFormError(
-        `Locker must be in this section's range (${section.number_start}–${section.number_end}).`,
-      );
-    setFormError(null);
-    add.mutate();
-  };
 
   return (
     <div className="admin-hotspots">
       <h4 className="admin-hotspots__title">
         Per-locker pins{' '}
-        <span className="admin-row__sub">(optional — yaw/pitch in the panorama)</span>
+        <span className="admin-row__sub">(tap each locker in the 360° photo)</span>
       </h4>
       {section.panorama_id ? (
         <Button variant="secondary" icon={<Camera size={16} />} onClick={() => setTagging(true)}>
           Tag in 360°
         </Button>
       ) : (
-        <p className="admin-row__sub">Add a panorama URL (Edit) to tag pins visually.</p>
+        <p className="admin-row__sub">Add a panorama photo (Edit) to tag pins.</p>
       )}
       {tagging && (
         <Suspense fallback={null}>
@@ -339,7 +303,7 @@ function HotspotEditor({ section }: { section: LockerSection }) {
         isError={lockers.isError}
         onRetry={() => void lockers.refetch()}
       >
-        {(lockers.data ?? []).length > 0 && (
+        {(lockers.data ?? []).length > 0 ? (
           <ul className="admin-list admin-list--compact">
             {(lockers.data ?? []).map((l) => (
               <li key={l.id} className="admin-row">
@@ -357,42 +321,15 @@ function HotspotEditor({ section }: { section: LockerSection }) {
               </li>
             ))}
           </ul>
+        ) : (
+          section.panorama_id && (
+            <p className="admin-row__sub">No pins yet — use “Tag in 360°”.</p>
+          )
         )}
       </SectionStates>
-      <form className="admin-hotspots__form" onSubmit={submit} noValidate>
-        <input
-          className="admin-input"
-          type="number"
-          placeholder="Locker #"
-          aria-label="Locker number"
-          value={number}
-          onChange={(e) => setNumber(e.target.value)}
-        />
-        <input
-          className="admin-input"
-          type="number"
-          step="0.1"
-          placeholder="Yaw"
-          aria-label="Hotspot yaw"
-          value={yaw}
-          onChange={(e) => setYaw(e.target.value)}
-        />
-        <input
-          className="admin-input"
-          type="number"
-          step="0.1"
-          placeholder="Pitch"
-          aria-label="Hotspot pitch"
-          value={pitch}
-          onChange={(e) => setPitch(e.target.value)}
-        />
-        <Button type="submit" variant="secondary" disabled={add.isPending}>
-          {add.isPending ? 'Adding…' : 'Add pin'}
-        </Button>
-      </form>
-      {(formError || add.isError) && (
+      {remove.isError && (
         <p className="admin-status admin-status--error" role="alert">
-          {formError ?? (add.error instanceof Error ? add.error.message : 'Couldn’t add the pin.')}
+          Couldn’t delete the pin.
         </p>
       )}
     </div>
@@ -409,6 +346,15 @@ export function LockersAdmin() {
   const [editing, setEditing] = useState<LockerSection | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
+  // Editing a section needs its current panorama URL preloaded, or saving would clear the panorama
+  // (a blank URL field = "remove panorama"). Wait for the load to *succeed* before mounting the edit
+  // form; if it errors, show a retry rather than risk wiping the photo.
+  const editingPanorama = usePanorama(editing?.panorama_id ?? null);
+  const editFormReady = !editing?.panorama_id || editingPanorama.isSuccess;
+  const closeForm = () => {
+    setEditing(null);
+    setShowForm(false);
+  };
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
@@ -435,15 +381,30 @@ export function LockersAdmin() {
       </div>
       {(showForm || editing) && (
         <Card>
-          <SectionForm
-            key={editing?.id ?? 'new-section'}
-            editing={editing}
-            panoramaUrl=""
-            onDone={() => {
-              setEditing(null);
-              setShowForm(false);
-            }}
-          />
+          {editFormReady ? (
+            <SectionForm
+              key={editing?.id ?? 'new-section'}
+              editing={editing}
+              panoramaUrl={editingPanorama.data?.image_url ?? ''}
+              onDone={closeForm}
+            />
+          ) : editingPanorama.isError ? (
+            <div className="admin-form">
+              <p className="admin-status admin-status--error" role="alert">
+                Couldn’t load this section’s photo. Retry before editing so it isn’t lost.
+              </p>
+              <div className="admin-form__actions">
+                <Button variant="primary" onClick={() => void editingPanorama.refetch()}>
+                  Retry
+                </Button>
+                <Button variant="secondary" onClick={closeForm}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Skeleton width="100%" height={120} radius="var(--radius-md)" />
+          )}
         </Card>
       )}
 
