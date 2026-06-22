@@ -229,6 +229,10 @@ function SectionForm({
             value={form.panorama_url}
             onChange={(e) => set('panorama_url', e.target.value)}
           />
+          <p className="admin-form__hint">
+            One 360° (equirectangular) photo of this locker bank — from a 360 camera, or your phone’s
+            Panorama / “Photo Sphere” mode. The app shrinks it for you.
+          </p>
         </Field>
         <Field label="Map X (optional)">
           <input
@@ -367,8 +371,10 @@ export function LockersAdmin() {
   return (
     <div className="admin-body">
       <p className="admin-note" role="note">
-        Placeholder sections until the real locker ranges, map coordinates, and panoramas are
-        supplied. A locker number typed by a student resolves to a section by its range.
+        <strong>How to add a locker bank:</strong> 1) <em>Add section</em> — give its locker number
+        range and building. 2) <em>Upload</em> the bank’s 360° photo. 3) Open <em>Pins → Tag in
+        360°</em> and tap each locker in the photo. Students just type their locker number and the app
+        finds the bank by its range.
       </p>
 
       <div className="admin-subsection__head">
