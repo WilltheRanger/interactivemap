@@ -35,9 +35,9 @@ jobs:
           VITE_SUPABASE_URL: https://mnvntttootxbbbnsnvke.supabase.co
           VITE_SUPABASE_ANON_KEY: sb_publishable_TLnFfdFCkX0_NoLFenvEqA_MGqjWmqV
           # Cloudinary (optional) — enables the admin "Upload photo" button for panoramas. Both are
-          # PUBLIC values (unsigned preset). Fill them in to turn uploads on; blank = paste-a-URL.
-          VITE_CLOUDINARY_CLOUD_NAME: ''
-          VITE_CLOUDINARY_UPLOAD_PRESET: ''
+          # PUBLIC values (unsigned preset), safe in the client.
+          VITE_CLOUDINARY_CLOUD_NAME: dhdpm7zd1
+          VITE_CLOUDINARY_UPLOAD_PRESET: '360 photos'
       # SPA fallback so deep links / refresh work on GitHub Pages.
       - run: cp dist/index.html dist/404.html
       - uses: actions/configure-pages@v5
