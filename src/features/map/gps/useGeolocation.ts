@@ -80,10 +80,19 @@ export function useGeolocation(): GeolocationState {
         setStatus('active');
       },
       (err) => {
-        clearWatch();
-        lastFixRef.current = null;
-        setPosition(null);
-        setStatus(err.code === err.PERMISSION_DENIED ? 'denied' : 'unavailable');
+        // Permission denied won't recover — stop and surface it.
+        if (err.code === err.PERMISSION_DENIED) {
+          clearWatch();
+          lastFixRef.current = null;
+          setPosition(null);
+          setStatus('denied');
+          return;
+        }
+        // Transient errors (timeout / position temporarily unavailable) are common near buildings.
+        // watchPosition keeps retrying, so DON'T tear it down or drop the last fix — that made the
+        // dot vanish and flicker on a brief hiccup. Keep showing the last position; only fall back to
+        // "unavailable" if we never got a fix in the first place.
+        setStatus((s) => (s === 'active' ? 'active' : 'unavailable'));
       },
       WATCH_OPTIONS,
     );
