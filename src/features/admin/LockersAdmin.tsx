@@ -361,11 +361,28 @@ export function LockersAdmin() {
   };
 
   const remove = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await getSupabase().from('locker_sections').delete().eq('id', id);
-      if (error) throw error;
+    mutationFn: async (section: LockerSection) => {
+      const supabase = getSupabase();
+      // Children first: lockers reference the section (FK, no cascade), so they block the delete.
+      const { error: lockersErr } = await supabase
+        .from('lockers')
+        .delete()
+        .eq('section_id', section.id);
+      if (lockersErr) throw new Error(lockersErr.message);
+      const { error: secErr } = await supabase
+        .from('locker_sections')
+        .delete()
+        .eq('id', section.id);
+      if (secErr) throw new Error(secErr.message);
+      // Tidy up the now-orphaned panorama (the section was the only thing referencing it).
+      if (section.panorama_id) {
+        await supabase.from('panoramas').delete().eq('id', section.panorama_id);
+      }
     },
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['lockerSections'] }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['lockerSections'] });
+      void queryClient.invalidateQueries({ queryKey: ['panoramas'] });
+    },
   });
 
   return (
@@ -453,8 +470,8 @@ export function LockersAdmin() {
                     </Button>
                     <ConfirmDeleteButton
                       label={s.label ?? s.id}
-                      pending={remove.isPending && remove.variables === s.id}
-                      onConfirm={() => remove.mutate(s.id)}
+                      pending={remove.isPending && remove.variables?.id === s.id}
+                      onConfirm={() => remove.mutate(s)}
                     />
                   </div>
                 </div>
