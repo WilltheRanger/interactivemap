@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ChevronRight, LogOut, Mail, Monitor, Moon, Sun, UserCircle2 } from 'lucide-react';
 import { Button } from '../../components';
 import { config } from '../../lib/config';
+import { isAdminEmail } from '../../lib/authPolicy';
 import { useSupabaseSession } from '../../data/useSession';
 import { getSupabase } from '../../lib/supabase';
 import { useTheme } from '../../data/useTheme';
@@ -54,6 +55,7 @@ export function AccountScreen() {
   const scheduleLabel =
     periodCount > 0 ? `${periodCount} ${periodCount === 1 ? 'class' : 'classes'} set` : 'None set';
   const lockerLabel = myLocker != null ? String(myLocker) : 'Not set';
+  const isAdmin = isAdminEmail(session?.user.email);
 
   const handleClear = () => {
     clearAll();
@@ -223,6 +225,26 @@ export function AccountScreen() {
           </>
         )}
       </div>
+
+      {isAdmin && (
+        <>
+          <h2 className="account__section-title">Staff tools</h2>
+          <div className="account__card">
+            <Link to="/admin" className="account__link-row">
+              <span className="account__row-label">Admin (manage data)</span>
+              <span className="account__row-value">
+                <ChevronRight size={18} aria-hidden="true" />
+              </span>
+            </Link>
+            <Link to="/geocal" className="account__link-row">
+              <span className="account__row-label">GPS calibration</span>
+              <span className="account__row-value">
+                <ChevronRight size={18} aria-hidden="true" />
+              </span>
+            </Link>
+          </div>
+        </>
+      )}
 
       <h2 className="account__section-title">About</h2>
       <div className="account__card">
