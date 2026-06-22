@@ -30,8 +30,8 @@ const DOT_ICON = L.divIcon({
   iconAnchor: [8, 8],
 });
 
-// Smoothing time constant: the dot eases ~95% of the way to a new fix in ~3× this (≈0.9s).
-const SMOOTH_TAU_MS = 300;
+// Smoothing time constant: the dot eases ~95% of the way to a new fix in ~3× this (≈1.2s).
+const SMOOTH_TAU_MS = 400;
 
 /**
  * "You Are Here" — a user-initiated GPS dot (with a facing cone) + accuracy circle on the 2D map.
@@ -131,10 +131,10 @@ export function MapGps({ map, imageSize, georef }: MapGpsProps) {
     const { latlng } = gpsToMapPoint(latitude, longitude, imageSize, georef);
     const target = L.latLng(latlng[0], latlng[1]);
     const radius = accuracyToMapRadius(latitude, longitude, accuracy, georef);
-    targetRef.current = target;
     targetRadiusRef.current = radius;
 
     if (!markerRef.current) {
+      targetRef.current = target;
       shownRef.current = target;
       shownRadiusRef.current = radius;
       circleRef.current = L.circle(target, {
@@ -153,7 +153,15 @@ export function MapGps({ map, imageSize, georef }: MapGpsProps) {
       }).addTo(map);
       markerMapRef.current = map;
     } else {
-      startLoop(); // glide toward the new fix
+      // Anti-jitter deadband: when you're standing still GPS still wobbles a few metres each fix,
+      // which makes the dot twitch. Only re-aim the dot if the new fix moved beyond a band scaled to
+      // the reading's own accuracy (so a noisier fix tolerates more wobble); always ease the accuracy
+      // circle. This holds the dot steady when stationary but still follows real movement.
+      const shown = shownRef.current ?? target;
+      const moved = Math.hypot(target.lat - shown.lat, target.lng - shown.lng);
+      const deadband = Math.min(Math.max(radius * 0.5, 8), 60);
+      if (moved > deadband) targetRef.current = target;
+      startLoop(); // glide toward the (possibly unchanged) target + new accuracy radius
     }
   }, [map, status, position, imageSize, georef, startLoop, teardown]);
 
