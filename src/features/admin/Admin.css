@@ -297,6 +297,13 @@
   width: 110px;
 }
 
+/* Small muted helper text under a form field. */
+.admin-form__hint {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
 /* In-admin panorama upload (Cloudinary) — a friendly "Upload photo" button + status. */
 .admin-upload {
   display: flex;
