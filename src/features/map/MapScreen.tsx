@@ -536,10 +536,13 @@ export function MapScreen() {
 
       <div ref={containerRef} key={level} className="map-screen__canvas" aria-label="Campus map" />
 
-      {/* GPS "Find Me" only where the georef matches the art (gps/georef.ts). The redrawn upper map
-          needs fresh control points, so its layer stays hidden until recalibrated. */}
-      {CAMPUS_LEVELS[level].gpsCalibrated && (
-        <MapGps map={mapInstance} imageSize={CAMPUS_LEVELS[level].imageSize} />
+      {/* GPS "Find Me" only on levels with a georef (gps/georef.ts) — each level has its own fit. */}
+      {CAMPUS_LEVELS[level].georef && (
+        <MapGps
+          map={mapInstance}
+          imageSize={CAMPUS_LEVELS[level].imageSize}
+          georef={CAMPUS_LEVELS[level].georef}
+        />
       )}
 
       {selected && (

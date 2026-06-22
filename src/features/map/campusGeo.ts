@@ -12,6 +12,8 @@
  *    against the illustration's edges (`scripts/fit-level.mjs`, mean ≈2px). The lockers are a separate
  *    overlay with their own transform. Re-run the fit script if a fitted asset is re-exported.
  */
+import type { Georef } from './gps/georef';
+
 export type CampusLevel = 'upper' | 'lower';
 
 export interface LevelConfig {
@@ -28,10 +30,9 @@ export interface LevelConfig {
    *  /map?lax=&lsx=&lay=&lsy= (see MapScreen). Unused when `lockerGroupId` is set. */
   lockerSvgUrl?: string;
   lockerSvgToImage?: { ax: number; sx: number; ay: number; sy: number };
-  /** Whether the GPS georeference (gps/georef.ts) matches this level's illustration. The georef was
-   *  calibrated on the old upper art; the redrawn upper map needs fresh control points, so its
-   *  "Find Me" dot is hidden until recalibrated. Lower still uses the original (approximate) art. */
-  gpsCalibrated?: boolean;
+  /** GPS georeference for this level (gps/georef.ts) — fitted from /geocal control points. When
+   *  present, the "Find Me" layer shows and uses it; absent → the layer is hidden for this level. */
+  georef?: Georef;
 }
 
 export const CAMPUS_LEVELS: Record<CampusLevel, LevelConfig> = {
@@ -46,7 +47,15 @@ export const CAMPUS_LEVELS: Record<CampusLevel, LevelConfig> = {
     imageSize: { w: 1382, h: 863 },
     svgToImage: { ax: 0, sx: 1, ay: 0, sy: 1 }, // identity — SVG and art share the frame
     lockerGroupId: 'Upper Lockers',
-    gpsCalibrated: false, // redrawn art invalidated the old georef — see gps/georef.ts
+    // Fitted (least-squares) from 5 /geocal control points on the v3 map — mean ~16 px (~4 m) error.
+    georef: {
+      a: -378354.36080380145,
+      b: -86550.72825823678,
+      c: -41642912.292653,
+      d: -98717.19614963865,
+      e: 507230.21229327813,
+      f: -28869273.55171639,
+    },
   },
   lower: {
     label: 'Lower',
@@ -56,7 +65,15 @@ export const CAMPUS_LEVELS: Record<CampusLevel, LevelConfig> = {
     svgToImage: { ax: -9, sx: 0.8111, ay: 15, sy: 0.7822 },
     lockerSvgUrl: `${import.meta.env.BASE_URL}lockers-lower.svg`,
     lockerSvgToImage: { ax: -245.13, sx: 1.1171, ay: -358.73, sy: 1.1716 },
-    gpsCalibrated: true,
+    // Original georef (calibrated on the old upper art, reused for lower's near-identical framing).
+    georef: {
+      a: -361902.53295107797,
+      b: -60295.66066283343,
+      c: -40596503.938283384,
+      d: -119032.97929808646,
+      e: 460316.8558728938,
+      f: -29669027.745826144,
+    },
   },
 };
 

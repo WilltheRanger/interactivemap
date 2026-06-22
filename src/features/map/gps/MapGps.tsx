@@ -4,13 +4,21 @@ import { LocateFixed } from 'lucide-react';
 import { Button } from '../../../components';
 import { useGeolocation } from './useGeolocation';
 import { useDeviceHeading } from './useDeviceHeading';
-import { accuracyToMapRadius, gpsToMapPoint, headingToMapRotation, type ImageSize } from './georef';
+import {
+  accuracyToMapRadius,
+  gpsToMapPoint,
+  headingToMapRotation,
+  type Georef,
+  type ImageSize,
+} from './georef';
 import './MapGps.css';
 
 interface MapGpsProps {
   /** The live Leaflet map for the displayed level (null briefly while a level reloads). */
   map: L.Map | null;
   imageSize: ImageSize;
+  /** The displayed level's GPS georeference (per-level; see CAMPUS_LEVELS[level].georef). */
+  georef: Georef;
 }
 
 const DOT_ICON = L.divIcon({
@@ -32,7 +40,7 @@ const SMOOTH_TAU_MS = 300;
  * lifecycles and its Leaflet layers. Deleting this folder + its one line in MapScreen removes it
  * cleanly.
  */
-export function MapGps({ map, imageSize }: MapGpsProps) {
+export function MapGps({ map, imageSize, georef }: MapGpsProps) {
   const { status, position, active, start, stop } = useGeolocation();
   const { heading, enable: enableHeading, stop: stopHeading } = useDeviceHeading();
 
@@ -120,9 +128,9 @@ export function MapGps({ map, imageSize }: MapGpsProps) {
     if (markerRef.current && markerMapRef.current !== map) teardown();
 
     const { latitude, longitude, accuracy } = position.coords;
-    const { latlng } = gpsToMapPoint(latitude, longitude, imageSize);
+    const { latlng } = gpsToMapPoint(latitude, longitude, imageSize, georef);
     const target = L.latLng(latlng[0], latlng[1]);
-    const radius = accuracyToMapRadius(latitude, longitude, accuracy);
+    const radius = accuracyToMapRadius(latitude, longitude, accuracy, georef);
     targetRef.current = target;
     targetRadiusRef.current = radius;
 
@@ -147,7 +155,7 @@ export function MapGps({ map, imageSize }: MapGpsProps) {
     } else {
       startLoop(); // glide toward the new fix
     }
-  }, [map, status, position, imageSize, startLoop, teardown]);
+  }, [map, status, position, imageSize, georef, startLoop, teardown]);
 
   // Rotate the facing cone to the compass heading (mapped into this rotated map's frame).
   useEffect(() => {
@@ -156,19 +164,19 @@ export function MapGps({ map, imageSize }: MapGpsProps) {
     if (heading != null && status === 'active' && position) {
       el.style.setProperty(
         '--gps-heading',
-        `${headingToMapRotation(position.coords.latitude, heading)}deg`,
+        `${headingToMapRotation(position.coords.latitude, heading, georef)}deg`,
       );
       el.classList.add('has-heading');
     } else {
       el.classList.remove('has-heading');
     }
-  }, [heading, position, status]);
+  }, [heading, position, status, georef]);
 
   useEffect(() => teardown, [teardown]); // tidy up on unmount
 
   const offCampus =
     status === 'active' && position
-      ? !gpsToMapPoint(position.coords.latitude, position.coords.longitude, imageSize).onMap
+      ? !gpsToMapPoint(position.coords.latitude, position.coords.longitude, imageSize, georef).onMap
       : false;
 
   const toggle = () => {
