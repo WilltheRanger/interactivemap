@@ -215,7 +215,7 @@ function SectionForm({
               )}
               {uploadError && (
                 <span className="admin-status admin-status--error" role="alert">
-                  {uploadError}
+                  {uploadError} You can paste an image URL below instead.
                 </span>
               )}
             </div>
