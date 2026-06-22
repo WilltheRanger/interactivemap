@@ -10,6 +10,7 @@ import { InstallModal } from './InstallModal';
 import { RequireAuth } from './RequireAuth';
 import { ScreenCrashCard } from './ErrorFallbacks';
 import { MapScreen } from '../features/map/MapScreen';
+import { GeoCalibrate } from '../features/map/GeoCalibrate';
 import { AnnouncementsScreen } from '../features/announcements/AnnouncementsScreen';
 import { LockersScreen } from '../features/locker/LockersScreen';
 import { LogScreen } from '../features/log/LogScreen';
@@ -55,6 +56,8 @@ function AnimatedRoutes({ scrollRef }: { scrollRef: RefObject<HTMLElement | null
             <Route path="/tos" element={<TosScreen />} />
             {/* Staff-only; not linked from the student nav (see AdminScreen). */}
             <Route path="/admin" element={<AdminScreen />} />
+            {/* Dev-only GPS calibration helper (not linked); used to refit the Upper georeference. */}
+            <Route path="/geocal" element={<GeoCalibrate />} />
             <Route path="*" element={<Navigate to="/map" replace />} />
           </Routes>
         </ErrorBoundary>
