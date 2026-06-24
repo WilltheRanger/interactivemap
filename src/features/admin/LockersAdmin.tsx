@@ -235,26 +235,40 @@ function SectionForm({
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [swapHalves, setSwapHalves] = useState(false);
+  const [lastFile, setLastFile] = useState<File | null>(null);
 
   const set = <K extends keyof SectionFormState>(key: K, value: string) => {
     setForm((f) => ({ ...f, [key]: value }));
     setSaved(false);
   };
 
-  // Admin-friendly upload: pick a photo → Cloudinary (CORS + auto-resize) → fill the URL automatically.
-  const onPickFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = ''; // let the same file be re-picked after an error
-    if (!file) return;
+  // Admin-friendly upload: pick a photo → (optional swap-halves fix) → Cloudinary (CORS + auto-resize)
+  // → fill the URL automatically.
+  const runUpload = async (file: File, swap: boolean) => {
     setUploadError(null);
     setUploading(true);
     try {
-      set('panorama_url', await uploadPanorama(file));
+      set('panorama_url', await uploadPanorama(file, { swapHalves: swap }));
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : 'Upload failed.');
     } finally {
       setUploading(false);
     }
+  };
+
+  const onPickFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // let the same file be re-picked after an error
+    if (!file) return;
+    setLastFile(file);
+    await runUpload(file, swapHalves);
+  };
+
+  // Toggling the fix re-processes the same photo so the corrected result shows without re-picking.
+  const onToggleSwap = (next: boolean) => {
+    setSwapHalves(next);
+    if (lastFile && !uploading) void runUpload(lastFile, next);
   };
 
   const save = useMutation({
@@ -397,6 +411,15 @@ function SectionForm({
                   {uploadError} You can paste an image URL below instead.
                 </span>
               )}
+              <label className="admin-toggle admin-upload__fix">
+                <input
+                  type="checkbox"
+                  checked={swapHalves}
+                  onChange={(e) => onToggleSwap(e.target.checked)}
+                  disabled={uploading}
+                />
+                <span>Photo is split the wrong way — swap left/right halves</span>
+              </label>
             </div>
           )}
           <input
@@ -410,7 +433,8 @@ function SectionForm({
           />
           <p className="admin-form__hint">
             One 360° (equirectangular) photo of this locker bank — from a 360 camera, or your phone’s
-            Panorama / “Photo Sphere” mode. The app shrinks it for you.
+            Panorama / “Photo Sphere” mode. The app shrinks it for you. If the preview’s seam runs
+            through the middle of the scene, tick “split the wrong way” and it re-fixes the photo.
           </p>
         </Field>
         <Field label="Map X (optional)">

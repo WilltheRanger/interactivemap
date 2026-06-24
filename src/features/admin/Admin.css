@@ -449,6 +449,10 @@
   gap: var(--space-2);
   margin-bottom: var(--space-2);
 }
+/* The "swap halves" fix sits on its own row beneath the upload button. */
+.admin-upload__fix {
+  flex-basis: 100%;
+}
 .admin-upload__preview {
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
