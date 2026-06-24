@@ -16,6 +16,7 @@ export type Room = Tables<'rooms'>;
 export type Teacher = Tables<'teachers'>;
 export type MasterScheduleRow = Tables<'master_schedule'>;
 export type Panorama = Tables<'panoramas'>;
+export type LockerBlock = Tables<'locker_blocks'>;
 export type LockerSection = Tables<'locker_sections'>;
 export type Locker = Tables<'lockers'>;
 
@@ -223,14 +224,22 @@ export async function resolveLockerSection(lockerNumber: number): Promise<Locker
   return data?.[0] ?? null;
 }
 
-/**
- * Fetch one locker block by id — the unambiguous join key now that locker numbers repeat across
- * blocks. The student picks a block ("Block 1"…) and types a number; the number is validated against
- * the block's range (numberInBlock), never used to *find* the block.
- */
-export async function getLockerSectionById(id: string): Promise<LockerSection | null> {
+// ── Locker blocks (the student-facing grouping; a block has many section ranges) ──
+/** All locker blocks ("Block 1", "Block 2"…) — the list a student picks from. */
+export async function getLockerBlocks(): Promise<LockerBlock[]> {
   const { data, error } = await getSupabase()
-    .from('locker_sections')
+    .from('locker_blocks')
+    .select('*')
+    .order('sort_order')
+    .order('label');
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** One block by id (for its display label). */
+export async function getLockerBlock(id: string): Promise<LockerBlock | null> {
+  const { data, error } = await getSupabase()
+    .from('locker_blocks')
     .select('*')
     .eq('id', id)
     .maybeSingle();
@@ -238,9 +247,26 @@ export async function getLockerSectionById(id: string): Promise<LockerSection | 
   return data;
 }
 
-/** True when a locker number falls within a block's inclusive [number_start, number_end] range. */
-export function numberInBlock(block: LockerSection, n: number): boolean {
-  return Number.isInteger(n) && n >= block.number_start && n <= block.number_end;
+/**
+ * Resolve a (block, number) to the section within that block whose range contains the number. A block
+ * holds several non-overlapping ranges (e.g. Block 4 = 001–069, 070–156, 253–264, 265–306); this
+ * finds the one the number lands in. Returns null when no range in the block contains it. The block
+ * id is what disambiguates — the same number can exist in a different block's range.
+ */
+export async function resolveLockerInBlock(
+  blockId: string,
+  lockerNumber: number,
+): Promise<LockerSection | null> {
+  const { data, error } = await getSupabase()
+    .from('locker_sections')
+    .select('*')
+    .eq('block_id', blockId)
+    .lte('number_start', lockerNumber)
+    .gte('number_end', lockerNumber)
+    .order('number_start')
+    .limit(1);
+  if (error) throw error;
+  return data?.[0] ?? null;
 }
 
 export async function getPanorama(id: string): Promise<Panorama | null> {

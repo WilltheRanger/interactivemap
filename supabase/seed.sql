@@ -44,17 +44,32 @@ insert into panoramas (id, image_url, label, initial_yaw, initial_pitch, hfov) v
   ('pano-1', 'https://pannellum.org/images/cerro-toco-0.jpg', 'Placeholder panorama', 0, 0, 100)
 on conflict (id) do nothing;
 
--- Locker sections with NON-OVERLAPPING ranges.
+-- Locker blocks (what a student picks). NOT tied to buildings.
+insert into locker_blocks (id, label, sort_order) values
+  ('block-1', 'Block 1', 1),
+  ('block-2', 'Block 2', 2),
+  ('block-4', 'Block 4', 4)
+on conflict (id) do nothing;
+
+-- Locker sections (ranges) belong to a block. Block 4 shows the real-world case: ONE block with
+-- multiple non-contiguous ranges, each its own physical bank with its own 360° photo + map spot.
+-- Numbers repeat across blocks (Block 1 and Block 4 both contain 1042-ish numbers in different ranges)
+-- — which is exactly why resolution needs the block, not just the number.
 insert into locker_sections
-  (id, building_id, panorama_id, number_start, number_end, map_coord, label) values
-  ('sec-1000s', 'bldg-a', 'pano-1', 1000, 1080, '{"x":120,"y":200}', 'Placeholder Section 1000s'),
-  ('sec-1100s', 'bldg-b', 'pano-1', 1081, 1160, '{"x":300,"y":240}', 'Placeholder Section 1100s')
+  (id, block_id, panorama_id, number_start, number_end, map_coord, label) values
+  ('sec-b1-1000s', 'block-1', 'pano-1', 1000, 1080, '{"x":120,"y":200}', '1000–1080'),
+  ('sec-b2-1100s', 'block-2', 'pano-1', 1081, 1160, '{"x":300,"y":240}', '1081–1160'),
+  ('sec-b4-001',   'block-4', 'pano-1',    1,   69, '{"x":400,"y":300}', '001–069'),
+  ('sec-b4-070',   'block-4', 'pano-1',   70,  156, '{"x":420,"y":300}', '070–156'),
+  ('sec-b4-253',   'block-4', 'pano-1',  253,  264, '{"x":440,"y":300}', '253–264'),
+  ('sec-b4-265',   'block-4', 'pano-1',  265,  306, '{"x":460,"y":300}', '265–306')
 on conflict (id) do nothing;
 
 -- A few lockers with sample hotspot angles (per-locker pin is optional).
 insert into lockers (id, section_id, number, hotspot_yaw, hotspot_pitch) values
-  ('lk-1042', 'sec-1000s', 1042, 10, -5),
-  ('lk-1100', 'sec-1100s', 1100, -30, 0)
+  ('lk-1042', 'sec-b1-1000s', 1042, 10, -5),
+  ('lk-1100', 'sec-b2-1100s', 1100, -30, 0),
+  ('lk-260',  'sec-b4-253',    260,  5,  0)
 on conflict (id) do nothing;
 
 -- Announcements (placeholder posts so the feed has content; one carries an event to

@@ -8,7 +8,8 @@ import {
   getBellSchedule,
   getCourses,
   getGraduationRequirements,
-  getLockerSectionById,
+  getLockerBlock,
+  getLockerBlocks,
   getLockerSections,
   getLockersBySection,
   getPanoramas,
@@ -21,6 +22,7 @@ import {
   getRoomWithTeacher,
   getSectionsForCourse,
   getTeachers,
+  resolveLockerInBlock,
   resolveLockerSection,
 } from '../lib/refData';
 
@@ -134,12 +136,27 @@ export function useLockerSection(lockerNumber: number | null) {
   });
 }
 
-/** Resolve a saved locker's block by its id (the unambiguous join key — see refData). */
+/** All locker blocks — the list a student picks from (and the admin Block dropdown). */
+export function useLockerBlocks() {
+  return useQuery({ queryKey: ['lockerBlocks'], queryFn: getLockerBlocks, staleTime: STALE_MS });
+}
+
+/** One block by id, for its display label (the saved locker stores only the id). */
 export function useLockerBlock(blockId: string | null) {
   return useQuery({
     queryKey: ['lockerBlock', blockId],
-    queryFn: () => getLockerSectionById(blockId as string),
+    queryFn: () => getLockerBlock(blockId as string),
     enabled: blockId != null,
+    staleTime: STALE_MS,
+  });
+}
+
+/** Resolve a saved {block, number} to the section (range) in that block that contains the number. */
+export function useResolveLocker(blockId: string | null, lockerNumber: number | null) {
+  return useQuery({
+    queryKey: ['resolveLocker', blockId, lockerNumber],
+    queryFn: () => resolveLockerInBlock(blockId as string, lockerNumber as number),
+    enabled: blockId != null && lockerNumber != null,
     staleTime: STALE_MS,
   });
 }
