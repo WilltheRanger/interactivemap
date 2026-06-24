@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, type FormEvent } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Compass, MapPin, Pencil, Search } from 'lucide-react';
 import { Button, Card, Skeleton } from '../../components';
@@ -9,6 +9,7 @@ import {
   useResolveLocker,
   usePanorama,
 } from '../../data/hooks';
+import type { LockerBlock } from '../../lib/refData';
 import { useMyLocker } from '../../data/usePersonal';
 import { setMyLocker } from '../../lib/personalStore';
 import type { MyLocker } from '../../types/personal';
@@ -18,12 +19,22 @@ import './LockersScreen.css';
 // student actually opens their locker.
 const PanoramaViewer = lazy(() => import('./PanoramaViewer'));
 
+/** The single block digit a student types in their BK pin, parsed from the block label ("BK3" → 3). */
+function blockPinDigit(b: LockerBlock): number | null {
+  const m = (b.label ?? '').match(/\d+/);
+  return m ? parseInt(m[0], 10) : null;
+}
+
+/** Locker number → its 3-digit pin form (301, 69 → "301", "069"). */
+function pad3(n: number): string {
+  return String(n).padStart(3, '0');
+}
+
 /**
- * Locker finder (block model): the school's lockers are grouped into blocks ("Block 1"…), each block
- * holds several non-contiguous ranges (sections), and locker numbers repeat across blocks. So a
- * student picks their BLOCK and types a number → the app finds the section in that block whose range
- * contains the number → that section's 360° panorama with a pin on the locker. The saved
- * {block_id, number} persists on-device only (personalStore.my_locker — never server-side per CLAUDE.md).
+ * Locker finder (BK pin). Lockers are issued as a code like "BK3301": a fixed "BK", then the block
+ * digit (3), then the 3-digit locker number (301). The student types the 4 digits; the block digit
+ * picks the block (numbers repeat across blocks), and the locker number resolves to the section (range)
+ * in that block → its 360° panorama with a pin. The saved {block_id, number} is on-device only.
  */
 export function LockersScreen() {
   const myLocker = useMyLocker();
@@ -35,9 +46,7 @@ export function LockersScreen() {
       <h1 id="lockers-title" className="screen__title">
         Lockers
       </h1>
-      <p className="screen__sub">
-        Pick your block and enter your locker number to find it and see it in 360°.
-      </p>
+      <p className="screen__sub">Enter your locker code to find it and see it in 360°.</p>
 
       <div className="screen__body">
         {showForm ? (
@@ -57,9 +66,7 @@ export function LockersScreen() {
   );
 }
 
-/** Block + number entry. The block is required; the number is checked against the block's ranges on
- *  resolution (the result view), so the form only validates a block is chosen and the number is a
- *  positive integer. */
+/** BK-pin entry: a fixed "BK" prefix + a 4-digit code (block digit + 3-digit locker number). */
 function LockerEntry({
   current,
   onSubmit,
@@ -71,78 +78,73 @@ function LockerEntry({
 }) {
   const blocks = useLockerBlocks();
   const list = blocks.data ?? [];
-  const [blockId, setBlockId] = useState(current?.block_id ?? '');
-  const [value, setValue] = useState(current != null ? String(current.number) : '');
+  const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const prefilled = useRef(false);
+
+  // Prefill the code when editing, once the blocks load (we need the saved block's digit to rebuild it).
+  useEffect(() => {
+    const data = blocks.data;
+    if (prefilled.current || !current || !data?.length) return;
+    const block = data.find((b) => b.id === current.block_id);
+    const digit = block ? blockPinDigit(block) : null;
+    setCode(`${digit ?? ''}${pad3(current.number)}`);
+    prefilled.current = true;
+  }, [current, blocks.data]);
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    if (!blockId) {
-      setError('Choose your locker block.');
+    if (!/^\d{4}$/.test(code)) {
+      setError('Enter the 4 numbers after BK — e.g. 3301.');
       return;
     }
-    const n = Number(value);
-    if (!value.trim() || !Number.isInteger(n) || n <= 0) {
-      setError('Enter your locker number.');
+    const digit = parseInt(code[0], 10);
+    const lockerNumber = parseInt(code.slice(1), 10);
+    const block = list.find((b) => blockPinDigit(b) === digit);
+    if (!block) {
+      setError(`No block BK${digit} found. Check the first number of your code.`);
       return;
     }
     setError(null);
-    onSubmit({ block_id: blockId, number: n });
+    onSubmit({ block_id: block.id, number: lockerNumber });
   };
 
-  const noBlocks = !blocks.isPending && !blocks.isError && list.length === 0;
+  const blocksError = blocks.isError;
 
   return (
     <Card>
       <form className="locker-entry" onSubmit={submit} noValidate>
-        <label className="locker-entry__label" htmlFor="locker-block">
-          Locker block
+        <label className="locker-entry__label" htmlFor="locker-code">
+          Your locker code
         </label>
-        <select
-          id="locker-block"
-          className="locker-entry__input"
-          value={blockId}
-          onChange={(event) => {
-            setBlockId(event.target.value);
-            setError(null);
-          }}
-          disabled={blocks.isPending || list.length === 0}
-          aria-invalid={!!error && !blockId}
-        >
-          <option value="">{blocks.isPending ? 'Loading blocks…' : 'Select your block'}</option>
-          {list.map((b) => (
-            <option key={b.id} value={b.id}>
-              {b.label}
-            </option>
-          ))}
-        </select>
+        <div className="locker-entry__code">
+          <span className="locker-entry__prefix" aria-hidden="true">
+            BK
+          </span>
+          <input
+            id="locker-code"
+            className="locker-entry__input locker-entry__code-input"
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            maxLength={4}
+            placeholder="3301"
+            value={code}
+            onChange={(event) => {
+              setCode(event.target.value.replace(/\D/g, '').slice(0, 4));
+              setError(null);
+            }}
+            aria-describedby="locker-code-help"
+            aria-invalid={!!error}
+          />
+        </div>
+        <p id="locker-code-help" className="locker-entry__help">
+          Your code is on your locker assignment — e.g. <strong>BK3301</strong> is block 3, locker 301.
+        </p>
 
-        <label className="locker-entry__label" htmlFor="locker-number">
-          Locker number
-        </label>
-        <input
-          id="locker-number"
-          className="locker-entry__input"
-          type="number"
-          inputMode="numeric"
-          min={1}
-          placeholder="e.g. 260"
-          value={value}
-          onChange={(event) => {
-            setValue(event.target.value);
-            setError(null);
-          }}
-          aria-invalid={!!error && !!blockId}
-        />
-
-        {blocks.isError && (
+        {blocksError && (
           <p className="locker-entry__error" role="alert">
-            Couldn’t load locker blocks. Check your connection and try again.
-          </p>
-        )}
-        {noBlocks && (
-          <p className="locker-entry__error" role="alert">
-            No locker blocks have been set up yet.
+            Couldn’t load locker data. Check your connection and try again.
           </p>
         )}
         {error && (
@@ -156,7 +158,7 @@ function LockerEntry({
             type="submit"
             variant="primary"
             icon={<Search size={16} />}
-            disabled={blocks.isPending || list.length === 0}
+            disabled={blocks.isPending}
           >
             Find my locker
           </Button>
@@ -214,8 +216,7 @@ function LockerResult({ myLocker, onChange }: { myLocker: MyLocker; onChange: ()
       <Card>
         <p className="locker-result__title">Locker not found</p>
         <p className="locker-result__sub">
-          We couldn’t find locker #{myLocker.number} in {blockLabel}. Double-check your block and
-          number.
+          We couldn’t find locker #{myLocker.number} in {blockLabel}. Double-check your code.
         </p>
         <div className="locker-result__actions">
           <Button variant="primary" icon={<Pencil size={16} />} onClick={onChange}>
@@ -226,15 +227,17 @@ function LockerResult({ myLocker, onChange }: { myLocker: MyLocker; onChange: ()
     );
   }
 
+  const pin = block.data ? `${block.data.label}${pad3(myLocker.number)}` : `#${myLocker.number}`;
+
   return (
     <>
       <Card>
         <div className="locker-result__head">
-          <span className="locker-result__badge">#{myLocker.number}</span>
+          <span className="locker-result__badge">{pin}</span>
           <div>
             <p className="locker-result__title">{block.data?.label ?? 'Your locker bank'}</p>
             <p className="locker-result__sub">
-              Lockers {found.number_start}–{found.number_end}
+              Locker {myLocker.number} · range {found.number_start}–{found.number_end}
             </p>
           </div>
         </div>

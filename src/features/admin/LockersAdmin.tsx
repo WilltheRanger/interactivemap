@@ -82,16 +82,17 @@ function BlocksManager() {
         <h2 className="admin-section-title">Blocks</h2>
       </div>
       <p className="admin-note" role="note">
-        A <strong>block</strong> is what a student picks (e.g. “Block 4”). Each block holds one or more
-        locker <em>sections</em> (ranges) — add those below and assign each to its block. Blocks
-        aren’t tied to buildings.
+        Name each block <strong>BK&lt;n&gt;</strong> (e.g. “BK4”) — the &lt;n&gt; is the single digit a
+        student types in their pin, like <strong>BK4</strong> + a 3-digit locker number. Each block
+        holds one or more locker <em>sections</em> (ranges) — add those below and assign each to its
+        block. Blocks aren’t tied to buildings.
       </p>
 
       <form className="admin-inline-form" onSubmit={submitAdd}>
         <input
           className="admin-input"
           type="text"
-          placeholder="New block name (e.g. Block 5)"
+          placeholder="New block name (e.g. BK8)"
           value={newLabel}
           onChange={(e) => setNewLabel(e.target.value)}
           aria-label="New block name"
