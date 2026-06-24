@@ -44,32 +44,34 @@ insert into panoramas (id, image_url, label, initial_yaw, initial_pitch, hfov) v
   ('pano-1', 'https://pannellum.org/images/cerro-toco-0.jpg', 'Placeholder panorama', 0, 0, 100)
 on conflict (id) do nothing;
 
--- Locker blocks (what a student picks). NOT tied to buildings.
+-- Locker blocks. A student types a pin like "BK3301" = BK + block digit (3) + 3-digit locker (301).
+-- The block label is "BK<n>"; <n> is the digit the student types. NOT tied to buildings.
 insert into locker_blocks (id, label, sort_order) values
-  ('block-1', 'Block 1', 1),
-  ('block-2', 'Block 2', 2),
-  ('block-4', 'Block 4', 4)
+  ('block-1', 'BK1', 1),
+  ('block-2', 'BK2', 2),
+  ('block-4', 'BK4', 4)
 on conflict (id) do nothing;
 
--- Locker sections (ranges) belong to a block. Block 4 shows the real-world case: ONE block with
--- multiple non-contiguous ranges, each its own physical bank with its own 360° photo + map spot.
--- Numbers repeat across blocks (Block 1 and Block 4 both contain 1042-ish numbers in different ranges)
--- — which is exactly why resolution needs the block, not just the number.
+-- Locker sections (ranges) belong to a block; the range is the 3-digit locker number (1–999). BK4
+-- shows the real-world case: ONE block with multiple non-contiguous ranges, each its own bank/photo.
+-- Numbers repeat across blocks (BK1 and BK2 both have 1–80) — which is why the pin's block digit is
+-- needed to disambiguate.
 insert into locker_sections
   (id, block_id, panorama_id, number_start, number_end, map_coord, label) values
-  ('sec-b1-1000s', 'block-1', 'pano-1', 1000, 1080, '{"x":120,"y":200}', '1000–1080'),
-  ('sec-b2-1100s', 'block-2', 'pano-1', 1081, 1160, '{"x":300,"y":240}', '1081–1160'),
-  ('sec-b4-001',   'block-4', 'pano-1',    1,   69, '{"x":400,"y":300}', '001–069'),
-  ('sec-b4-070',   'block-4', 'pano-1',   70,  156, '{"x":420,"y":300}', '070–156'),
-  ('sec-b4-253',   'block-4', 'pano-1',  253,  264, '{"x":440,"y":300}', '253–264'),
-  ('sec-b4-265',   'block-4', 'pano-1',  265,  306, '{"x":460,"y":300}', '265–306')
+  ('sec-b1-001', 'block-1', 'pano-1',   1,  80, '{"x":120,"y":200}', '001–080'),
+  ('sec-b2-001', 'block-2', 'pano-1',   1,  80, '{"x":300,"y":240}', '001–080'),
+  ('sec-b4-001', 'block-4', 'pano-1',   1,  69, '{"x":400,"y":300}', '001–069'),
+  ('sec-b4-070', 'block-4', 'pano-1',  70, 156, '{"x":420,"y":300}', '070–156'),
+  ('sec-b4-253', 'block-4', 'pano-1', 253, 264, '{"x":440,"y":300}', '253–264'),
+  ('sec-b4-265', 'block-4', 'pano-1', 265, 306, '{"x":460,"y":300}', '265–306')
 on conflict (id) do nothing;
 
--- A few lockers with sample hotspot angles (per-locker pin is optional).
+-- A few lockers with sample hotspot angles (per-locker pin is optional). Locker 42 exists in both BK1
+-- and BK2 — the pin (BK1042 vs BK2042) is what tells them apart.
 insert into lockers (id, section_id, number, hotspot_yaw, hotspot_pitch) values
-  ('lk-1042', 'sec-b1-1000s', 1042, 10, -5),
-  ('lk-1100', 'sec-b2-1100s', 1100, -30, 0),
-  ('lk-260',  'sec-b4-253',    260,  5,  0)
+  ('lk-b1-042', 'sec-b1-001', 42, 10, -5),
+  ('lk-b2-042', 'sec-b2-001', 42, -30, 0),
+  ('lk-b4-260', 'sec-b4-253', 260, 5, 0)
 on conflict (id) do nothing;
 
 -- Announcements (placeholder posts so the feed has content; one carries an event to
