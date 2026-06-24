@@ -17,20 +17,23 @@ const MAX_DIM = 4096;
 const JPEG_QUALITY = 0.85;
 
 /**
- * Shrink a panorama to <=MAX_DIM on its longest side and re-encode as JPEG. Best-effort: any
- * decode/resize failure (odd format, no canvas, etc.) falls back to the original file, so an upload
- * is never blocked by the optimization.
+ * Prepare a panorama for upload: optionally fix a "split the wrong way" equirectangular by swapping
+ * its left and right halves (a lossless 180° yaw rotation that moves the stitch seam from the middle
+ * of the content back to the edges where it belongs), then downscale to <=MAX_DIM and re-encode as
+ * JPEG. Best-effort: any decode/resize/canvas failure falls back to the original file, so an upload is
+ * never blocked. When nothing needs doing (small enough, no swap), the original bytes are kept as-is.
  */
-async function downscaleForUpload(file: File): Promise<Blob> {
+async function prepareForUpload(file: File, swapHalves: boolean): Promise<Blob> {
   try {
     if (typeof createImageBitmap !== 'function') return file;
     const bitmap = await createImageBitmap(file);
     const longest = Math.max(bitmap.width, bitmap.height);
-    if (longest <= MAX_DIM) {
+    const needsResize = longest > MAX_DIM;
+    if (!needsResize && !swapHalves) {
       bitmap.close?.();
-      return file; // already small enough — keep the original bytes
+      return file; // already small enough and nothing to fix — keep the original bytes
     }
-    const scale = MAX_DIM / longest;
+    const scale = needsResize ? MAX_DIM / longest : 1;
     const w = Math.round(bitmap.width * scale);
     const h = Math.round(bitmap.height * scale);
     const canvas = document.createElement('canvas');
@@ -41,7 +44,16 @@ async function downscaleForUpload(file: File): Promise<Blob> {
       bitmap.close?.();
       return file;
     }
-    ctx.drawImage(bitmap, 0, 0, w, h);
+    if (swapHalves) {
+      // Output left half ← input right half, output right half ← input left half (seam → edges).
+      const half = Math.floor(bitmap.width / 2);
+      const rightSrcW = bitmap.width - half;
+      const rightDstW = Math.round(rightSrcW * scale);
+      ctx.drawImage(bitmap, half, 0, rightSrcW, bitmap.height, 0, 0, rightDstW, h);
+      ctx.drawImage(bitmap, 0, 0, half, bitmap.height, rightDstW, 0, w - rightDstW, h);
+    } else {
+      ctx.drawImage(bitmap, 0, 0, w, h);
+    }
     bitmap.close?.();
     const blob = await new Promise<Blob | null>((resolve) =>
       canvas.toBlob(resolve, 'image/jpeg', JPEG_QUALITY),
@@ -52,13 +64,16 @@ async function downscaleForUpload(file: File): Promise<Blob> {
   }
 }
 
-export async function uploadPanorama(file: File): Promise<string> {
+export async function uploadPanorama(
+  file: File,
+  opts: { swapHalves?: boolean } = {},
+): Promise<string> {
   const { cloudinaryCloudName, cloudinaryUploadPreset } = config;
   if (!cloudinaryCloudName || !cloudinaryUploadPreset) {
     throw new Error('Photo upload isn’t set up yet (Cloudinary not configured).');
   }
 
-  const upload = await downscaleForUpload(file);
+  const upload = await prepareForUpload(file, opts.swapHalves ?? false);
 
   const body = new FormData();
   body.append('file', upload, file.name);
