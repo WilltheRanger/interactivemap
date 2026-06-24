@@ -1,6 +1,6 @@
 import { lazy, Suspense, useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Camera, Check, Pencil, Plus, Upload, X } from 'lucide-react';
+import { Camera, Check, Map, Pencil, Plus, Upload, X } from 'lucide-react';
 import { Button, Card, Skeleton } from '../../components';
 import {
   useLockerBlocks,
@@ -17,6 +17,8 @@ import { slugify } from './slugify';
 
 // Pannellum + the panorama image are heavy and admin-only, so the visual tagger is code-split.
 const LockerTagger = lazy(() => import('./LockerTagger'));
+// The map tagger loads the full campus SVG + illustration — admin-only, so code-split too.
+const LockerMapTagger = lazy(() => import('./LockerMapTagger'));
 
 /**
  * Blocks manager: a block ("Block 4") is what a student picks. Each block holds one or more locker
@@ -528,6 +530,7 @@ export function LockersAdmin() {
   const [editing, setEditing] = useState<LockerSection | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [tagging, setTagging] = useState(false);
   // Editing a section needs its current panorama URL preloaded, or saving would clear the panorama
   // (a blank URL field = "remove panorama"). Wait for the load to *succeed* before mounting the edit
   // form; if it errors, show a retry rather than risk wiping the photo.
@@ -578,11 +581,16 @@ export function LockersAdmin() {
 
       <div className="admin-subsection__head">
         <h2 className="admin-section-title">Locker sections</h2>
-        {!showForm && !editing && (
-          <Button variant="secondary" icon={<Plus size={16} />} onClick={() => setShowForm(true)}>
-            Add section
+        <div className="admin-row__actions">
+          <Button variant="secondary" icon={<Map size={16} />} onClick={() => setTagging(true)}>
+            Tag on map
           </Button>
-        )}
+          {!showForm && !editing && (
+            <Button variant="secondary" icon={<Plus size={16} />} onClick={() => setShowForm(true)}>
+              Add section
+            </Button>
+          )}
+        </div>
       </div>
       {(showForm || editing) && (
         <Card>
@@ -669,6 +677,12 @@ export function LockersAdmin() {
           </p>
         )}
       </SectionStates>
+
+      {tagging && (
+        <Suspense fallback={null}>
+          <LockerMapTagger onClose={() => setTagging(false)} />
+        </Suspense>
+      )}
     </div>
   );
 }

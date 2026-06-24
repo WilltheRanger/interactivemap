@@ -1,5 +1,6 @@
 import { lazy, Suspense, useState, type FormEvent } from 'react';
-import { Compass, Pencil, Search } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Compass, MapPin, Pencil, Search } from 'lucide-react';
 import { Button, Card, Skeleton } from '../../components';
 import {
   useLockerBlock,
@@ -175,6 +176,7 @@ function LockerEntry({
 function LockerResult({ myLocker, onChange }: { myLocker: MyLocker; onChange: () => void }) {
   const block = useLockerBlock(myLocker.block_id);
   const section = useResolveLocker(myLocker.block_id, myLocker.number);
+  const navigate = useNavigate();
   const [viewing, setViewing] = useState(false);
 
   if (block.isPending || section.isPending) {
@@ -251,6 +253,15 @@ function LockerResult({ myLocker, onChange }: { myLocker: MyLocker; onChange: ()
             <p className="locker-result__note">No 360° photo for this bank yet.</p>
           )}
           <div className="locker-result__secondary">
+            {found.map_shape_ids?.length > 0 && (
+              <Button
+                variant="secondary"
+                icon={<MapPin size={16} />}
+                onClick={() => navigate(`/map?section=${encodeURIComponent(found.id)}`)}
+              >
+                Show on map
+              </Button>
+            )}
             <Button variant="secondary" icon={<Pencil size={16} />} onClick={onChange}>
               Change locker
             </Button>

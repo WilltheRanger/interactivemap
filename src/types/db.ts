@@ -182,6 +182,7 @@ export type Database = {
           id: string;
           label: string | null;
           map_coord: Json | null;
+          map_shape_ids: string[];
           number_end: number;
           number_start: number;
           panorama_id: string | null;
@@ -192,6 +193,7 @@ export type Database = {
           id: string;
           label?: string | null;
           map_coord?: Json | null;
+          map_shape_ids?: string[];
           number_end: number;
           number_start: number;
           panorama_id?: string | null;
@@ -202,6 +204,7 @@ export type Database = {
           id?: string;
           label?: string | null;
           map_coord?: Json | null;
+          map_shape_ids?: string[];
           number_end?: number;
           number_start?: number;
           panorama_id?: string | null;
