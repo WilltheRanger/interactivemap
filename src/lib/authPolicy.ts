@@ -16,7 +16,7 @@ export const ALLOWED_EMAIL_DOMAINS = ['stu.wvusd.org', 'wvusd.org'];
  * supabase/migrations/0004_announcements_admin_email.sql — RLS is the real gate, this array only
  * controls the UI.
  */
-export const ADMIN_EMAILS = ['aryamshah2@gmail.com', 'jwai@wvusd.org'];
+export const ADMIN_EMAILS = ['aryamshah2@gmail.com', 'jwai@wvusd.org', 'duxinyu774@gmail.com', 'albusshih@gmail.com'];
 
 export function isAdminEmail(email: string | null | undefined): boolean {
   return !!email && ADMIN_EMAILS.includes(email.toLowerCase());
