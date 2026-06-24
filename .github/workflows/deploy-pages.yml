@@ -1,8 +1,13 @@
 name: Deploy to GitHub Pages
 
+# Auto-deploy from main is intentionally DISABLED for now. The live site deploys from the working
+# branch (claude/peaceful-faraday-zlzdty) until the project is final, so main is staging only and must
+# not publish. To make main the live source later, restore the push trigger:
+#   on:
+#     push:
+#       branches: [main]
+#     workflow_dispatch:
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
