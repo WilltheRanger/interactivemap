@@ -151,6 +151,27 @@
   color: var(--color-text-muted);
 }
 
+/* Sections grouped by block (admin Lockers tab). */
+.admin-groups {
+  display: grid;
+  gap: var(--space-4);
+}
+.admin-group {
+  display: grid;
+  gap: var(--space-2);
+}
+.admin-group-title {
+  margin: 0;
+  padding-bottom: var(--space-1);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  border-bottom: 1px solid var(--color-border);
+}
+.admin-group__empty {
+  font-size: var(--font-size-sm);
+}
+
 /* Inline "add a row" form (e.g. the Blocks manager) + inline rename input inside a row. */
 .admin-inline-form {
   display: flex;

@@ -561,8 +561,6 @@ export function LockersAdmin() {
   // form; if it errors, show a retry rather than risk wiping the photo.
   const editingPanorama = usePanorama(editing?.panorama_id ?? null);
   const editFormReady = !editing?.panorama_id || editingPanorama.isSuccess;
-  const blockLabel = (id: string | null) =>
-    (id && (blocks.data ?? []).find((b) => b.id === id)?.label) || null;
   const closeForm = () => {
     setEditing(null);
     setShowForm(false);
@@ -592,6 +590,53 @@ export function LockersAdmin() {
       void queryClient.invalidateQueries({ queryKey: ['panoramas'] });
     },
   });
+
+  const renderSection = (s: LockerSection) => (
+    <li key={s.id} className="admin-row admin-row--stacked">
+      <div className="admin-row__main">
+        <div className="admin-row__text">
+          <span className="admin-row__title">{s.label ?? `${s.number_start}–${s.number_end}`}</span>
+          <span className="admin-row__sub">
+            #{s.number_start}–{s.number_end}
+            {s.panorama_id ? ' · photo set' : ' · no photo'}
+            {s.map_shape_ids?.length ? ` · ${s.map_shape_ids.length} on map` : ' · not on map'}
+          </span>
+        </div>
+        <div className="admin-row__actions">
+          <Button variant="secondary" onClick={() => setExpanded(expanded === s.id ? null : s.id)}>
+            {expanded === s.id ? 'Hide pins' : 'Pins'}
+          </Button>
+          <Button
+            variant="secondary"
+            icon={<Pencil size={16} />}
+            onClick={() => setEditing(s)}
+            aria-label={`Edit ${s.label ?? s.id}`}
+          >
+            Edit
+          </Button>
+          <ConfirmDeleteButton
+            label={s.label ?? s.id}
+            pending={remove.isPending && remove.variables?.id === s.id}
+            onConfirm={() => remove.mutate(s)}
+          />
+        </div>
+      </div>
+      {expanded === s.id && <HotspotEditor section={s} />}
+    </li>
+  );
+
+  // Group sections under their block (blocks in their sort order), plus a trailing "No block" group
+  // for any section that isn't assigned — so the list is easy to scan by block.
+  const sectionList = sections.data ?? [];
+  const blockList = blocks.data ?? [];
+  const knownBlockIds = new Set(blockList.map((b) => b.id));
+  const groups: { key: string; label: string; items: LockerSection[] }[] = blockList.map((b) => ({
+    key: b.id,
+    label: b.label,
+    items: sectionList.filter((s) => s.block_id === b.id),
+  }));
+  const orphans = sectionList.filter((s) => !s.block_id || !knownBlockIds.has(s.block_id));
+  if (orphans.length) groups.push({ key: '__none', label: 'No block', items: orphans });
 
   return (
     <div className="admin-body">
@@ -651,49 +696,27 @@ export function LockersAdmin() {
         isError={sections.isError}
         onRetry={() => void sections.refetch()}
       >
-        {sections.data?.length === 0 ? (
+        {sectionList.length === 0 ? (
           <p className="admin-empty" role="status">
             No locker sections yet — add the first one above.
           </p>
         ) : (
-          <ul className="admin-list">
-            {(sections.data ?? []).map((s) => (
-              <li key={s.id} className="admin-row admin-row--stacked">
-                <div className="admin-row__main">
-                  <div className="admin-row__text">
-                    <span className="admin-row__title">{s.label ?? s.id}</span>
-                    <span className="admin-row__sub">
-                      #{s.number_start}–{s.number_end}
-                      {` · ${blockLabel(s.block_id) ?? 'no block'}`}
-                      {s.panorama_id ? ' · panorama set' : ' · no panorama'}
-                    </span>
-                  </div>
-                  <div className="admin-row__actions">
-                    <Button
-                      variant="secondary"
-                      onClick={() => setExpanded(expanded === s.id ? null : s.id)}
-                    >
-                      {expanded === s.id ? 'Hide pins' : 'Pins'}
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      icon={<Pencil size={16} />}
-                      onClick={() => setEditing(s)}
-                      aria-label={`Edit ${s.label ?? s.id}`}
-                    >
-                      Edit
-                    </Button>
-                    <ConfirmDeleteButton
-                      label={s.label ?? s.id}
-                      pending={remove.isPending && remove.variables?.id === s.id}
-                      onConfirm={() => remove.mutate(s)}
-                    />
-                  </div>
-                </div>
-                {expanded === s.id && <HotspotEditor section={s} />}
-              </li>
+          <div className="admin-groups">
+            {groups.map((g) => (
+              <div key={g.key} className="admin-group">
+                <h3 className="admin-group-title">
+                  {g.label} <span className="admin-row__sub">({g.items.length})</span>
+                </h3>
+                {g.items.length === 0 ? (
+                  <p className="admin-empty admin-group__empty" role="status">
+                    No sections in this block yet.
+                  </p>
+                ) : (
+                  <ul className="admin-list">{g.items.map(renderSection)}</ul>
+                )}
+              </div>
             ))}
-          </ul>
+          </div>
         )}
         {remove.isError && (
           <p className="admin-status admin-status--error" role="alert">
