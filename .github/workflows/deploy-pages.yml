@@ -1,8 +1,8 @@
-name: Deploy preview to GitHub Pages
+name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [claude/peaceful-faraday-zlzdty]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
