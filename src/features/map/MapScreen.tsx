@@ -5,7 +5,8 @@ import { motion } from 'framer-motion';
 import { Camera, Hourglass, MapPin, User, X } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { SearchInput } from '../../components/SearchInput';
-import { useLockerSection, usePanorama, useRoomWithTeacher } from '../../data/hooks';
+import { useLockerBlocks, useLockerSections, usePanorama, useRoomWithTeacher } from '../../data/hooks';
+import type { LockerSection } from '../../lib/refData';
 import { useCurrentPeriod, type CurrentPeriod } from '../../data/useCurrentPeriod';
 import { useNow } from '../../data/useNow';
 import { useResolvedEntry } from '../schedule/resolveEntry';
@@ -37,8 +38,9 @@ interface RoomSelection {
   building: string;
   /** Shape id to resolve against the `rooms` table for a teacher — null for whole-building groups. */
   lookupId: string | null;
-  /** Locker banks only: the bank's first locker number, used to resolve its section → panorama. */
-  lockerStart?: number | null;
+  /** Locker banks only: the tapped shape's id, resolved against locker_sections.map_shape_ids → the
+   *  section (range) it belongs to, for its range + block label + panorama. */
+  lockerShapeId?: string | null;
 }
 
 const MAX_SEARCH_RESULTS = 8;
@@ -61,27 +63,16 @@ function roomTitle(id: string): string {
   return BUILDING_LABELS[id] ?? id;
 }
 
-/** Locker-bank id (a number range like "001-060" or "1471-1515") → "Lockers 1–60". */
+/** Fallback label for a locker shape that isn't assigned to a section yet — derived from its own id
+ *  (a number range like "001-060"). Once tagged, the card shows the section's range + block instead. */
 function lockerTitle(id: string): string {
   const m = id.match(/^(\d+)\s*-\s*(\d+)/);
   return m ? `Lockers ${parseInt(m[1], 10)}–${parseInt(m[2], 10)}` : 'Lockers';
 }
 
-/** The bank's first locker number (e.g. "001-060" → 1), used to resolve it to a DB section. */
-function lockerStartNumber(id: string): number | null {
-  const n = parseInt(id, 10);
-  return Number.isFinite(n) ? n : null;
-}
-
-/** Building label for a locker bank, from its sub-group id ("Upper 400 Bld Library side" → its
- *  building label). Falls back to the campus name when no building number is in the group id. */
-function lockerBuilding(groupId: string | null, levelLabel: string): string {
-  const num = groupId?.match(/[1-9]00/)?.[0];
-  if (num) {
-    const key = [`bldg${num}-upper`, `bldg${num}`].find((k) => k in BUILDING_LABELS);
-    return key ? BUILDING_LABELS[key] : `${num}s building`;
-  }
-  return `${levelLabel} campus`;
+/** Display name for a section (range): its label ("001–069"), falling back to its number range. */
+function sectionRangeLabel(s: LockerSection): string {
+  return s.label?.trim() || `Lockers ${s.number_start}–${s.number_end}`;
 }
 
 /**
@@ -121,6 +112,10 @@ export function MapScreen() {
   const [lockerT, setLockerT] = useState<LockerTransform | null>(null);
   const [lockerAnchor, setLockerAnchor] = useState<[number, number]>([0, 0]);
   const calibrating = new URLSearchParams(window.location.search).get('calibrate') === '1';
+
+  // Locker sections + blocks power both the tap-to-resolve index and the ?section= deep link below.
+  const lockerSections = useLockerSections();
+  const lockerBlocks = useLockerBlocks();
 
   const clearSelection = () => {
     svgRef.current
@@ -271,13 +266,14 @@ export function MapScreen() {
           // A locker bank: invisible until tapped. Its id is a number range; show that + its building.
           // No teacher to resolve (lookupId null).
           if (isInLockerGroup(shape, lockerGroupId)) {
-            const lgid = shape.closest('g[id]')?.getAttribute('id') ?? null;
+            // Resolution (range + block + panorama) happens reactively in render from the shape→section
+            // index; the title/building here are only fallbacks for an as-yet-untagged shape.
             setSelected({
               id,
               title: lockerTitle(id),
-              building: lockerBuilding(lgid, config.label),
+              building: '',
               lookupId: null,
-              lockerStart: lockerStartNumber(id),
+              lockerShapeId: id,
             });
             return;
           }
@@ -404,16 +400,67 @@ export function MapScreen() {
     return () => clearTimeout(t);
   }, [status, searchParams, rooms, level]);
 
+  // Apply ?section=ID (from the locker finder's "Show on map") → highlight that section's shape on the
+  // map and jump to it. Lockers are upper-only, so switch to upper if needed.
+  useEffect(() => {
+    if (status !== 'ready') return;
+    const sectionId = searchParams.get('section');
+    if (!sectionId) return;
+    const section = (lockerSections.data ?? []).find((s) => s.id === sectionId);
+    const shapeId = section?.map_shape_ids?.[0];
+    if (!shapeId) return;
+    const t = setTimeout(() => {
+      if (level === 'upper') {
+        selectByIdRef.current?.(shapeId);
+      } else {
+        pendingRoomRef.current = shapeId;
+        setLevel('upper');
+      }
+    }, 0);
+    return () => clearTimeout(t);
+  }, [status, searchParams, lockerSections.data, level]);
+
   // Resolve a tapped room to its teacher (rooms.id == the SVG shape id). Returns null where the
   // room isn't in the directory yet — the card just omits the teacher line, never errors.
   const roomLookup = useRoomWithTeacher(selected?.lookupId ?? null);
   const teacherName = roomLookup.data?.teacher?.name ?? null;
 
-  // Resolve a tapped locker bank → its DB section (by its first number) → its 360° panorama, so the
-  // card can offer "View 360°". No match (e.g. section ranges not entered yet) → no button, no error.
-  const lockerSection = useLockerSection(selected?.lockerStart ?? null);
-  const lockerPanorama = usePanorama(lockerSection.data?.panorama_id ?? null);
-  const bankPanorama = selected?.lockerStart != null ? (lockerPanorama.data ?? null) : null;
+  // Resolve a tapped locker bank → its section (the range that owns this map shape) → range + block
+  // label + 360° panorama. Built from the section list's `map_shape_ids` (assigned via the admin "Tag
+  // lockers on map" tool). An untagged shape resolves to nothing — card shows a plain fallback, no 360.
+  const { shapeToSection, blockLabelById } = useMemo(() => {
+    const shapeToSection = new Map<string, LockerSection>();
+    for (const s of lockerSections.data ?? []) {
+      for (const shapeId of s.map_shape_ids ?? []) shapeToSection.set(shapeId, s);
+    }
+    const blockLabelById = new Map<string, string>(
+      (lockerBlocks.data ?? []).map((b) => [b.id, b.label]),
+    );
+    return { shapeToSection, blockLabelById };
+  }, [lockerSections.data, lockerBlocks.data]);
+
+  const lockerSection = selected?.lockerShapeId
+    ? (shapeToSection.get(selected.lockerShapeId) ?? null)
+    : null;
+  const lockerBlockLabel = lockerSection?.block_id
+    ? (blockLabelById.get(lockerSection.block_id) ?? null)
+    : null;
+  const lockerPanorama = usePanorama(lockerSection?.panorama_id ?? null);
+  const bankPanorama = lockerSection ? (lockerPanorama.data ?? null) : null;
+
+  // Detail-card text: a tapped locker shows its section's range + block (falling back to the shape's
+  // own label when it isn't assigned to a range yet); everything else uses the selection as-is.
+  const isLockerSel = !!selected?.lockerShapeId;
+  const detailTitle = selected
+    ? isLockerSel && lockerSection
+      ? sectionRangeLabel(lockerSection)
+      : selected.title
+    : '';
+  const detailSub = selected
+    ? isLockerSel
+      ? (lockerBlockLabel ?? (lockerSection ? '' : 'Not assigned to a range yet'))
+      : selected.building
+    : '';
 
   // "School is live" status: the in-session period (with a countdown) and, if the student has a
   // class then, its room (rooms.id == a map shape id) matched against the index to find its level.
@@ -555,8 +602,8 @@ export function MapScreen() {
           transition={{ duration: 0.25 }}
         >
           <div className="map-screen__detail-text">
-            <p className="map-screen__detail-title">{selected.title}</p>
-            {selected.building && <p className="map-screen__detail-sub">{selected.building}</p>}
+            <p className="map-screen__detail-title">{detailTitle}</p>
+            {detailSub && <p className="map-screen__detail-sub">{detailSub}</p>}
             {teacherName && (
               <p className="map-screen__detail-teacher">
                 <User size={14} aria-hidden="true" />
