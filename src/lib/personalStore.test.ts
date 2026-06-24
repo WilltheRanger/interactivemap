@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import type { ScheduleEntry } from '../types/personal';
+import type { MyLocker, ScheduleEntry } from '../types/personal';
 import {
   STORAGE_KEY,
   clearAll,
@@ -20,6 +20,7 @@ const teacherEntry: ScheduleEntry = {
   class_label: 'Algebra 2',
 };
 const roomEntry: ScheduleEntry = { kind: 'room', room_id: 'r-200', class_label: 'Chemistry' };
+const locker: MyLocker = { block_id: 'block-1', number: 1042 };
 
 beforeEach(() => {
   localStorage.clear();
@@ -32,31 +33,39 @@ afterEach(() => {
 describe('migrate', () => {
   it('returns a clean default for non-objects and missing data', () => {
     for (const raw of [null, undefined, 'nope', 42, []]) {
-      expect(migrate(raw)).toEqual({ version: 1, schedule: {}, my_locker: null });
+      expect(migrate(raw)).toEqual({ version: 2, schedule: {}, my_locker: null });
     }
   });
 
-  it('defaults on unknown / older version', () => {
-    expect(migrate({ version: 0, schedule: {}, my_locker: 5 })).toEqual({
-      version: 1,
-      schedule: {},
-      my_locker: null,
-    });
-    expect(migrate({ version: 2, schedule: { '1': teacherEntry } })).toEqual({
-      version: 1,
-      schedule: {},
+  it('defaults on an unknown version', () => {
+    for (const version of [0, 3, 99]) {
+      expect(
+        migrate({ version, schedule: { '1': teacherEntry }, my_locker: locker }),
+      ).toEqual({ version: 2, schedule: {}, my_locker: null });
+    }
+  });
+
+  it('migrates a v1 blob: keeps the schedule, drops the un-resolvable bare-number locker', () => {
+    const v1 = { version: 1, schedule: { '1': teacherEntry, '3': roomEntry }, my_locker: 1042 };
+    expect(migrate(v1)).toEqual({
+      version: 2,
+      schedule: { '1': teacherEntry, '3': roomEntry },
       my_locker: null,
     });
   });
 
-  it('keeps a valid v1 blob', () => {
-    const raw = { version: 1, schedule: { '1': teacherEntry, '3': roomEntry }, my_locker: 1042 };
-    expect(migrate(raw)).toEqual(raw);
+  it('keeps a valid v2 blob', () => {
+    const v2 = {
+      version: 2,
+      schedule: { '1': teacherEntry, '3': roomEntry },
+      my_locker: locker,
+    };
+    expect(migrate(v2)).toEqual(v2);
   });
 
   it('drops invalid schedule entries but keeps valid ones', () => {
     const raw = {
-      version: 1,
+      version: 2,
       schedule: {
         '1': teacherEntry,
         '2': { kind: 'teacher', class_label: 'No id' }, // missing teacher_id
@@ -70,8 +79,19 @@ describe('migrate', () => {
   });
 
   it('nulls an invalid locker', () => {
-    for (const bad of [0, -1, 1.5, '12', 100000]) {
-      expect(migrate({ version: 1, schedule: {}, my_locker: bad }).my_locker).toBeNull();
+    const bads = [
+      1042, // a bare number (the v1 shape) is no longer valid
+      { number: 5 }, // missing block_id
+      { block_id: 'block-1' }, // missing number
+      { block_id: '', number: 5 }, // empty block_id
+      { block_id: 'block-1', number: 0 },
+      { block_id: 'block-1', number: -1 },
+      { block_id: 'block-1', number: 1.5 },
+      { block_id: 'block-1', number: 100000 },
+      { block_id: 'block-1', number: '5' },
+    ];
+    for (const bad of bads) {
+      expect(migrate({ version: 2, schedule: {}, my_locker: bad }).my_locker).toBeNull();
     }
   });
 });
@@ -104,7 +124,7 @@ describe('schedule API', () => {
     const raw = localStorage.getItem(STORAGE_KEY);
     expect(raw).not.toBeNull();
     expect(JSON.parse(raw as string)).toEqual({
-      version: 1,
+      version: 2,
       schedule: { '1': teacherEntry },
       my_locker: null,
     });
@@ -113,15 +133,23 @@ describe('schedule API', () => {
 
 describe('locker API', () => {
   it('sets and clears a valid locker', () => {
-    setMyLocker(1042);
-    expect(getMyLocker()).toBe(1042);
+    setMyLocker(locker);
+    expect(getMyLocker()).toEqual(locker);
     setMyLocker(null);
     expect(getMyLocker()).toBeNull();
   });
 
-  it('rejects invalid locker numbers', () => {
-    for (const bad of [0, -1, 1.5, 100000]) {
-      expect(() => setMyLocker(bad)).toThrow();
+  it('rejects invalid lockers', () => {
+    const bads = [
+      1042,
+      { number: 5 },
+      { block_id: 'block-1' },
+      { block_id: '', number: 5 },
+      { block_id: 'block-1', number: 0 },
+      { block_id: 'block-1', number: 100000 },
+    ];
+    for (const bad of bads) {
+      expect(() => setMyLocker(bad as never)).toThrow();
     }
   });
 });

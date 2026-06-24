@@ -206,6 +206,11 @@ export async function getSectionsForCourse(
 }
 
 // ── Lockers / panoramas ──────────────────────────────────────────────────────────
+/**
+ * Resolve a locker number to a block (`locker_sections` row) by RANGE. Ambiguous now that the school's
+ * locker numbers repeat across blocks — it returns the first matching block. Kept only for the map's
+ * tap-a-bank lookup pending Phase B; the student finder resolves by block id (getLockerSectionById).
+ */
 export async function resolveLockerSection(lockerNumber: number): Promise<LockerSection | null> {
   const { data, error } = await getSupabase()
     .from('locker_sections')
@@ -216,6 +221,26 @@ export async function resolveLockerSection(lockerNumber: number): Promise<Locker
     .limit(1);
   if (error) throw error;
   return data?.[0] ?? null;
+}
+
+/**
+ * Fetch one locker block by id — the unambiguous join key now that locker numbers repeat across
+ * blocks. The student picks a block ("Block 1"…) and types a number; the number is validated against
+ * the block's range (numberInBlock), never used to *find* the block.
+ */
+export async function getLockerSectionById(id: string): Promise<LockerSection | null> {
+  const { data, error } = await getSupabase()
+    .from('locker_sections')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+/** True when a locker number falls within a block's inclusive [number_start, number_end] range. */
+export function numberInBlock(block: LockerSection, n: number): boolean {
+  return Number.isInteger(n) && n >= block.number_start && n <= block.number_end;
 }
 
 export async function getPanorama(id: string): Promise<Panorama | null> {
