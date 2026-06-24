@@ -9,6 +9,7 @@ import { getSupabase } from '../../lib/supabase';
 import { useTheme } from '../../data/useTheme';
 import { useDisplayPrefs } from '../../data/useDisplayPrefs';
 import { useMyLocker, useSchedule } from '../../data/usePersonal';
+import { useLockerBlock } from '../../data/hooks';
 import { clearAll } from '../../lib/personalStore';
 import { clearPlan } from '../../lib/fourYearPlanStore';
 import type { ThemePreference } from '../../lib/theme';
@@ -47,6 +48,7 @@ export function AccountScreen() {
   const { preference, resolved, setPreference } = useTheme();
   const { textSize, contrast, setTextSize, setContrast } = useDisplayPrefs();
   const myLocker = useMyLocker();
+  const lockerBlock = useLockerBlock(myLocker?.block_id ?? null);
   const schedule = useSchedule();
   const [confirmingClear, setConfirmingClear] = useState(false);
   const [justCleared, setJustCleared] = useState(false);
@@ -54,7 +56,11 @@ export function AccountScreen() {
   const periodCount = Object.keys(schedule).length;
   const scheduleLabel =
     periodCount > 0 ? `${periodCount} ${periodCount === 1 ? 'class' : 'classes'} set` : 'None set';
-  const lockerLabel = myLocker != null ? String(myLocker) : 'Not set';
+  const lockerLabel = myLocker
+    ? lockerBlock.data?.label
+      ? `${lockerBlock.data.label} · #${myLocker.number}`
+      : `#${myLocker.number}`
+    : 'Not set';
   const isAdmin = isAdminEmail(session?.user.email);
 
   const handleClear = () => {

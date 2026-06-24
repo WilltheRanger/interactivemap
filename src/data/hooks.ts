@@ -8,6 +8,7 @@ import {
   getBellSchedule,
   getCourses,
   getGraduationRequirements,
+  getLockerSectionById,
   getLockerSections,
   getLockersBySection,
   getPanoramas,
@@ -129,6 +130,16 @@ export function useLockerSection(lockerNumber: number | null) {
     queryKey: ['lockerSection', lockerNumber],
     queryFn: () => resolveLockerSection(lockerNumber as number),
     enabled: lockerNumber != null,
+    staleTime: STALE_MS,
+  });
+}
+
+/** Resolve a saved locker's block by its id (the unambiguous join key — see refData). */
+export function useLockerBlock(blockId: string | null) {
+  return useQuery({
+    queryKey: ['lockerBlock', blockId],
+    queryFn: () => getLockerSectionById(blockId as string),
+    enabled: blockId != null,
     staleTime: STALE_MS,
   });
 }

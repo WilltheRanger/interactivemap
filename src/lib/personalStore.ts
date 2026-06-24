@@ -8,10 +8,10 @@
  * reactively via `useSyncExternalStore` (see ../data/usePersonal.ts), and so other tabs stay in
  * sync via the `storage` event. `getSnapshot` returns a stable reference that only changes on write.
  */
-import type { Personal, Schedule, ScheduleEntry } from '../types/personal';
+import type { MyLocker, Personal, Schedule, ScheduleEntry } from '../types/personal';
 
 export const STORAGE_KEY = 'dbhs-wayfinder:v1';
-export const CURRENT_VERSION = 1 as const;
+export const CURRENT_VERSION = 2 as const;
 
 const MAX_LOCKER = 99999;
 
@@ -31,20 +31,31 @@ export function isValidEntry(value: unknown): value is ScheduleEntry {
   return false;
 }
 
-function isValidLocker(value: unknown): value is number {
-  return typeof value === 'number' && Number.isInteger(value) && value > 0 && value <= MAX_LOCKER;
+function isValidLocker(value: unknown): value is MyLocker {
+  return (
+    isRecord(value) &&
+    typeof value.block_id === 'string' &&
+    value.block_id.length > 0 &&
+    typeof value.number === 'number' &&
+    Number.isInteger(value.number) &&
+    value.number > 0 &&
+    value.number <= MAX_LOCKER
+  );
 }
 
 /**
- * Normalize any stored/unknown blob into a valid `Personal`. Unknown or older versions, and any
- * malformed fields, degrade to safe defaults rather than throwing. Invalid schedule entries are
- * dropped (not kept), so a corrupt entry can never crash a read.
+ * Normalize any stored/unknown blob into a valid `Personal`. Malformed fields degrade to safe
+ * defaults rather than throwing, and invalid schedule entries are dropped (not kept) so a corrupt
+ * entry can never crash a read.
+ *
+ * v1 → v2 migration: v1 and v2 share the schedule shape, so the schedule carries over. Only the
+ * locker changed — v1 stored a bare number, which can't be resolved to a block now that numbers
+ * repeat across blocks, so it's dropped (set to null) and the student re-picks their block + number.
+ * Any other version falls back to a clean default.
  */
 export function migrate(raw: unknown): Personal {
   if (!isRecord(raw)) return defaultPersonal();
-
-  // version 1 is the only known shape today; unknown versions fall back to a clean default.
-  if (raw.version !== CURRENT_VERSION) return defaultPersonal();
+  if (raw.version !== 1 && raw.version !== CURRENT_VERSION) return defaultPersonal();
 
   const schedule: Schedule = {};
   if (isRecord(raw.schedule)) {
@@ -53,6 +64,7 @@ export function migrate(raw: unknown): Personal {
     }
   }
 
+  // isValidLocker only accepts the v2 {block_id, number} shape, so a v1 bare-number locker → null.
   const my_locker = isValidLocker(raw.my_locker) ? raw.my_locker : null;
   return { version: CURRENT_VERSION, schedule, my_locker };
 }
@@ -132,13 +144,13 @@ export function clearSchedule(): void {
 }
 
 // ── Locker API ───────────────────────────────────────────────────────────────
-export function getMyLocker(): number | null {
+export function getMyLocker(): MyLocker | null {
   return current.my_locker;
 }
 
-export function setMyLocker(value: number | null): void {
+export function setMyLocker(value: MyLocker | null): void {
   if (value !== null && !isValidLocker(value)) {
-    throw new Error('locker must be a positive integer or null');
+    throw new Error('locker must be { block_id, number } or null');
   }
   persist({ ...current, my_locker: value });
 }
