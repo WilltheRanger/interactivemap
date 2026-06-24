@@ -1,4 +1,4 @@
-import { CalendarOff, FlaskConical, Hourglass, RefreshCw, WifiOff } from 'lucide-react';
+import { CalendarOff, FlaskConical, RefreshCw, Timer, WifiOff } from 'lucide-react';
 import { Skeleton } from '../../components';
 import { useBellFeed } from '../../data/useBellFeed';
 import { useBellSettings } from '../../data/useBellSettings';
@@ -165,7 +165,7 @@ export function TodaySchedule({ preview }: { preview?: PreviewMode }) {
               <span className="bell-row__remaining">
                 {t.active && t.secondsRemaining != null && (
                   <>
-                    <Hourglass size={13} aria-hidden="true" />
+                    <Timer size={13} aria-hidden="true" />
                     {formatRemaining(t.secondsRemaining)}
                   </>
                 )}
@@ -203,7 +203,7 @@ function NowBanner({
       </span>
       {headline.secondsRemaining != null && (
         <span className="bell-now__count">
-          <Hourglass size={14} aria-hidden="true" />
+          <Timer size={14} aria-hidden="true" />
           {formatRemaining(headline.secondsRemaining)} left
         </span>
       )}

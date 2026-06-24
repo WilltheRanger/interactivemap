@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { motion } from 'framer-motion';
-import { Camera, Hourglass, MapPin, User, X } from 'lucide-react';
+import { Camera, MapPin, Timer, User, X } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { SearchInput } from '../../components/SearchInput';
 import { useLockerBlocks, useLockerSections, usePanorama, useRoomWithTeacher } from '../../data/hooks';
@@ -766,7 +766,7 @@ function PeriodCountdown({ endMinutes }: { endMinutes: number }) {
   if (left <= 0) return null;
   return (
     <span className="map-screen__nowbar-time">
-      <Hourglass size={13} aria-hidden="true" />
+      <Timer size={13} aria-hidden="true" />
       {formatRemaining(left)} left
     </span>
   );
