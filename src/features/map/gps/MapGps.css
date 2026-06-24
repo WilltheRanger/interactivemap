@@ -1,0 +1,91 @@
+/* "Find Me" control cluster — floats bottom-right, just above the bottom nav. Sits *below* the room
+   detail card (z-index), so an opaque card simply covers it when a room is open. Token-only. */
+.map-gps {
+  position: absolute;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+.map-gps__msg {
+  max-width: 240px;
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-1);
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+}
+
+/* The pulsing "you are here" dot (a Leaflet divIcon, so these are global). */
+.gps-dot-icon {
+  background: transparent;
+  border: 0;
+}
+
+/* Facing cone — a wrapper centered on the dot, rotated to the heading; shown only when known. */
+.gps-dot__heading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  display: none;
+  transform: translate(-50%, -50%) rotate(var(--gps-heading, 0deg));
+}
+.gps-dot-icon.has-heading .gps-dot__heading {
+  display: block;
+}
+.gps-dot__cone {
+  position: absolute;
+  left: 50%;
+  bottom: 5px;
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 11px solid var(--color-primary);
+  transform: translateX(-50%);
+}
+.gps-dot__core,
+.gps-dot__pulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+.gps-dot__core {
+  background: var(--color-primary);
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+.gps-dot__pulse {
+  background: var(--color-primary);
+  opacity: 0.4;
+  animation: gps-pulse 2s ease-out infinite;
+}
+@keyframes gps-pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.4;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(4);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gps-dot__pulse {
+    animation: none;
+    opacity: 0.25;
+  }
+}

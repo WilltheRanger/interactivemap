@@ -1,0 +1,101 @@
+/* Account screen: sign-in placeholder + on-device settings (theme control). Token-only. */
+
+.account__card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+  padding: var(--space-4);
+}
+
+.account__identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+.account__avatar {
+  flex: 0 0 auto;
+  color: var(--color-text-muted);
+}
+.account__avatar--photo {
+  border-radius: var(--radius-pill);
+}
+.account__signout {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+.account__name {
+  font-weight: var(--font-weight-semibold);
+}
+.account__hint {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.account__section-title {
+  margin: var(--space-5) 0 var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+.account__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.account__row-label {
+  font-weight: var(--font-weight-medium);
+}
+.account__caption {
+  margin-top: var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+/* Inline icon within a hint line (e.g. the iOS Share glyph in the install steps). */
+.account__inline-icon {
+  vertical-align: -2px;
+}
+
+/* Saved-info hub: tappable rows linking to the locker / schedule editors. */
+.account__link-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: var(--tap-target);
+  padding: var(--space-2) 0;
+}
+.account__link-row + .account__link-row {
+  border-top: 1px solid var(--color-border-subtle);
+}
+.account__link-row:hover .account__row-value {
+  color: var(--color-primary);
+}
+.account__row-value {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-text-muted);
+}
+
+/* Stacked settings within one card (Accessibility), divided. */
+.account__setting + .account__setting {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+/* Confirm / clear actions */
+.account__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}

@@ -1,0 +1,407 @@
+.map-screen {
+  position: relative;
+  height: 100%;
+}
+
+.map-screen__top {
+  position: absolute;
+  /* Above Leaflet's panes/controls (their z-indexes run into the hundreds). */
+  z-index: 1000;
+  top: var(--space-4);
+  left: var(--space-4);
+  right: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.map-screen__controls {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+.map-screen__search {
+  position: relative; /* anchors the results dropdown */
+  flex: 1;
+  min-width: 0;
+}
+
+/* "Class now" bar — where the student should be, from the live schedule; tap to highlight it. */
+.map-screen__nowbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: var(--tap-target);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-1);
+  font: inherit;
+  color: inherit;
+  text-align: left;
+}
+.map-screen__nowbar--btn {
+  cursor: pointer;
+}
+.map-screen__nowbar--btn:hover {
+  border-color: var(--color-accent);
+}
+.map-screen__nowbar-pin {
+  flex: 0 0 auto;
+  color: var(--color-primary);
+}
+.map-screen__nowbar-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+.map-screen__nowbar-label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+.map-screen__nowbar-class {
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.map-screen__nowbar-time {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-accent-strong);
+  white-space: nowrap;
+}
+
+/* Room search results, floating under the search bar. */
+.map-screen__results {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  left: 0;
+  right: 0;
+  z-index: 1001;
+  display: grid;
+  max-height: 50vh;
+  overflow-y: auto;
+  padding: var(--space-2);
+  gap: var(--space-1);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-2);
+}
+.map-screen__result {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: var(--tap-target);
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.map-screen__result:hover,
+.map-screen__result:focus-visible {
+  background: var(--color-primary-weak);
+}
+.map-screen__result-title {
+  font-weight: var(--font-weight-semibold);
+}
+.map-screen__result-sub {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+.map-screen__results-note {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.map-screen__canvas {
+  height: 100%;
+  background: var(--color-bg);
+}
+
+/* Leaflet container inherits the app's theme + type. */
+.map-screen .leaflet-container {
+  background: var(--color-bg);
+  font: inherit;
+}
+
+/* Loading / image-missing message floated over the canvas. */
+.map-screen__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+  pointer-events: none;
+}
+.map-screen__placeholder {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  text-align: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-1);
+  padding: var(--space-3) var(--space-4);
+}
+
+/* ── Locker overlay calibration panel (dev tool, ?calibrate=1) ───────────── */
+.locker-calib {
+  position: absolute;
+  bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+  left: var(--space-3);
+  z-index: 1001; /* above the search/now bar (1000) so it's never covered */
+  max-height: 72vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-2);
+  font-size: var(--font-size-xs);
+}
+.locker-calib__title {
+  margin: 0 0 var(--space-1);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+.locker-calib__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.locker-calib__label {
+  width: 56px;
+  color: var(--color-text-muted);
+}
+.locker-calib__btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--font-size-md);
+  line-height: 1;
+  cursor: pointer;
+}
+.locker-calib__btn:hover {
+  background: var(--color-primary-weak);
+}
+.locker-calib__input {
+  width: 72px;
+  min-height: 28px;
+  padding: 0 var(--space-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-xs);
+  text-align: center;
+}
+.locker-calib__out {
+  margin-top: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  user-select: all;
+}
+.locker-calib__hint {
+  margin: 0;
+  max-width: 220px;
+  color: var(--color-text-muted);
+}
+
+/* ── Locker overlay (drawn ON the map, deliberately visible) ──────────────── */
+/* Non-interactive so taps fall through to the room shapes beneath. Locker banks are filled with the
+   gold accent + a dark outline so they read clearly over the illustration (unlike the invisible room
+   shapes). vector-effect keeps the outline crisp at every zoom. */
+.locker-svg {
+  pointer-events: none;
+}
+.locker-svg rect,
+.locker-svg path {
+  fill: var(--color-accent);
+  fill-opacity: 0.92;
+  stroke: #3a2a00;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+/* ── Campus plan SVG (aligned over the illustration) ─────────────────────── */
+/* The <svg> itself ignores pointer events so map gaps pan/deselect; only rooms capture taps. */
+.campus-svg {
+  pointer-events: none;
+}
+/* Combined-mode lockers: locker banks living inside the campus SVG's locker group. Invisible at rest
+   (fill/stroke forced off here to override the shapes' own exported colors), but tappable — a tap
+   lights the bank up in gold and opens its detail card. Gold (vs the rooms' purple) marks them as
+   lockers. Strokes scale with the map at rest so a hair of drift can't register against the art. */
+.campus-svg .campus-locker {
+  pointer-events: all; /* tappable even while fully transparent */
+  cursor: pointer;
+  fill: var(--color-accent);
+  fill-opacity: 0;
+  stroke: none;
+  vector-effect: non-scaling-stroke;
+  transition:
+    fill-opacity 0.12s ease,
+    stroke 0.12s ease,
+    filter 0.12s ease;
+}
+.campus-svg .campus-locker:hover {
+  fill-opacity: 0.3;
+  filter: blur(1px);
+}
+.campus-svg .campus-locker.is-selected {
+  fill-opacity: 0.5;
+  stroke: var(--color-accent-strong);
+  stroke-width: 3;
+  stroke-opacity: 0.85;
+  vector-effect: none;
+  filter: blur(1px);
+}
+/* The illustration has the room lines baked in, so rooms are invisible at rest — the SVG only
+   provides the tap targets and paints the hover/selected highlight. */
+.campus-svg .campus-room {
+  pointer-events: all; /* tappable even with a fully transparent fill */
+  cursor: pointer;
+  opacity: 1; /* override any per-shape opacity from the export so highlights look uniform */
+  fill: #582c83;
+  fill-opacity: 0;
+  stroke: none;
+  vector-effect: non-scaling-stroke; /* (resting/hover) crisp if a stroke is ever shown */
+  transition:
+    fill-opacity 0.12s ease,
+    stroke 0.12s ease,
+    filter 0.12s ease;
+}
+/* Highlights carry no crisp edges — a softly blurred fill and a glow-style gold stroke instead
+   of a hard outline — so a hair of drift between the tap shapes and the drawn walls can't
+   register against the artwork's lines. Strokes scale with the map (vector-effect: none) to stay
+   proportional to the drawn walls at every zoom. */
+.campus-svg .campus-room:hover {
+  fill-opacity: 0.18;
+  filter: blur(1.2px);
+}
+.campus-svg .campus-room.is-selected {
+  fill-opacity: 0.45;
+  stroke: #f4b41a;
+  stroke-width: 4;
+  stroke-opacity: 0.85;
+  vector-effect: none;
+  filter: blur(1.6px);
+}
+/* Whole-building selection (Find → a building result): light up every room in the group. */
+.campus-svg g.is-selected .campus-room {
+  fill-opacity: 0.35;
+  stroke: #f4b41a;
+  stroke-width: 3;
+  stroke-opacity: 0.7;
+  vector-effect: none;
+  filter: blur(1.6px);
+}
+
+/* Tapped-room detail card, floating above the map bottom. */
+.map-screen__detail {
+  position: absolute;
+  z-index: 1000;
+  left: var(--space-4);
+  right: var(--space-4);
+  bottom: var(--space-4);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2);
+}
+.map-screen__detail-text {
+  flex: 1;
+  min-width: 0;
+}
+.map-screen__detail-title {
+  font-weight: var(--font-weight-bold);
+}
+.map-screen__detail-sub {
+  margin-top: 2px;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+/* Resolved teacher (rooms.id → teacher). Icon + name, tinted to the brand purple like other meta. */
+.map-screen__detail-teacher {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+}
+/* "View 360°" — shown on a locker bank's card when its section has a panorama. Small gold pill CTA. */
+.map-screen__detail-360 {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  min-height: var(--tap-target);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+}
+.map-screen__detail-360:hover {
+  background: var(--color-accent-strong);
+}
+.map-screen__detail-close {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* >= 44px tap target (DESIGN.md); negative margin keeps the card padding snug around it. */
+  width: var(--tap-target);
+  height: var(--tap-target);
+  margin: calc(-1 * var(--space-1)) calc(-1 * var(--space-1)) calc(-1 * var(--space-1)) 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+.map-screen__detail-close:hover {
+  background: var(--color-primary-weak);
+  color: var(--color-primary);
+}

@@ -1,0 +1,210 @@
+/* Set Classes: period rows, inline period editor, and the shared pick lists. Token-only. */
+
+.sched__hint {
+  color: var(--color-text-muted);
+}
+
+.sched-list {
+  list-style: none;
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.sched-row {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+}
+
+.sched-row__head {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--tap-target);
+  padding: var(--space-3) var(--space-4);
+  background: none;
+  border: 0;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border-radius: var(--radius-lg);
+}
+
+.sched-row__period {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-weak);
+  color: var(--color-primary);
+  font-weight: var(--font-weight-bold);
+}
+
+.sched-row__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sched-row__title {
+  font-weight: var(--font-weight-semibold);
+}
+.sched-row__title--empty {
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
+}
+.sched-row__sub {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.sched-row__chevron {
+  flex: 0 0 auto;
+  display: inline-flex;
+  color: var(--color-text-muted);
+}
+
+.sched-row__body {
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.sched-row__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+/* Rename (display-only class_label) */
+.sched-rename {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.sched-input {
+  flex: 1;
+  min-width: 160px;
+  min-height: var(--tap-target);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: inherit;
+  font: inherit;
+  /* >= 16px or iOS auto-zooms the page when the input gets focus. */
+  font-size: var(--font-size-md);
+}
+
+/* Inline period editor */
+.sched-editor__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+.sched-editor__title {
+  font-weight: var(--font-weight-semibold);
+}
+.sched-editor__nav {
+  display: inline-flex;
+  gap: var(--space-2);
+}
+.sched-editor__alt {
+  margin-top: var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.sched-textbtn {
+  background: none;
+  border: 0;
+  padding: var(--space-1);
+  color: var(--color-primary);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+
+.sched-labelfield {
+  display: block;
+  margin-bottom: var(--space-3);
+}
+.sched-labelfield__caption {
+  display: block;
+  margin-bottom: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+/* Shared pick list (courses / sections / teachers / buildings / rooms) */
+.picker {
+  display: grid;
+  gap: var(--space-2);
+}
+.picker__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+  max-height: 320px;
+  overflow-y: auto;
+}
+.picker__option {
+  width: 100%;
+  min-height: var(--tap-target);
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.picker__option:hover {
+  background: var(--color-primary-weak);
+}
+.picker__label {
+  display: block;
+  font-weight: var(--font-weight-medium);
+}
+.picker__sub {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+.picker__status {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  padding: var(--space-2) 0;
+}
+
+/* Clear-all */
+.sched-clear {
+  margin-top: var(--space-5);
+}
+.sched-clear__confirm {
+  display: grid;
+  gap: var(--space-3);
+}
+.sched-clear__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}

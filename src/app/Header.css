@@ -1,0 +1,59 @@
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  /* min-height (not height) so the status-bar inset padding adds to the bar instead of squeezing the
+     row. Pad for the iOS status bar / Dynamic Island (top) and the notch in landscape (left/right)
+     when installed to the home screen; insets are 0 on the web, so this is a no-op there. */
+  min-height: var(--header-height);
+  padding: env(safe-area-inset-top, 0) max(var(--space-4), env(safe-area-inset-right, 0)) 0
+    max(var(--space-4), env(safe-area-inset-left, 0));
+  background: var(--color-surface);
+  border-bottom: 2px solid var(--color-accent);
+}
+
+.app-header__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-right: auto;
+  min-width: 0;
+}
+.app-header__logo {
+  display: block;
+  flex: 0 0 auto;
+  height: 44px;
+  width: auto;
+}
+.app-header__titles {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  min-width: 0;
+}
+.app-header__name {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+}
+.app-header__sub {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.app-header__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 0 0 auto;
+}
+
+@media (max-width: 420px) {
+  .app-header__action-label {
+    /* aria-label keeps the accessible name; collapse to icon-only to fit narrow phones. */
+    display: none;
+  }
+  .app-header__name {
+    font-size: var(--font-size-md);
+  }
+}

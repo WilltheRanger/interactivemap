@@ -11,8 +11,9 @@ before planning any non-trivial work.
 ## What (v1 scope)
 - Interactive 2D campus map; click a building/room → room number + teacher.
 - Manual schedule entry by the student; the app resolves class location from reference data.
-- "Now / next" period highlighting, driven by a hard-coded bell schedule.
+- Passive schedule view: tap a period → its class + location (no live now/next — see DECISIONS.md #1).
 - Locker finder: the map shows the locker section; click it → a 360° panorama with a pin on the locker.
+- Hall-pass Log: tap Log → pick a reason → scan the teacher's QR → the teacher's Apps Script logs `{time, student, reason}` to their own Google Sheet (zero submit; the app stores no log data; see DECISIONS.md + `plan/phase-12-hall-pass-log.md`).
 
 ## Out of scope — do NOT build or re-propose
 - Auto-pulling student schedules from the SIS (personal/FERPA-protected, access-gated). Students self-enter.
@@ -26,7 +27,8 @@ before planning any non-trivial work.
   is a display label only.
 - **Data split:** reference data (buildings, rooms, teachers, lockers, panoramas) lives in Supabase.
   Personal data (a student's schedule + their locker number) stays on the device in `localStorage`.
-  Never store student-identifying data server-side.
+  Never store student-identifying data server-side. (The hall-pass Log honors this by routing entries
+  to the **teacher's own Google Sheet** — the app never stores them.)
 - Until real campus data is provided, use clearly-labeled **placeholder** data. Do not invent real
   room numbers, teacher names, or coordinates and present them as real.
 
@@ -64,4 +66,23 @@ follow the DESIGN.md checklist, and ask before inventing any screen or state not
 - Building IDs in the map file MUST match the keys in the `rooms` table, or joins break.
 
 ## Commands
-<!-- Fill in once the project is scaffolded: dev server, build, lint, test -->
+- `npm run dev` — start the Vite dev server (mobile-first; test at ~375px).
+- `npm run build` — type-check (`tsc -b`) + production build to `dist/`.
+- `npm run preview` — serve the production build locally.
+- `npm run lint` — ESLint (flat config, TS + react-hooks).
+- `npm run format` / `npm run format:check` — Prettier write / verify.
+- `npm test` — Vitest (run once) · `npm run test:watch` — Vitest watch mode.
+
+Env: copy `.env.example` → `.env` and set `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` (anon key only;
+read-only via RLS).
+
+## Source layout (`src/`)
+- `app/` — root `App` + `router` (the Phase-09 `RequireAuth` seam wraps the routes here).
+- `components/` — reusable UI primitives (Phase 04, from the mockup).
+- `features/{map,find,locker,schedule,log,account}/` — screen logic per feature. Per the mockup the
+  bottom nav is **Map / Find / Lockers / Log**; **Set Classes** (schedule entry) + **Account** live in
+  the header.
+- `lib/` — non-UI modules (`config`, later `supabase`, `personalStore`, `timeEngine`).
+- `data/` — reference-data hooks + static data (map meta, optional bell schedule).
+- `types/` — shared types (generated DB rows + personal-data shapes).
+- `styles/` — `tokens.css` (placeholder until Phase 04), `global.css`, `app.css`.

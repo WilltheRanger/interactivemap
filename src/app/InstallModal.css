@@ -1,0 +1,95 @@
+/* First-run iOS install walkthrough: a centered modal over a dimmed backdrop. Token-only; sits above
+   the install banner (1100) and splash (1000). */
+.install-modal__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(env(safe-area-inset-top, 0px) + var(--space-4)) var(--space-4)
+    calc(env(safe-area-inset-bottom, 0px) + var(--space-4));
+  background: rgba(31, 36, 51, 0.55);
+}
+
+.install-modal {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  max-width: 340px;
+  max-height: 100%;
+  overflow-y: auto;
+  padding: var(--space-6) var(--space-5) var(--space-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-2);
+  text-align: center;
+}
+
+/* 44px tap target, pinned to the corner. */
+.install-modal__close {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--tap-target);
+  height: var(--tap-target);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+.install-modal__close:hover {
+  background: var(--color-primary-weak);
+  color: var(--color-text);
+}
+
+.install-modal__title {
+  margin: 0;
+  /* Clear the close button so a wrapped title doesn't run under it. */
+  padding-inline: var(--space-5);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+.install-modal__intro {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+/* Portrait screen-recording: cap its height so the whole modal fits a phone viewport. */
+.install-modal__gif {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  max-height: 44vh;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+
+.install-modal__steps {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+}
+/* Keep "Share" + its icon on one line and vertically centered together (inline-flex baseline-aligns
+   the word with the surrounding text; align-items centers the icon against it). */
+.install-modal__share {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  white-space: nowrap;
+}
+
+.install-modal__cta {
+  width: 100%;
+}

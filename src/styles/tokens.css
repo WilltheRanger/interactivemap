@@ -1,0 +1,129 @@
+/*
+ * Design tokens — extracted from the owner's mockup (the Diamond Bar Map screen). These are my best
+ * read from the image; nudge any hex if you have exact values. Components reference ONLY these vars.
+ */
+:root {
+  color-scheme: light;
+
+  /* Brand */
+  --color-primary: #582c83; /* Diamond Bar purple — header title, nav active, icons */
+  --color-primary-weak: #efeaf6; /* tint for hovers / subtle fills */
+  --color-accent: #f4b41a; /* Diamond Bar gold — pins, primary CTA, active underline, badges */
+  --color-accent-strong: #e0a012; /* darker gold for hover / borders */
+  --color-on-primary: #ffffff;
+  --color-on-accent: #ffffff; /* matches mockup "View 360°" (see DESIGN.md note on contrast) */
+
+  /* Neutrals */
+  --color-bg: #eaebef; /* page background behind cards / map */
+  --color-surface: #ffffff; /* header, cards, nav, search, chips */
+  --color-text: #1f2433; /* primary text */
+  --color-text-muted: #6b7280; /* "High School", "Near Science Building" */
+  --color-border: #e7e3f1; /* faint purple-gray card/button borders */
+  --color-border-subtle: #ededf1;
+  --color-error: #c0392b;
+  --color-on-error: #ffffff; /* text on a filled error/danger surface */
+  --color-success: #1d7a4d; /* status "on track" — text, icons, progress fill */
+  --color-warn: #b06a00; /* status "at risk" — text, icons */
+  /* Soft status fills for pill badges. Derived from the status colors + the current surface, so a
+     single definition tracks both light and dark (the referenced tokens are themed below). */
+  --color-success-weak: color-mix(in srgb, var(--color-success) 14%, var(--color-surface));
+  --color-warn-weak: color-mix(in srgb, var(--color-warn) 16%, var(--color-surface));
+  --color-error-weak: color-mix(in srgb, var(--color-error) 14%, var(--color-surface));
+  --color-accent-weak: color-mix(
+    in srgb,
+    var(--color-accent) 22%,
+    var(--color-surface)
+  ); /* live-period highlight */
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+
+  /* Shadow */
+  --shadow-1: 0 1px 2px rgba(31, 36, 51, 0.06), 0 2px 6px rgba(31, 36, 51, 0.08);
+  --shadow-2: 0 4px 16px rgba(31, 36, 51, 0.12);
+
+  /* Type — Poppins (rounded geometric sans; best read of the mockup) */
+  --font-sans: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-size-xs: 0.6875rem; /* 11px — nav labels */
+  --font-size-sm: 0.8125rem; /* 13px */
+  --font-size-md: 1rem; /* 16px */
+  --font-size-lg: 1.25rem; /* 20px — brand title */
+  --font-size-xl: 1.5rem;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Layout */
+  --tap-target: 44px; /* DESIGN.md: touch targets >= 44px */
+  --header-height: 64px;
+  --nav-height: 64px;
+  --content-max: 480px;
+}
+
+/*
+ * Dark theme. `data-theme="dark"` is set on <html> by lib/theme.ts (and the inline no-flash script in
+ * index.html). Only the color tokens + elevation change; spacing/radius/type are shared. The brand
+ * purple is lightened (it's only ever a foreground — text/icons), gold accents are kept, and surfaces
+ * go to near-black.
+ */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  /* Brand */
+  --color-primary: #c3a3e6; /* lightened purple for contrast on dark surfaces */
+  --color-primary-weak: #2c2440; /* muted dark-purple fill for hovers / tints */
+  --color-accent: #f4b41a;
+  --color-accent-strong: #f0c040;
+  --color-on-primary: #1b1430; /* dark text on the lightened purple */
+  --color-on-accent: #ffffff;
+
+  /* Neutrals */
+  --color-bg: #14151a;
+  --color-surface: #1e2027;
+  --color-text: #f2f3f5;
+  --color-text-muted: #9aa0ab;
+  --color-border: #31343f;
+  --color-border-subtle: #2a2c35;
+  --color-error: #f08a7e;
+  --color-on-error: #2a0f0c; /* dark text on the lightened error red */
+  --color-success: #58c08b; /* lightened for contrast on dark surfaces */
+  --color-warn: #e0a64e;
+
+  /* Elevation — black shadows read on dark surfaces where the light ones vanish. */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.45);
+  --shadow-2: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+/*
+ * High contrast (accessibility) — `data-contrast="high"` on <html>, set by lib/displayPrefs.ts. Layers
+ * on top of light or dark: pure-black/white text, darker muted text, and stronger borders. The dark
+ * variant has higher specificity, so it wins when both attributes are present.
+ */
+:root[data-contrast='high'] {
+  --color-text: #000000;
+  --color-text-muted: #3a3f4a;
+  --color-border: #6b7080;
+  --color-border-subtle: #6b7080;
+}
+:root[data-theme='dark'][data-contrast='high'] {
+  --color-bg: #000000;
+  --color-surface: #15171c;
+  --color-text: #ffffff;
+  --color-text-muted: #d6dae1;
+  --color-border: #9aa0ad;
+  --color-border-subtle: #9aa0ad;
+}

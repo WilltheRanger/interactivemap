@@ -1,0 +1,71 @@
+/* Crash fallbacks. Kept self-contained (no component imports) so they render when the app can't. */
+
+.crash {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  min-height: 60vh;
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+}
+
+/* Card variant used inside a screen (header/nav still visible). */
+.crash--card {
+  min-height: 0;
+  margin-top: var(--space-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+}
+
+.crash__logo {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+}
+
+.crash__title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+}
+
+.crash__text {
+  max-width: 420px;
+  color: var(--color-text-muted);
+}
+
+.crash__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.crash__button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--tap-target);
+  padding: 0 var(--space-5);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font: inherit;
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+}
+.crash__button:hover {
+  background: var(--color-accent-strong);
+}
+
+.crash__link {
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  text-decoration: underline;
+}

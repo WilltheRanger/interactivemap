@@ -1,0 +1,537 @@
+/* Admin announcements manager (not in student nav). Token-only; reuses .ann-panel from the feed. */
+
+.admin-body {
+  display: grid;
+  gap: var(--space-5);
+}
+
+/* ── Form ── */
+.admin-form {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.admin-form__title {
+  margin: 0;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+}
+
+.admin-field {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.admin-field__label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+}
+
+.admin-input {
+  font: inherit;
+  color: inherit;
+  padding: var(--space-3);
+  min-height: var(--tap-target);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.admin-input:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+.admin-input[aria-invalid='true'] {
+  border-color: var(--color-error);
+}
+
+.admin-input--area {
+  resize: vertical;
+  min-height: 96px;
+}
+
+.admin-field__error {
+  color: var(--color-error);
+  font-size: var(--font-size-sm);
+}
+
+.admin-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--tap-target);
+  font-weight: var(--font-weight-medium);
+}
+
+.admin-toggle input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--color-primary);
+}
+
+.admin-form__event {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-primary-weak);
+  border-radius: var(--radius-md);
+}
+
+.admin-form__actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.admin-status {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.admin-status--error {
+  color: var(--color-error);
+}
+
+/* ── Posted list ── */
+.admin-section-title {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+.admin-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.admin-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-1);
+}
+
+.admin-row__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.admin-row__title {
+  font-weight: var(--font-weight-semibold);
+}
+
+.admin-row__sub {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.admin-row__actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.admin-empty {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+/* Sections grouped by block (admin Lockers tab). */
+.admin-groups {
+  display: grid;
+  gap: var(--space-4);
+}
+.admin-group {
+  display: grid;
+  gap: var(--space-2);
+}
+.admin-group-title {
+  margin: 0;
+  padding-bottom: var(--space-1);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  border-bottom: 1px solid var(--color-border);
+}
+.admin-group__empty {
+  font-size: var(--font-size-sm);
+}
+
+/* Inline "add a row" form (e.g. the Blocks manager) + inline rename input inside a row. */
+.admin-inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+.admin-inline-form .admin-input,
+.admin-input--inline {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+/* ── Tag lockers on map (full-screen admin overlay) ── */
+.map-tagger {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+}
+.map-tagger__bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: calc(env(safe-area-inset-top, 0px) + var(--space-3)) var(--space-4) var(--space-3);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+.map-tagger__title {
+  margin: 0;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+.map-tagger__controls {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4) 0;
+}
+.map-tagger__pick {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+.map-tagger__zoom {
+  display: flex;
+  gap: var(--space-2);
+}
+.map-tagger__hint {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: var(--space-2) var(--space-4) var(--space-3);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+.map-tagger__swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1px solid var(--color-border);
+  vertical-align: middle;
+  margin: 0 2px 0 6px;
+}
+.map-tagger__swatch--mine {
+  background: var(--color-accent);
+}
+.map-tagger__swatch--other {
+  background: #6aa6ff;
+}
+.map-tagger__swatch--free {
+  background: transparent;
+}
+.map-tagger__stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  background: var(--color-surface);
+}
+.map-tagger__canvas {
+  position: relative;
+}
+.map-tagger__img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.map-tagger__svg-host {
+  position: absolute;
+  inset: 0;
+}
+.map-tagger__svg-host svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none; /* only locker shapes opt back in (below) */
+}
+.map-tagger__msg {
+  margin: var(--space-5);
+  text-align: center;
+  color: var(--color-text-muted);
+}
+/* The combined campus SVG carries room tap-targets too; hide everything but lockers so the
+   illustration underneath shows and only the locker shapes are visible/colourable. */
+.map-tagger__svg-host svg rect:not(.tagger-locker),
+.map-tagger__svg-host svg path:not(.tagger-locker) {
+  fill: transparent;
+  stroke: none;
+}
+.tagger-locker {
+  pointer-events: auto;
+  cursor: pointer;
+  stroke: rgba(0, 0, 0, 0.55);
+  stroke-width: 0.6;
+}
+.tagger-locker--mine {
+  fill: var(--color-accent);
+  fill-opacity: 0.95;
+}
+.tagger-locker--other {
+  fill: #6aa6ff;
+  fill-opacity: 0.85;
+}
+.tagger-locker--free {
+  fill: #ffffff;
+  fill-opacity: 0.35;
+}
+
+.admin-signout {
+  margin-left: var(--space-3);
+}
+
+/* ── Unified admin: tabs + section chrome (Chunk 3) ── */
+.admin-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-4);
+}
+.admin-tabs--inner {
+  margin-bottom: 0;
+}
+.admin-tab {
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  padding: var(--space-2) var(--space-3);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+.admin-tab:hover {
+  background: var(--color-primary-weak);
+}
+.admin-tab.is-active {
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: var(--font-weight-semibold);
+}
+
+.admin-note {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-primary-weak);
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.admin-subsection__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.admin-form__grid {
+  display: grid;
+  gap: var(--space-3);
+}
+@media (min-width: 640px) {
+  .admin-form__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.admin-form__checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.admin-list--compact .admin-row {
+  padding: var(--space-2) var(--space-3);
+}
+.admin-row--stacked {
+  flex-direction: column;
+  align-items: stretch;
+}
+.admin-row__main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+.admin-row__main .admin-row__text {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Bell schedule rows */
+.admin-bell__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.admin-bell__period {
+  width: 110px;
+}
+.admin-bell__row .admin-input[type='time'] {
+  width: 110px;
+}
+
+/* Requirements inline editors */
+.admin-req__notes {
+  width: 100%;
+  margin-top: var(--space-1);
+  font-size: var(--font-size-sm);
+}
+.admin-req__credits {
+  width: 84px;
+}
+.admin-req-group {
+  display: grid;
+  gap: var(--space-2);
+}
+.admin-req-group__title {
+  margin: var(--space-2) 0 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+/* Locker hotspot editor */
+.admin-hotspots {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+}
+.admin-hotspots__title {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+.admin-hotspots__form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.admin-hotspots__form .admin-input {
+  width: 110px;
+}
+
+/* Small muted helper text under a form field. */
+.admin-form__hint {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+/* In-admin panorama upload (Cloudinary) — a friendly "Upload photo" button + status. */
+.admin-upload {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+/* The "swap halves" fix sits on its own row beneath the upload button. */
+.admin-upload__fix {
+  flex-basis: 100%;
+}
+.admin-upload__preview {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+}
+
+/* ── Locker 360° tagger panel (floats over the full-screen Pannellum viewer) ──── */
+.locker-tagger {
+  position: fixed;
+  z-index: 1300; /* above the .pano viewer (1200) */
+  left: var(--space-3);
+  right: var(--space-3);
+  bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+  margin: 0 auto;
+  max-width: 420px;
+  max-height: 46vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2);
+}
+.locker-tagger__coords {
+  margin: 0;
+  font-weight: var(--font-weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+.locker-tagger__form {
+  display: flex;
+  gap: var(--space-2);
+}
+.locker-tagger__form .admin-input {
+  flex: 1;
+  min-width: 0;
+}
+.locker-tagger__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.locker-tagger__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  font-variant-numeric: tabular-nums;
+}
+.locker-tagger__rowactions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex: 0 0 auto;
+}
