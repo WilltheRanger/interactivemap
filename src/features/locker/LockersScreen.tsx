@@ -1,14 +1,13 @@
 import { lazy, Suspense, useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Compass, MapPin, Pencil, Search } from 'lucide-react';
+import { Compass, Pencil, Search } from 'lucide-react';
 import { Button, Card, Skeleton } from '../../components';
 import {
   useLockerBlock,
-  useLockerSections,
+  useLockerBlocks,
   useLockersBySection,
+  useResolveLocker,
   usePanorama,
 } from '../../data/hooks';
-import { numberInBlock, type LockerSection } from '../../lib/refData';
 import { useMyLocker } from '../../data/usePersonal';
 import { setMyLocker } from '../../lib/personalStore';
 import type { MyLocker } from '../../types/personal';
@@ -18,17 +17,12 @@ import './LockersScreen.css';
 // student actually opens their locker.
 const PanoramaViewer = lazy(() => import('./PanoramaViewer'));
 
-/** Display name for a block: its label ("Block 1"), falling back to its range. */
-function blockLabel(s: LockerSection): string {
-  return s.label ?? `Lockers ${s.number_start}–${s.number_end}`;
-}
-
 /**
- * Locker finder (Phase 08 + block model): the school's locker numbers repeat across blocks, so a
- * student picks their BLOCK ("Block 1"…) and types a number → the block is resolved BY ID (never by
- * range) and the number is validated against that block's range → the block highlighted on the map +
- * a 360° panorama with a pin on the locker. The saved {block_id, number} persists on-device only
- * (personalStore.my_locker — never server-side, per CLAUDE.md).
+ * Locker finder (block model): the school's lockers are grouped into blocks ("Block 1"…), each block
+ * holds several non-contiguous ranges (sections), and locker numbers repeat across blocks. So a
+ * student picks their BLOCK and types a number → the app finds the section in that block whose range
+ * contains the number → that section's 360° panorama with a pin on the locker. The saved
+ * {block_id, number} persists on-device only (personalStore.my_locker — never server-side per CLAUDE.md).
  */
 export function LockersScreen() {
   const myLocker = useMyLocker();
@@ -62,7 +56,9 @@ export function LockersScreen() {
   );
 }
 
-/** Block + number entry. Validates the number against the chosen block's range before saving. */
+/** Block + number entry. The block is required; the number is checked against the block's ranges on
+ *  resolution (the result view), so the form only validates a block is chosen and the number is a
+ *  positive integer. */
 function LockerEntry({
   current,
   onSubmit,
@@ -72,7 +68,7 @@ function LockerEntry({
   onSubmit: (loc: MyLocker) => void;
   onCancel?: () => void;
 }) {
-  const blocks = useLockerSections();
+  const blocks = useLockerBlocks();
   const list = blocks.data ?? [];
   const [blockId, setBlockId] = useState(current?.block_id ?? '');
   const [value, setValue] = useState(current != null ? String(current.number) : '');
@@ -80,8 +76,7 @@ function LockerEntry({
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    const block = list.find((b) => b.id === blockId);
-    if (!block) {
+    if (!blockId) {
       setError('Choose your locker block.');
       return;
     }
@@ -90,12 +85,8 @@ function LockerEntry({
       setError('Enter your locker number.');
       return;
     }
-    if (!numberInBlock(block, n)) {
-      setError(`${blockLabel(block)} holds lockers ${block.number_start}–${block.number_end}.`);
-      return;
-    }
     setError(null);
-    onSubmit({ block_id: block.id, number: n });
+    onSubmit({ block_id: blockId, number: n });
   };
 
   const noBlocks = !blocks.isPending && !blocks.isError && list.length === 0;
@@ -120,7 +111,7 @@ function LockerEntry({
           <option value="">{blocks.isPending ? 'Loading blocks…' : 'Select your block'}</option>
           {list.map((b) => (
             <option key={b.id} value={b.id}>
-              {blockLabel(b)}
+              {b.label}
             </option>
           ))}
         </select>
@@ -134,7 +125,7 @@ function LockerEntry({
           type="number"
           inputMode="numeric"
           min={1}
-          placeholder="e.g. 42"
+          placeholder="e.g. 260"
           value={value}
           onChange={(event) => {
             setValue(event.target.value);
@@ -179,23 +170,30 @@ function LockerEntry({
   );
 }
 
-/** Resolves the saved block by id and renders loading / not-found / found states. */
+/** Resolves the saved {block, number} → the block (for its label) + the matching section (the range
+ *  that contains the number), and renders loading / not-found / found states. */
 function LockerResult({ myLocker, onChange }: { myLocker: MyLocker; onChange: () => void }) {
   const block = useLockerBlock(myLocker.block_id);
-  const navigate = useNavigate();
+  const section = useResolveLocker(myLocker.block_id, myLocker.number);
   const [viewing, setViewing] = useState(false);
 
-  if (block.isPending) {
+  if (block.isPending || section.isPending) {
     return <Skeleton width="100%" height={150} radius="var(--radius-lg)" />;
   }
 
-  if (block.isError) {
+  if (block.isError || section.isError) {
     return (
       <Card>
         <p className="locker-result__title">Couldn’t load locker data</p>
         <p className="locker-result__sub">Check your connection and try again.</p>
         <div className="locker-result__actions">
-          <Button variant="primary" onClick={() => void block.refetch()}>
+          <Button
+            variant="primary"
+            onClick={() => {
+              void block.refetch();
+              void section.refetch();
+            }}
+          >
             Try again
           </Button>
           <Button variant="secondary" onClick={onChange}>
@@ -206,13 +204,16 @@ function LockerResult({ myLocker, onChange }: { myLocker: MyLocker; onChange: ()
     );
   }
 
-  const found = block.data;
+  const blockLabel = block.data?.label ?? 'your block';
+  const found = section.data;
+
   if (!found) {
     return (
       <Card>
-        <p className="locker-result__title">Locker block not found</p>
+        <p className="locker-result__title">Locker not found</p>
         <p className="locker-result__sub">
-          The block this locker was saved in is no longer available. Pick your block again.
+          We couldn’t find locker #{myLocker.number} in {blockLabel}. Double-check your block and
+          number.
         </p>
         <div className="locker-result__actions">
           <Button variant="primary" icon={<Pencil size={16} />} onClick={onChange}>
@@ -229,7 +230,7 @@ function LockerResult({ myLocker, onChange }: { myLocker: MyLocker; onChange: ()
         <div className="locker-result__head">
           <span className="locker-result__badge">#{myLocker.number}</span>
           <div>
-            <p className="locker-result__title">{found.label ?? 'Your locker bank'}</p>
+            <p className="locker-result__title">{block.data?.label ?? 'Your locker bank'}</p>
             <p className="locker-result__sub">
               Lockers {found.number_start}–{found.number_end}
             </p>
@@ -250,17 +251,6 @@ function LockerResult({ myLocker, onChange }: { myLocker: MyLocker; onChange: ()
             <p className="locker-result__note">No 360° photo for this bank yet.</p>
           )}
           <div className="locker-result__secondary">
-            {found.building_id && (
-              <Button
-                variant="secondary"
-                icon={<MapPin size={16} />}
-                onClick={() =>
-                  navigate(`/map?room=${encodeURIComponent(found.building_id as string)}`)
-                }
-              >
-                Show on map
-              </Button>
-            )}
             <Button variant="secondary" icon={<Pencil size={16} />} onClick={onChange}>
               Change locker
             </Button>
@@ -269,12 +259,12 @@ function LockerResult({ myLocker, onChange }: { myLocker: MyLocker; onChange: ()
       </Card>
 
       {viewing && found.panorama_id && (
-        <Suspense fallback={<PanoLoading label={found.label} />}>
+        <Suspense fallback={<PanoLoading label={block.data?.label} />}>
           <LockerPanorama
             panoramaId={found.panorama_id}
             sectionId={found.id}
             lockerNumber={myLocker.number}
-            label={found.label ?? `Lockers ${found.number_start}–${found.number_end}`}
+            label={block.data?.label ?? `Lockers ${found.number_start}–${found.number_end}`}
             onClose={() => setViewing(false)}
           />
         </Suspense>

@@ -154,9 +154,30 @@ export type Database = {
         };
         Relationships: [];
       };
+      locker_blocks: {
+        Row: {
+          created_at: string;
+          id: string;
+          label: string;
+          sort_order: number;
+        };
+        Insert: {
+          created_at?: string;
+          id: string;
+          label: string;
+          sort_order?: number;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          label?: string;
+          sort_order?: number;
+        };
+        Relationships: [];
+      };
       locker_sections: {
         Row: {
-          building_id: string | null;
+          block_id: string | null;
           created_at: string;
           id: string;
           label: string | null;
@@ -166,7 +187,7 @@ export type Database = {
           panorama_id: string | null;
         };
         Insert: {
-          building_id?: string | null;
+          block_id?: string | null;
           created_at?: string;
           id: string;
           label?: string | null;
@@ -176,7 +197,7 @@ export type Database = {
           panorama_id?: string | null;
         };
         Update: {
-          building_id?: string | null;
+          block_id?: string | null;
           created_at?: string;
           id?: string;
           label?: string | null;
@@ -187,10 +208,10 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: 'locker_sections_building_id_fkey';
-            columns: ['building_id'];
+            foreignKeyName: 'locker_sections_block_id_fkey';
+            columns: ['block_id'];
             isOneToOne: false;
-            referencedRelation: 'buildings';
+            referencedRelation: 'locker_blocks';
             referencedColumns: ['id'];
           },
           {

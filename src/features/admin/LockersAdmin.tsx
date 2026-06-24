@@ -1,8 +1,13 @@
 import { lazy, Suspense, useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Camera, Pencil, Plus, Upload } from 'lucide-react';
+import { Camera, Check, Pencil, Plus, Upload, X } from 'lucide-react';
 import { Button, Card, Skeleton } from '../../components';
-import { useBuildings, useLockerSections, useLockersBySection, usePanorama } from '../../data/hooks';
+import {
+  useLockerBlocks,
+  useLockerSections,
+  useLockersBySection,
+  usePanorama,
+} from '../../data/hooks';
 import { config } from '../../lib/config';
 import { uploadPanorama } from '../../lib/cloudinary';
 import type { LockerSection } from '../../lib/refData';
@@ -13,11 +18,186 @@ import { slugify } from './slugify';
 // Pannellum + the panorama image are heavy and admin-only, so the visual tagger is code-split.
 const LockerTagger = lazy(() => import('./LockerTagger'));
 
+/**
+ * Blocks manager: a block ("Block 4") is what a student picks. Each block holds one or more locker
+ * sections (ranges) — managed below. Blocks aren't tied to buildings.
+ */
+function BlocksManager() {
+  const blocks = useLockerBlocks();
+  const queryClient = useQueryClient();
+  const [newLabel, setNewLabel] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editLabel, setEditLabel] = useState('');
+
+  const invalidate = () => void queryClient.invalidateQueries({ queryKey: ['lockerBlocks'] });
+
+  const add = useMutation({
+    mutationFn: async (label: string) => {
+      const sortOrders = (blocks.data ?? []).map((b) => b.sort_order);
+      const sort_order = (sortOrders.length ? Math.max(...sortOrders) : 0) + 1;
+      const id = `block-${slugify(label) || sort_order}`;
+      const { error } = await getSupabase()
+        .from('locker_blocks')
+        .insert({ id, label: label.trim(), sort_order });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setNewLabel('');
+      invalidate();
+    },
+  });
+
+  const rename = useMutation({
+    mutationFn: async ({ id, label }: { id: string; label: string }) => {
+      const { error } = await getSupabase()
+        .from('locker_blocks')
+        .update({ label: label.trim() })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setEditingId(null);
+      invalidate();
+    },
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await getSupabase().from('locker_blocks').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: invalidate,
+  });
+
+  const submitAdd = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newLabel.trim()) add.mutate(newLabel);
+  };
+
+  return (
+    <div className="admin-subsection">
+      <div className="admin-subsection__head">
+        <h2 className="admin-section-title">Blocks</h2>
+      </div>
+      <p className="admin-note" role="note">
+        A <strong>block</strong> is what a student picks (e.g. “Block 4”). Each block holds one or more
+        locker <em>sections</em> (ranges) — add those below and assign each to its block. Blocks
+        aren’t tied to buildings.
+      </p>
+
+      <form className="admin-inline-form" onSubmit={submitAdd}>
+        <input
+          className="admin-input"
+          type="text"
+          placeholder="New block name (e.g. Block 5)"
+          value={newLabel}
+          onChange={(e) => setNewLabel(e.target.value)}
+          aria-label="New block name"
+        />
+        <Button
+          type="submit"
+          variant="secondary"
+          icon={<Plus size={16} />}
+          disabled={add.isPending || !newLabel.trim()}
+        >
+          {add.isPending ? 'Adding…' : 'Add block'}
+        </Button>
+      </form>
+      {add.isError && (
+        <p className="admin-status admin-status--error" role="alert">
+          Couldn’t add block: {add.error instanceof Error ? add.error.message : 'unknown error'}
+        </p>
+      )}
+
+      <SectionStates
+        isPending={blocks.isPending}
+        isError={blocks.isError}
+        onRetry={() => void blocks.refetch()}
+      >
+        {(blocks.data ?? []).length === 0 ? (
+          <p className="admin-empty" role="status">
+            No blocks yet — add the first one above.
+          </p>
+        ) : (
+          <ul className="admin-list">
+            {(blocks.data ?? []).map((b) => (
+              <li key={b.id} className="admin-row">
+                {editingId === b.id ? (
+                  <>
+                    <input
+                      className="admin-input admin-input--inline"
+                      type="text"
+                      value={editLabel}
+                      onChange={(e) => setEditLabel(e.target.value)}
+                      aria-label={`Rename ${b.label}`}
+                    />
+                    <div className="admin-row__actions">
+                      <Button
+                        variant="primary"
+                        icon={<Check size={16} />}
+                        disabled={rename.isPending || !editLabel.trim()}
+                        onClick={() => rename.mutate({ id: b.id, label: editLabel })}
+                      >
+                        Save
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        icon={<X size={16} />}
+                        onClick={() => setEditingId(null)}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <span className="admin-row__text">
+                      <span className="admin-row__title">{b.label}</span>
+                    </span>
+                    <div className="admin-row__actions">
+                      <Button
+                        variant="secondary"
+                        icon={<Pencil size={16} />}
+                        onClick={() => {
+                          setEditingId(b.id);
+                          setEditLabel(b.label);
+                        }}
+                        aria-label={`Rename ${b.label}`}
+                      >
+                        Rename
+                      </Button>
+                      <ConfirmDeleteButton
+                        label={b.label}
+                        pending={remove.isPending && remove.variables === b.id}
+                        onConfirm={() => remove.mutate(b.id)}
+                      />
+                    </div>
+                  </>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+        {remove.isError && (
+          <p className="admin-status admin-status--error" role="alert">
+            Couldn’t delete this block — move or delete its sections first.
+          </p>
+        )}
+        {rename.isError && (
+          <p className="admin-status admin-status--error" role="alert">
+            Couldn’t rename the block.
+          </p>
+        )}
+      </SectionStates>
+    </div>
+  );
+}
+
 interface SectionFormState {
   label: string;
   number_start: string;
   number_end: string;
-  building_id: string;
+  block_id: string;
   panorama_url: string;
   map_x: string;
   map_y: string;
@@ -29,7 +209,7 @@ function fromSection(s: LockerSection | null, panoramaUrl: string): SectionFormS
     label: s?.label ?? '',
     number_start: s ? String(s.number_start) : '',
     number_end: s ? String(s.number_end) : '',
-    building_id: s?.building_id ?? '',
+    block_id: s?.block_id ?? '',
     panorama_url: panoramaUrl,
     map_x: coord?.x != null ? String(coord.x) : '',
     map_y: coord?.y != null ? String(coord.y) : '',
@@ -46,7 +226,7 @@ function SectionForm({
   onDone: () => void;
 }) {
   const queryClient = useQueryClient();
-  const buildings = useBuildings();
+  const blocks = useLockerBlocks();
   const [form, setForm] = useState<SectionFormState>(fromSection(editing, panoramaUrl));
   const [errors, setErrors] = useState<Partial<Record<keyof SectionFormState, string>>>({});
   const [saved, setSaved] = useState(false);
@@ -78,7 +258,8 @@ function SectionForm({
   const save = useMutation({
     mutationFn: async () => {
       const supabase = getSupabase();
-      const id = editing?.id ?? `sec-${slugify(form.label) || form.number_start}`;
+      const id =
+        editing?.id ?? `sec-${slugify(form.label) || `${form.block_id}-${form.number_start}`}`;
 
       // Panorama: a URL creates/updates a panoramas row tied to this section; blank clears it.
       let panoramaId: string | null = editing?.panorama_id ?? null;
@@ -98,7 +279,7 @@ function SectionForm({
         label: form.label.trim() || null,
         number_start: Number(form.number_start),
         number_end: Number(form.number_end),
-        building_id: form.building_id || null,
+        block_id: form.block_id || null,
         panorama_id: panoramaId,
         map_coord:
           form.map_x.trim() && form.map_y.trim()
@@ -124,6 +305,7 @@ function SectionForm({
     const next: typeof errors = {};
     const start = Number(form.number_start);
     const end = Number(form.number_end);
+    if (!form.block_id) next.block_id = 'Choose the block this section belongs to.';
     if (!form.number_start.trim() || !Number.isInteger(start) || start <= 0)
       next.number_start = 'Enter the first locker number.';
     if (!form.number_end.trim() || !Number.isInteger(end) || end <= 0)
@@ -142,27 +324,28 @@ function SectionForm({
         {editing ? `Edit ${editing.label ?? editing.id}` : 'New locker section'}
       </h3>
       <div className="admin-form__grid">
-        <Field label="Label (e.g. “400s breezeway”)">
+        <Field label="Block" error={errors.block_id}>
+          <select
+            className="admin-input"
+            value={form.block_id}
+            onChange={(e) => set('block_id', e.target.value)}
+            aria-invalid={!!errors.block_id}
+          >
+            <option value="">Select a block</option>
+            {(blocks.data ?? []).map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.label}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Label (e.g. “001–069”)">
           <input
             className="admin-input"
             type="text"
             value={form.label}
             onChange={(e) => set('label', e.target.value)}
           />
-        </Field>
-        <Field label="Building (optional)">
-          <select
-            className="admin-input"
-            value={form.building_id}
-            onChange={(e) => set('building_id', e.target.value)}
-          >
-            <option value="">None</option>
-            {(buildings.data ?? []).map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.label}
-              </option>
-            ))}
-          </select>
         </Field>
         <Field label="First locker number" error={errors.number_start}>
           <input
@@ -187,13 +370,7 @@ function SectionForm({
         <Field label="360° panorama photo (optional)">
           {config.isCloudinaryConfigured && (
             <div className="admin-upload">
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/*"
-                hidden
-                onChange={onPickFile}
-              />
+              <input ref={fileRef} type="file" accept="image/*" hidden onChange={onPickFile} />
               <Button
                 type="button"
                 variant="secondary"
@@ -341,11 +518,12 @@ function HotspotEditor({ section }: { section: LockerSection }) {
 }
 
 /**
- * Locker Sections tab. Current rows are placeholder until the owner supplies real ranges,
- * coordinates, and panorama files (DATA-INTAKE checkpoint) — this UI is how they get entered.
+ * Locker tab: manage Blocks (what a student picks) and the locker Sections (ranges) within them.
+ * Current rows are placeholder until the owner supplies real ranges, coordinates, and panorama files.
  */
 export function LockersAdmin() {
   const sections = useLockerSections();
+  const blocks = useLockerBlocks();
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState<LockerSection | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -355,6 +533,8 @@ export function LockersAdmin() {
   // form; if it errors, show a retry rather than risk wiping the photo.
   const editingPanorama = usePanorama(editing?.panorama_id ?? null);
   const editFormReady = !editing?.panorama_id || editingPanorama.isSuccess;
+  const blockLabel = (id: string | null) =>
+    (id && (blocks.data ?? []).find((b) => b.id === id)?.label) || null;
   const closeForm = () => {
     setEditing(null);
     setShowForm(false);
@@ -387,11 +567,13 @@ export function LockersAdmin() {
 
   return (
     <div className="admin-body">
+      <BlocksManager />
+
       <p className="admin-note" role="note">
-        <strong>How to add a locker bank:</strong> 1) <em>Add section</em> — give its locker number
-        range and building. 2) <em>Upload</em> the bank’s 360° photo. 3) Open <em>Pins → Tag in
-        360°</em> and tap each locker in the photo. Students just type their locker number and the app
-        finds the bank by its range.
+        <strong>How to add a locker bank:</strong> 1) Make sure its <em>Block</em> exists above. 2){' '}
+        <em>Add section</em> — pick the block, give its number range. 3) <em>Upload</em> the bank’s
+        360° photo. 4) Open <em>Pins → Tag in 360°</em> and tap each locker. Students pick their block
+        and type their number; the app finds the section whose range contains it.
       </p>
 
       <div className="admin-subsection__head">
@@ -449,7 +631,7 @@ export function LockersAdmin() {
                     <span className="admin-row__title">{s.label ?? s.id}</span>
                     <span className="admin-row__sub">
                       #{s.number_start}–{s.number_end}
-                      {s.building_id && ` · ${s.building_id}`}
+                      {` · ${blockLabel(s.block_id) ?? 'no block'}`}
                       {s.panorama_id ? ' · panorama set' : ' · no panorama'}
                     </span>
                   </div>
