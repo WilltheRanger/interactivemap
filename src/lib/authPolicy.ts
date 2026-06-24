@@ -9,14 +9,22 @@
 export const ALLOWED_EMAIL_DOMAINS = ['stu.wvusd.org', 'wvusd.org'];
 
 /**
- * Admin allow-list for the /admin announcements manager.
+ * Admin allow-list for the /admin manager.
+ *
+ * IMPORTANT: this array only controls the UI (what an admin SEES). The REAL gate is the
+ * `public.is_announcements_admin()` RLS function in Supabase. They MUST list the same emails — when
+ * you add an admin here, also update that function (see supabase/migrations/0010_admin_emails_sync.sql
+ * for the exact SQL), or the new admin can open the panel but every save fails with "couldn't save".
  *
  * TODO(owner): aryamshah2@gmail.com is the interim admin; replace with the school-managed
- * account(s) before launch. Keep this list in sync with is_announcements_admin() in
- * supabase/migrations/0004_announcements_admin_email.sql — RLS is the real gate, this array only
- * controls the UI.
+ * account(s) before launch.
  */
-export const ADMIN_EMAILS = ['aryamshah2@gmail.com', 'jwai@wvusd.org', 'duxinyu774@gmail.com', 'albusshih@gmail.com'];
+export const ADMIN_EMAILS = [
+  'aryamshah2@gmail.com',
+  'jwai@wvusd.org',
+  'duxinyu774@gmail.com',
+  'albusshih@gmail.com',
+];
 
 export function isAdminEmail(email: string | null | undefined): boolean {
   return !!email && ADMIN_EMAILS.includes(email.toLowerCase());
