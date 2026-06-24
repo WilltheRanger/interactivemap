@@ -134,13 +134,9 @@ function LockerEntry({
               setCode(event.target.value.replace(/\D/g, '').slice(0, 4));
               setError(null);
             }}
-            aria-describedby="locker-code-help"
             aria-invalid={!!error}
           />
         </div>
-        <p id="locker-code-help" className="locker-entry__help">
-          Your code is on your locker assignment — e.g. <strong>BK3301</strong> is block 3, locker 301.
-        </p>
 
         {blocksError && (
           <p className="locker-entry__error" role="alert">
