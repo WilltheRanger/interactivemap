@@ -1,4 +1,4 @@
-import { lazy, Suspense, useRef, useState } from 'react';
+﻿import { lazy, Suspense, useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Camera, Check, Map, Pencil, Plus, Upload, X } from 'lucide-react';
 import { Button, Card, Skeleton } from '../../components';
@@ -82,7 +82,7 @@ function BlocksManager() {
         <h2 className="admin-section-title">Blocks</h2>
       </div>
       <p className="admin-note" role="note">
-        Name each block <strong>BK&lt;n&gt;</strong> (e.g. “BK4”) — the &lt;n&gt; is the single digit a
+        Name each block <strong>BK&lt;n&gt;</strong> (e.g. "BK4") — the &lt;n&gt; is the single digit a
         student types in their pin, like <strong>BK4</strong> + a 3-digit locker number. Each block
         holds one or more locker <em>sections</em> (ranges) — add those below and assign each to its
         block. Blocks aren’t tied to buildings.
@@ -356,12 +356,19 @@ function SectionForm({
             ))}
           </select>
         </Field>
-        <Field label="Label (e.g. “001–069”)">
+        <Field label={'Label (e.g. "001\u2013069")'}>
           <input
             className="admin-input"
             type="text"
             value={form.label}
-            onChange={(e) => set('label', e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value;
+              set('label', val);
+              const match = val.match(/^(\d+)\s*[-–—]\s*(\d+)$/);
+              if (match) {
+                setForm((f) => ({ ...f, label: val, number_start: String(parseInt(match[1], 10)), number_end: String(parseInt(match[2], 10)) }));
+              }
+            }}
           />
         </Field>
         <Field label="First locker number" error={errors.number_start}>
@@ -434,8 +441,8 @@ function SectionForm({
           />
           <p className="admin-form__hint">
             One 360° (equirectangular) photo of this locker bank — from a 360 camera, or your phone’s
-            Panorama / “Photo Sphere” mode. The app shrinks it for you. If the preview’s seam runs
-            through the middle of the scene, tick “split the wrong way” and it re-fixes the photo.
+            Panorama / "Photo Sphere" mode. The app shrinks it for you. If the preview’s seam runs
+            through the middle of the scene, tick "split the wrong way" and it re-fixes the photo.
           </p>
         </Field>
         <Field label="Map X (optional)">
@@ -531,7 +538,7 @@ function HotspotEditor({ section }: { section: LockerSection }) {
           </ul>
         ) : (
           section.panorama_id && (
-            <p className="admin-row__sub">No pins yet — use “Tag in 360°”.</p>
+            <p className="admin-row__sub">No pins yet — use "Tag in 360°".</p>
           )
         )}
       </SectionStates>
