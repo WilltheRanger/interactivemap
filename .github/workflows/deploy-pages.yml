@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [claude/peaceful-faraday-zlzdty]
   workflow_dispatch:
 
 permissions:
