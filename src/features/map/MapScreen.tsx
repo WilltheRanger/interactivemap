@@ -111,7 +111,9 @@ export function MapScreen() {
   const lockerVbRef = useRef<[number, number]>([0, 0]);
   const [lockerT, setLockerT] = useState<LockerTransform | null>(null);
   const [lockerAnchor, setLockerAnchor] = useState<[number, number]>([0, 0]);
-  const calibrating = new URLSearchParams(window.location.search).get('calibrate') === '1';
+  // Dev-only: gated behind import.meta.env.DEV so ?calibrate=1 can't open the panel in production.
+  const calibrating =
+    import.meta.env.DEV && new URLSearchParams(window.location.search).get('calibrate') === '1';
 
   // Locker sections + blocks power both the tap-to-resolve index and the ?section= deep link below.
   const lockerSections = useLockerSections();
