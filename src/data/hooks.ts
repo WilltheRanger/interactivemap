@@ -3,6 +3,9 @@
  * so screens can render the loading / empty / error states (DESIGN.md).
  */
 import { useQuery } from '@tanstack/react-query';
+import { getSupabase } from '../lib/supabase';
+import { panoramaStoragePath } from '../lib/panoramaUpload';
+import type { Panorama } from '../lib/refData';
 import {
   getAnnouncements,
   getBellSchedule,
@@ -167,5 +170,34 @@ export function usePanorama(id: string | null) {
     queryFn: () => getPanorama(id as string),
     enabled: id != null,
     staleTime: STALE_MS,
+  });
+}
+
+const SIGNED_URL_TTL_SEC = 3600;
+
+/**
+ * Resolve a panorama row to a URL the 360° viewer can load. Panoramas stored in the private
+ * `panoramas` Storage bucket get a short-lived **signed** URL (so the bytes stay off the public web);
+ * anything else (legacy Cloudinary, or a pasted URL) passes through unchanged. The result is cached
+ * and auto-refreshed before the signature expires. Pass the panorama row (or null while it loads).
+ */
+export function useSignedPanoramaUrl(pano: Pick<Panorama, 'id' | 'image_url'> | null | undefined) {
+  const rawUrl = pano?.image_url ?? null;
+  const path = rawUrl ? panoramaStoragePath(rawUrl) : null;
+  return useQuery({
+    queryKey: ['panoramaUrl', pano?.id, rawUrl],
+    enabled: rawUrl != null,
+    // Non-Storage URLs are stable — seed them so the viewer opens with no extra round-trip.
+    initialData: rawUrl != null && path == null ? rawUrl : undefined,
+    staleTime: path != null ? (SIGNED_URL_TTL_SEC - 300) * 1000 : Infinity,
+    gcTime: SIGNED_URL_TTL_SEC * 1000,
+    queryFn: async (): Promise<string> => {
+      if (path == null) return rawUrl as string;
+      const { data, error } = await getSupabase()
+        .storage.from('panoramas')
+        .createSignedUrl(path, SIGNED_URL_TTL_SEC);
+      if (error || !data?.signedUrl) throw error ?? new Error('Could not load the panorama photo.');
+      return data.signedUrl;
+    },
   });
 }

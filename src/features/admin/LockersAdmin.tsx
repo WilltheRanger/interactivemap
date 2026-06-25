@@ -9,7 +9,7 @@ import {
   usePanorama,
 } from '../../data/hooks';
 import { config } from '../../lib/config';
-import { uploadPanorama } from '../../lib/cloudinary';
+import { uploadPanoramaToStorage } from '../../lib/panoramaUpload';
 import type { LockerSection } from '../../lib/refData';
 import { getSupabase } from '../../lib/supabase';
 import { ConfirmDeleteButton, Field, MutationStatus, SectionStates } from './shared';
@@ -244,13 +244,13 @@ function SectionForm({
     setSaved(false);
   };
 
-  // Admin-friendly upload: pick a photo → (optional swap-halves fix) → Cloudinary (CORS + auto-resize)
-  // → fill the URL automatically.
+  // Admin-friendly upload: pick a photo → (optional swap-halves fix) → resize → private Supabase
+  // Storage bucket (admin-only via RLS) → fill the URL automatically. The viewer signs it on display.
   const runUpload = async (file: File, swap: boolean) => {
     setUploadError(null);
     setUploading(true);
     try {
-      set('panorama_url', await uploadPanorama(file, { swapHalves: swap }));
+      set('panorama_url', await uploadPanoramaToStorage(file, { swapHalves: swap }));
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : 'Upload failed.');
     } finally {
@@ -385,7 +385,7 @@ function SectionForm({
           />
         </Field>
         <Field label="360° panorama photo (optional)">
-          {config.isCloudinaryConfigured && (
+          {config.isSupabaseConfigured && (
             <div className="admin-upload">
               <input ref={fileRef} type="file" accept="image/*" hidden onChange={onPickFile} />
               <Button
@@ -398,14 +398,9 @@ function SectionForm({
                 {uploading ? 'Uploading…' : form.panorama_url ? 'Replace photo' : 'Upload photo'}
               </Button>
               {form.panorama_url && !uploading && (
-                <a
-                  className="admin-upload__preview"
-                  href={form.panorama_url}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Uploaded ✓ — preview
-                </a>
+                // No external preview link: panoramas live in a private bucket, so the raw URL 403s
+                // until signed. Verify the photo via "Pins → Tag in 360°", which signs it.
+                <span className="admin-upload__preview">Uploaded ✓</span>
               )}
               {uploadError && (
                 <span className="admin-status admin-status--error" role="alert">
@@ -427,7 +422,7 @@ function SectionForm({
             className="admin-input"
             type="url"
             placeholder={
-              config.isCloudinaryConfigured ? 'Filled in automatically when you upload' : 'https://…'
+              config.isSupabaseConfigured ? 'Filled in automatically when you upload' : 'https://…'
             }
             value={form.panorama_url}
             onChange={(e) => set('panorama_url', e.target.value)}

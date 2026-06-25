@@ -8,6 +8,7 @@ import {
   useLockersBySection,
   useResolveLocker,
   usePanorama,
+  useSignedPanoramaUrl,
 } from '../../data/hooks';
 import type { LockerBlock } from '../../lib/refData';
 import { useMyLocker } from '../../data/usePersonal';
@@ -299,12 +300,17 @@ function LockerPanorama({
 }) {
   const panorama = usePanorama(panoramaId);
   const lockers = useLockersBySection(sectionId);
+  // Resolve the (possibly private/signed) image URL once the panorama row has loaded.
+  const signedUrl = useSignedPanoramaUrl(panorama.data);
 
-  if (panorama.isPending || lockers.isPending) {
+  const failed = panorama.isError || signedUrl.isError;
+  const loading = panorama.isPending || lockers.isPending || signedUrl.isPending;
+
+  if (!failed && loading) {
     return <PanoLoading label={label} />;
   }
 
-  if (panorama.isError || !panorama.data) {
+  if (failed || !panorama.data || !signedUrl.data) {
     return (
       <div className="pano" role="alert" aria-label={`${label} — 360° view`}>
         <div className="pano__bar">
@@ -327,7 +333,7 @@ function LockerPanorama({
 
   return (
     <PanoramaViewer
-      imageUrl={pano.image_url}
+      imageUrl={signedUrl.data}
       label={label}
       lockerNumber={lockerNumber}
       initialYaw={pano.initial_yaw}

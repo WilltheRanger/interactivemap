@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '../../components';
-import { useLockersBySection, usePanorama } from '../../data/hooks';
+import { useLockersBySection, usePanorama, useSignedPanoramaUrl } from '../../data/hooks';
 import type { Locker, LockerSection } from '../../lib/refData';
 import { getSupabase } from '../../lib/supabase';
 import { ConfirmDeleteButton } from './shared';
@@ -27,6 +27,8 @@ export default function LockerTagger({
   const queryClient = useQueryClient();
   const panorama = usePanorama(section.panorama_id);
   const lockers = useLockersBySection(section.id);
+  // Private-bucket panoramas need a short-lived signed URL; legacy URLs pass through unchanged.
+  const signedUrl = useSignedPanoramaUrl(panorama.data);
   const viewerRef = useRef<PannellumViewer | null>(null);
 
   const [captured, setCaptured] = useState<{ yaw: number; pitch: number } | null>(null);
@@ -140,7 +142,15 @@ export default function LockerTagger({
   const title = `Tag · ${section.label ?? section.id}`;
 
   // Loading / missing panorama: a minimal full-screen shell (no Pannellum) with a close button.
-  if (panorama.isPending || !panorama.data) {
+  const pano = panorama.data;
+  const imageUrl = signedUrl.data;
+  if (panorama.isPending || !pano || signedUrl.isPending || !imageUrl) {
+    const message =
+      panorama.isPending || (pano && signedUrl.isPending)
+        ? 'Loading the panorama…'
+        : !pano
+          ? 'This section has no panorama image yet — add its URL first.'
+          : 'Couldn’t load the panorama photo.';
     return (
       <div className="pano" role="dialog" aria-modal="true" aria-label={title}>
         <div className="pano__bar">
@@ -151,23 +161,17 @@ export default function LockerTagger({
         </div>
         <div className="pano__stage">
           <div className="pano__overlay" role="status">
-            <p className="pano__msg">
-              {panorama.isPending
-                ? 'Loading the panorama…'
-                : 'This section has no panorama image yet — add its URL first.'}
-            </p>
+            <p className="pano__msg">{message}</p>
           </div>
         </div>
       </div>
     );
   }
 
-  const pano = panorama.data;
-
   return (
     <>
       <PanoramaViewer
-        imageUrl={pano.image_url}
+        imageUrl={imageUrl}
         label={title}
         lockerNumber={0}
         initialYaw={pano.initial_yaw}

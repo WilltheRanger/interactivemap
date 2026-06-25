@@ -462,7 +462,7 @@
   color: var(--color-text-muted);
 }
 
-/* In-admin panorama upload (Cloudinary) — a friendly "Upload photo" button + status. */
+/* In-admin panorama upload (private Supabase Storage) — a friendly "Upload photo" button + status. */
 .admin-upload {
   display: flex;
   flex-wrap: wrap;

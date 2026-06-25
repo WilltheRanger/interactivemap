@@ -5,7 +5,13 @@ import { motion } from 'framer-motion';
 import { Camera, MapPin, Timer, User, X } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { SearchInput } from '../../components/SearchInput';
-import { useLockerBlocks, useLockerSections, usePanorama, useRoomWithTeacher } from '../../data/hooks';
+import {
+  useLockerBlocks,
+  useLockerSections,
+  usePanorama,
+  useRoomWithTeacher,
+  useSignedPanoramaUrl,
+} from '../../data/hooks';
 import type { LockerSection } from '../../lib/refData';
 import { useCurrentPeriod, type CurrentPeriod } from '../../data/useCurrentPeriod';
 import { useNow } from '../../data/useNow';
@@ -449,6 +455,8 @@ export function MapScreen() {
     : null;
   const lockerPanorama = usePanorama(lockerSection?.panorama_id ?? null);
   const bankPanorama = lockerSection ? (lockerPanorama.data ?? null) : null;
+  // Private-bucket panoramas need a short-lived signed URL; legacy URLs pass through unchanged.
+  const bankPanoramaUrl = useSignedPanoramaUrl(bankPanorama);
 
   // Detail-card text: a tapped locker shows its section's range + block (falling back to the shape's
   // own label when it isn't assigned to a range yet); everything else uses the selection as-is.
@@ -634,10 +642,10 @@ export function MapScreen() {
         </motion.div>
       )}
 
-      {panoOpen && bankPanorama && (
+      {panoOpen && bankPanorama && bankPanoramaUrl.data && (
         <Suspense fallback={null}>
           <PanoramaViewer
-            imageUrl={bankPanorama.image_url}
+            imageUrl={bankPanoramaUrl.data}
             label={selected?.title ?? 'Lockers'}
             lockerNumber={0}
             initialYaw={bankPanorama.initial_yaw}
