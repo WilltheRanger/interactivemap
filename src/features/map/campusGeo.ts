@@ -2,15 +2,16 @@
  * Campus map geometry + room index. Each level pairs a campus illustration (raster underlay) with a
  * traced-plan SVG aligned on top, so the invisible SVG tap targets sit on the drawn walls.
  *
- * Two placement styles:
- *  - Combined (upper): the SVG and the illustration are exported from the *same* Figma frame, so they
- *    share one coordinate space and overlay 1:1 — svgToImage is the identity. The SVG carries both the
- *    rooms (building groups) and the lockers (the `lockerGroupId` group), so the lockers inherit the
- *    rooms' placement for free; no separate locker overlay or fit.
- *  - Fitted (lower): the SVG was traced on a different frame than the art, so svgToImage maps SVG
- *    coords → image pixels (image = a + s·svg), fitted by chamfer-matching every traced boundary
- *    against the illustration's edges (`scripts/fit-level.mjs`, mean ≈2px). The lockers are a separate
- *    overlay with their own transform. Re-run the fit script if a fitted asset is re-exported.
+ * Both levels are now "combined" SVGs — one file carries the rooms and the lockers (the `lockerGroupId`
+ * group), so the lockers inherit the rooms' placement for free (no separate locker overlay). They differ
+ * only in how the SVG aligns to the illustration:
+ *  - Identity (upper): SVG and illustration are exported from the *same* Figma frame, so they overlay
+ *    1:1 — svgToImage is the identity.
+ *  - Fitted (lower): the SVG was traced on a different frame than the art, so svgToImage maps SVG coords
+ *    → image pixels (image = a + s·svg), fitted by chamfer-matching every traced boundary against the
+ *    illustration's edges (`scripts/fit-level.mjs`, mean ≈2px). Re-run the fit script if it's re-exported.
+ * (The standalone fitted-overlay fields — lockerSvgUrl/lockerSvgToImage — are retained on LevelConfig
+ *  for the calibration seam but are currently unused.)
  */
 import type { Georef } from './gps/georef';
 
@@ -59,12 +60,14 @@ export const CAMPUS_LEVELS: Record<CampusLevel, LevelConfig> = {
   },
   lower: {
     label: 'Lower',
-    svgUrl: `${import.meta.env.BASE_URL}campus-lower.svg`,
+    // Combined export (rooms + the "Lower Lockers" group in one SVG), traced on a different frame than
+    // the illustration — so svgToImage is a fitted transform (not identity). Re-run
+    // `node scripts/fit-level.mjs lower` and paste the new SVG_TO_IMAGE if this SVG is re-exported.
+    svgUrl: `${import.meta.env.BASE_URL}lower-combined.svg`,
     imageUrl: `${import.meta.env.BASE_URL}campus-map-lower-v2.webp`,
     imageSize: { w: 1500, h: 910 },
-    svgToImage: { ax: -9, sx: 0.8111, ay: 15, sy: 0.7822 },
-    lockerSvgUrl: `${import.meta.env.BASE_URL}lockers-lower.svg`,
-    lockerSvgToImage: { ax: -245.13, sx: 1.1171, ay: -358.73, sy: 1.1716 },
+    svgToImage: { ax: -45, sx: 0.912, ay: 18, sy: 0.859 }, // fitted, mean ~2.4px (fit-level.mjs)
+    lockerGroupId: 'Lower Lockers',
     // Original georef (calibrated on the old upper art, reused for lower's near-identical framing).
     georef: {
       a: -361902.53295107797,
@@ -87,7 +90,16 @@ export const LEVEL_ORDER: CampusLevel[] = ['upper', 'lower'];
 export const GROUP_ADJUST: Record<string, { dx: number; dy: number }> = {};
 
 /** Frame/wrapper group ids that are NOT buildings (rooms inside them are standalone). */
-const WRAPPER_IDS = new Set(['Upper', 'Upper (1) 1', 'Frame 1']);
+const WRAPPER_IDS = new Set([
+  'Upper',
+  'Upper (1) 1',
+  'Frame 1',
+  // lower-combined.svg wrappers: rooms sit flat in "Lower"; the locker banks are nested under
+  // "Lower Lockers" (the lockerGroupId) inside "Lower Lockers (1) 1".
+  'Lower 1',
+  'Lower',
+  'Lower Lockers (1) 1',
+]);
 
 export function isWrapperGroupId(id: string | null | undefined): boolean {
   return !id || WRAPPER_IDS.has(id);
