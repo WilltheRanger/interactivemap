@@ -183,6 +183,11 @@ export function MapScreen() {
           attributionControl: false,
           zoomControl: false,
           maxZoom: 3, // small source images: enough to tap rooms; SVG highlights stay crisp
+          // Floor low enough that getBoundsZoom() can return the true (negative) cover zoom for a large
+          // illustration — it clamps its result to [minZoom, maxZoom]. Without this, a big image (e.g. the
+          // hi-res lower art) clamps to 0 and renders at 1:1, far too zoomed in. applyCoverZoom() tightens
+          // minZoom to the real per-level cover zoom right after, so this is only a computation floor.
+          minZoom: -5,
           zoomSnap: 0.25,
           zoomDelta: 0.5,
           maxBounds: imageBounds,
