@@ -65,20 +65,19 @@ export const CAMPUS_LEVELS: Record<CampusLevel, LevelConfig> = {
     // accounts for the image being a cropped render of the frame). Re-run `node scripts/fit-level.mjs
     // lower` and paste the new SVG_TO_IMAGE if either asset is re-exported.
     svgUrl: `${import.meta.env.BASE_URL}lower-combined.svg`,
-    imageUrl: `${import.meta.env.BASE_URL}campus-map-lower-v3.webp`,
-    imageSize: { w: 1190, h: 724 },
-    svgToImage: { ax: -21, sx: 0.7009, ay: 15, sy: 0.706 }, // fitted, mean ~0.07px (fit-level.mjs)
+    imageUrl: `${import.meta.env.BASE_URL}campus-map-lower-v4.webp`,
+    imageSize: { w: 3472, h: 2064 },
+    svgToImage: { ax: 16, sx: 2, ay: 40, sy: 2.0002 }, // fitted, mean ~0.02px (fit-level.mjs)
     lockerGroupId: 'Lower Lockers',
-    // Georef recomposed for the v3 art: the old (v2) georef pushed through the v2→v3 pixel transform
-    // (v3 = A3∘A2⁻¹·v2). Approximate (~5–10 m); recapture /geocal control points on the v3 art for a
-    // precise refit if needed.
+    // Georef recomposed for the v4 art (the v3 georef pushed through the v3→v4 pixel transform).
+    // Approximate (~5–10 m); recapture /geocal control points on the v4 art for a precise refit if needed.
     georef: {
-      a: -278133.2076155817,
-      b: -46339.06640195169,
-      c: -31199646.07658204,
-      d: -97831.52896909084,
-      e: 378327.9397511793,
-      f: -24384555.775964208,
+      a: -793645.9055944692,
+      b: -132227.32601498556,
+      c: -89027306.2330776,
+      d: -277170.8558696537,
+      e: 1071857.7125925056,
+      f: -69084971.99161986,
     },
   },
 };

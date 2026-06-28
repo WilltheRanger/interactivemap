@@ -20,7 +20,7 @@ const OUT = '/tmp/map-calib';
 mkdirSync(OUT, { recursive: true });
 
 const LEVELS = {
-  lower: { svg: 'public/lower-combined.svg', img: 'public/campus-map-lower-v3.webp' },
+  lower: { svg: 'public/lower-combined.svg', img: 'public/campus-map-lower-v4.webp' },
 };
 
 const level = process.argv[2] ?? 'lower';
