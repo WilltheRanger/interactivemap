@@ -9,6 +9,7 @@ import { RoomsTeachersAdmin } from './RoomsTeachersAdmin';
 import { LockersAdmin } from './LockersAdmin';
 import { BellScheduleAdmin } from './BellScheduleAdmin';
 import { CoursesAdmin } from './CoursesAdmin';
+import { LinksAdmin } from './LinksAdmin';
 import './Admin.css';
 
 const TABS = [
@@ -17,6 +18,7 @@ const TABS = [
   { id: 'lockers', label: 'Lockers' },
   { id: 'bell', label: 'Bell Schedule' },
   { id: 'courses', label: 'Courses & Requirements' },
+  { id: 'links', label: 'Links' },
 ] as const;
 type TabId = (typeof TABS)[number]['id'];
 
@@ -103,6 +105,7 @@ export function AdminScreen() {
             {tab === 'lockers' && <LockersAdmin />}
             {tab === 'bell' && <BellScheduleAdmin />}
             {tab === 'courses' && <CoursesAdmin />}
+            {tab === 'links' && <LinksAdmin />}
           </div>
         </>
       )}

@@ -40,6 +40,42 @@ export type Database = {
         };
         Relationships: [];
       };
+      links: {
+        Row: {
+          created_at: string;
+          description: string | null;
+          icon: string;
+          id: string;
+          label: string;
+          section: string;
+          sort_order: number;
+          tint: string;
+          url: string;
+        };
+        Insert: {
+          created_at?: string;
+          description?: string | null;
+          icon?: string;
+          id?: string;
+          label: string;
+          section: string;
+          sort_order?: number;
+          tint?: string;
+          url: string;
+        };
+        Update: {
+          created_at?: string;
+          description?: string | null;
+          icon?: string;
+          id?: string;
+          label?: string;
+          section?: string;
+          sort_order?: number;
+          tint?: string;
+          url?: string;
+        };
+        Relationships: [];
+      };
       bell_schedule: {
         Row: {
           created_at: string;

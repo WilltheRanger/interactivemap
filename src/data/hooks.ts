@@ -11,6 +11,7 @@ import {
   getBellSchedule,
   getCourses,
   getGraduationRequirements,
+  getLinks,
   getLockerBlock,
   getLockerBlocks,
   getLockerSections,
@@ -34,6 +35,10 @@ const STALE_MS = 5 * 60 * 1000; // reference data changes rarely
 export function useAnnouncements() {
   // Fresher than reference data — staff post these during the year.
   return useQuery({ queryKey: ['announcements'], queryFn: getAnnouncements, staleTime: 60 * 1000 });
+}
+
+export function useLinks() {
+  return useQuery({ queryKey: ['links'], queryFn: getLinks, staleTime: STALE_MS });
 }
 
 export function useCourses() {

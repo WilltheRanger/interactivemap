@@ -8,6 +8,7 @@ import { getSupabase } from './supabase';
 import type { Tables } from '../types/db';
 
 export type Announcement = Tables<'announcements'>;
+export type LinkRow = Tables<'links'>;
 export type BellPeriod = Tables<'bell_schedule'>;
 export type Course = Tables<'courses'>;
 export type GraduationRequirement = Tables<'graduation_requirements'>;
@@ -40,6 +41,17 @@ export async function getAnnouncements(): Promise<Announcement[]> {
     .from('announcements')
     .select('*')
     .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+// ── Links directory (admin-managed external resources; written via /admin) ───────
+export async function getLinks(): Promise<LinkRow[]> {
+  const { data, error } = await getSupabase()
+    .from('links')
+    .select('*')
+    .order('sort_order')
+    .order('label');
   if (error) throw error;
   return data ?? [];
 }

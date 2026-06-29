@@ -535,3 +535,40 @@
   gap: var(--space-1);
   flex: 0 0 auto;
 }
+
+/* ── Links admin: icon-tile preview + colour swatches ── */
+.links-admin__preview {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) 0 var(--space-3);
+}
+.links-admin__rowtile {
+  width: 36px;
+  height: 36px;
+}
+.links-admin__tints {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.links-admin__swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+.links-admin__swatch.is-active {
+  border-color: var(--color-text);
+}
+.links-admin__color {
+  width: 44px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: none;
+  cursor: pointer;
+}
