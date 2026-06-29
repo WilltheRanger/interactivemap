@@ -1,15 +1,6 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import {
-  AlertTriangle,
-  CalendarDays,
-  CalendarRange,
-  Check,
-  CheckCircle2,
-  Plus,
-  X,
-  XCircle,
-} from 'lucide-react';
+import { AlertTriangle, CalendarDays, CalendarRange, Check, Plus, X } from 'lucide-react';
 import { Button, SearchInput, Skeleton } from '../../components';
 import { Segmented, type SegmentedOption } from '../account/Segmented';
 import { useCourses, useGraduationRequirements } from '../../data/hooks';
@@ -25,7 +16,6 @@ import {
   filledSemesterCount,
   summarizeAllPathways,
   TOTAL_SEMESTERS,
-  type PathwayStatus,
   type PathwaySummary,
 } from '../../lib/creditPlan';
 import type { Course } from '../../lib/refData';
@@ -39,17 +29,6 @@ const PATHWAY_LABEL = {
   uc: 'UC Eligibility',
   brahma_tech: 'Brahma Tech',
 };
-const STATUS_TEXT: Record<PathwayStatus, string> = {
-  on_track: 'On track',
-  at_risk: 'At risk',
-  not_on_track: 'Not on track',
-};
-const STATUS_ICON: Record<PathwayStatus, ReactNode> = {
-  on_track: <CheckCircle2 size={14} aria-hidden="true" />,
-  at_risk: <AlertTriangle size={14} aria-hidden="true" />,
-  not_on_track: <XCircle size={14} aria-hidden="true" />,
-};
-
 /** Grade selector options (Segmented needs string values; we map back to the numeric Grade). */
 const GRADE_OPTIONS: SegmentedOption<string>[] = GRADES.map((g) => ({
   value: String(g),
@@ -230,10 +209,6 @@ function PathwayCard({ summary }: { summary: PathwaySummary }) {
     <div className={`plan-pathway plan-pathway--${summary.status}`}>
       <div className="plan-pathway__head">
         <span className="plan-pathway__name">{PATHWAY_LABEL[summary.pathway]}</span>
-        <span className="plan-pathway__status">
-          {STATUS_ICON[summary.status]}
-          {STATUS_TEXT[summary.status]}
-        </span>
       </div>
       <div className="plan-pathway__track" aria-hidden="true">
         <div className="plan-pathway__fill" style={{ width: `${Math.min(pct, 100)}%` }} />
