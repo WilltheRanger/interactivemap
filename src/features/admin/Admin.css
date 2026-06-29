@@ -618,3 +618,14 @@
 .locker-tagger__gfield .admin-input {
   width: 6rem;
 }
+.locker-tagger__nudge {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.locker-tagger__nudge-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}

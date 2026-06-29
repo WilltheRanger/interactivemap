@@ -11,6 +11,7 @@ import '../locker/LockersScreen.css'; // the .pano* / .pano-pin shell styles the
 
 const round = (n: number) => Math.round(n * 10) / 10;
 const CORNER_LABELS = ['TL', 'TR', 'BR', 'BL'];
+const NUDGE_STEP = 0.5; // degrees per tap when sliding the whole grid
 
 /**
  * Admin "tag in 360°" tool for one locker section. Opens the section's panorama; a tap on the photo
@@ -48,6 +49,8 @@ export default function LockerTagger({
   const [gCols, setGCols] = useState('');
   const [gStart, setGStart] = useState(String(section.number_start));
   const [gOrder, setGOrder] = useState<GridOrder>('col');
+  // Whole-grid fine adjust (degrees), applied on top of the interpolated pins.
+  const [gNudge, setGNudge] = useState({ yaw: 0, pitch: 0 });
 
   // Load an existing pin back into the form so it can be moved/retagged (Save upserts the same row).
   // Stable so the pins memo can wire it as each marker's click handler without re-adding hot spots.
@@ -85,14 +88,20 @@ export default function LockerTagger({
     if (gCorners.length !== 4) return null;
     if (!Number.isInteger(r) || !Number.isInteger(c) || r < 2 || c < 2) return null;
     if (!Number.isInteger(s)) return null;
-    return interpolateGrid(
+    const base = interpolateGrid(
       gCorners as [GridCorner, GridCorner, GridCorner, GridCorner],
       r,
       c,
       s,
       gOrder,
     );
-  }, [gCorners, gRows, gCols, gStart, gOrder]);
+    if (gNudge.yaw === 0 && gNudge.pitch === 0) return base;
+    return base.map((p) => ({
+      number: p.number,
+      yaw: round(p.yaw + gNudge.yaw),
+      pitch: round(p.pitch + gNudge.pitch),
+    }));
+  }, [gCorners, gRows, gCols, gStart, gOrder, gNudge]);
 
   // Markers on the photo. Grid mode shows the tapped corners + the interpolated preview; otherwise the
   // existing tagged lockers (tap a marker to edit) plus the just-clicked "pending" point.
@@ -191,6 +200,7 @@ export default function LockerTagger({
     onSuccess: () => {
       invalidate();
       setGCorners([]);
+      setGNudge({ yaw: 0, pitch: 0 });
       setMode('manual');
     },
   });
@@ -252,12 +262,16 @@ export default function LockerTagger({
 
   const startGrid = () => {
     setGCorners([]);
+    setGNudge({ yaw: 0, pitch: 0 });
     setGStart(String(firstUntagged()));
     setCaptured(null);
     setNumber('');
     setError(null);
     setMode('grid');
   };
+
+  const nudgeGrid = (dYaw: number, dPitch: number) =>
+    setGNudge((n) => ({ yaw: round(n.yaw + dYaw), pitch: round(n.pitch + dPitch) }));
 
   // Undo the pin the last quick tap placed (a mistap) and step the counter back to it.
   const undoLastQuick = () => {
@@ -367,7 +381,10 @@ export default function LockerTagger({
               </span>
               <Button
                 variant="secondary"
-                onClick={() => setGCorners([])}
+                onClick={() => {
+                  setGCorners([]);
+                  setGNudge({ yaw: 0, pitch: 0 });
+                }}
                 disabled={gCorners.length === 0}
               >
                 Reset corners
@@ -395,6 +412,33 @@ export default function LockerTagger({
             </div>
             {gCorners.length === 4 && !gridPins && (
               <p className="locker-tagger__coords">Enter rows &amp; columns (each ≥ 2) to preview.</p>
+            )}
+            {gridPins && (
+              <div className="locker-tagger__nudge" role="group" aria-label="Nudge the whole grid">
+                <span className="locker-tagger__nudge-label">
+                  Nudge
+                  {gNudge.yaw !== 0 || gNudge.pitch !== 0
+                    ? ` · yaw ${round(gNudge.yaw)} · pitch ${round(gNudge.pitch)}`
+                    : ''}
+                </span>
+                <Button variant="secondary" aria-label="Move left" onClick={() => nudgeGrid(-NUDGE_STEP, 0)}>
+                  ←
+                </Button>
+                <Button variant="secondary" aria-label="Move up" onClick={() => nudgeGrid(0, NUDGE_STEP)}>
+                  ↑
+                </Button>
+                <Button variant="secondary" aria-label="Move down" onClick={() => nudgeGrid(0, -NUDGE_STEP)}>
+                  ↓
+                </Button>
+                <Button variant="secondary" aria-label="Move right" onClick={() => nudgeGrid(NUDGE_STEP, 0)}>
+                  →
+                </Button>
+                {(gNudge.yaw !== 0 || gNudge.pitch !== 0) && (
+                  <Button variant="secondary" onClick={() => setGNudge({ yaw: 0, pitch: 0 })}>
+                    Reset
+                  </Button>
+                )}
+              </div>
             )}
           </>
         ) : mode === 'quick' ? (
