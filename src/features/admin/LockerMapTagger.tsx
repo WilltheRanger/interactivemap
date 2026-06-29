@@ -2,10 +2,16 @@ import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Minus, Plus, X } from 'lucide-react';
 import { Button } from '../../components';
+import { Segmented, type SegmentedOption } from '../account/Segmented';
 import { useLockerBlocks, useLockerSections } from '../../data/hooks';
 import type { LockerSection } from '../../lib/refData';
 import { getSupabase } from '../../lib/supabase';
-import { CAMPUS_LEVELS, isInLockerGroup } from '../map/campusGeo';
+import { CAMPUS_LEVELS, LEVEL_ORDER, isInLockerGroup, type CampusLevel } from '../map/campusGeo';
+
+const LEVEL_OPTIONS: SegmentedOption<CampusLevel>[] = LEVEL_ORDER.map((l) => ({
+  value: l,
+  label: CAMPUS_LEVELS[l].label,
+}));
 
 /** Display name for a section (range): its label, falling back to its number range. */
 function sectionRangeLabel(s: LockerSection): string {
@@ -13,15 +19,17 @@ function sectionRangeLabel(s: LockerSection): string {
 }
 
 /**
- * Tag lockers on map (upper level): the admin picks a section (range), then clicks the locker shapes
- * on the campus map that belong to it. Each shape belongs to one section; clicking a shape owned by
- * another section reassigns it. Saved to locker_sections.map_shape_ids — what the map uses to resolve
- * a tapped shape → its range + block + 360°. No SVG-file editing.
+ * Tag lockers on map: pick a campus level (Upper / Lower), pick a section (range), then click the
+ * locker shapes on that level's map that belong to it. Each shape belongs to one section; clicking a
+ * shape owned by another section reassigns it. Saved to locker_sections.map_shape_ids — what the map
+ * uses to resolve a tapped shape → its range + block + 360°. No SVG-file editing. Assignments persist
+ * across a level switch, so one save covers both floors.
  */
 export default function LockerMapTagger({ onClose }: { onClose: () => void }) {
   const sections = useLockerSections();
   const blocks = useLockerBlocks();
   const queryClient = useQueryClient();
+  const [level, setLevel] = useState<CampusLevel>('upper');
 
   const svgHostRef = useRef<HTMLDivElement>(null);
   const shapesRef = useRef<SVGGraphicsElement[]>([]);
@@ -36,8 +44,7 @@ export default function LockerMapTagger({ onClose }: { onClose: () => void }) {
   const [zoom, setZoom] = useState(1);
   const [dirty, setDirty] = useState(false);
 
-  const config = CAMPUS_LEVELS.upper;
-  const lockerGroupId = config.lockerGroupId;
+  const config = CAMPUS_LEVELS[level];
 
   // Repaint every shape from the current assignments + selected section.
   const repaint = () => {
@@ -50,9 +57,14 @@ export default function LockerMapTagger({ onClose }: { onClose: () => void }) {
     }
   };
 
-  // Load the upper campus SVG once; wire each locker shape as a click target.
+  // Load the selected level's campus SVG; wire each locker shape as a click target. Re-runs on a
+  // level switch (assignments persist in the ref, so a switch just repaints the new floor's shapes).
   useEffect(() => {
     let cancelled = false;
+    shapesRef.current = [];
+    const { w: W, h: H } = config.imageSize;
+    const { ax, sx, ay, sy } = config.svgToImage;
+    const groupId = config.lockerGroupId;
     fetch(config.svgUrl)
       .then((res) => (res.ok ? res.text() : Promise.reject(new Error('missing'))))
       .then((text) => {
@@ -65,9 +77,18 @@ export default function LockerMapTagger({ onClose }: { onClose: () => void }) {
         }
         svg.removeAttribute('width');
         svg.removeAttribute('height');
+        // Map the traced SVG onto the illustration's pixel frame so the clickable shapes land on the
+        // drawn banks: identity for Upper (same frame), a fitted offset+scale for Lower.
+        svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+        svg.setAttribute('preserveAspectRatio', 'none');
+        const wrap = svg.ownerDocument.createElementNS('http://www.w3.org/2000/svg', 'g');
+        wrap.setAttribute('transform', `translate(${ax}, ${ay}) scale(${sx}, ${sy})`);
+        while (svg.firstChild) wrap.appendChild(svg.firstChild);
+        svg.appendChild(wrap);
+
         const shapes: SVGGraphicsElement[] = [];
         svg.querySelectorAll<SVGGraphicsElement>('rect[id], path[id]').forEach((shape) => {
-          if (!isInLockerGroup(shape, lockerGroupId) || !shape.id) return;
+          if (!isInLockerGroup(shape, groupId) || !shape.id) return;
           shape.classList.add('tagger-locker');
           shape.addEventListener('click', (event) => {
             event.stopPropagation();
@@ -83,7 +104,9 @@ export default function LockerMapTagger({ onClose }: { onClose: () => void }) {
         });
         shapesRef.current = shapes;
         svgHostRef.current.replaceChildren(svg);
+        setLoadError(false);
         setSvgReady(true);
+        repaint(); // paint this floor's shapes from the persisted assignments + selected section
       })
       .catch(() => {
         if (!cancelled) setLoadError(true);
@@ -91,9 +114,9 @@ export default function LockerMapTagger({ onClose }: { onClose: () => void }) {
     return () => {
       cancelled = true;
     };
-    // config.svgUrl / lockerGroupId are stable; run once.
+    // Re-run when the level changes (config is derived from it).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [level]);
 
   // Seed assignments from the saved map_shape_ids the first time the sections load.
   useEffect(() => {
@@ -158,13 +181,24 @@ export default function LockerMapTagger({ onClose }: { onClose: () => void }) {
   return (
     <div className="map-tagger" role="dialog" aria-label="Tag lockers on map">
       <div className="map-tagger__bar">
-        <p className="map-tagger__title">Tag lockers on map · Upper</p>
+        <p className="map-tagger__title">Tag lockers on map · {config.label}</p>
         <button type="button" className="pano__close" aria-label="Close" onClick={onClose}>
           <X size={18} aria-hidden="true" />
         </button>
       </div>
 
       <div className="map-tagger__controls">
+        <label className="map-tagger__pick">
+          <span className="admin-field__label">Floor</span>
+          <Segmented
+            ariaLabel="Campus level"
+            layoutId="tagger-level-seg"
+            value={level}
+            options={LEVEL_OPTIONS}
+            onChange={setLevel}
+          />
+        </label>
+
         <label className="map-tagger__pick">
           <span className="admin-field__label">Section</span>
           <select
