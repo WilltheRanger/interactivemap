@@ -4,11 +4,13 @@ import { Button } from '../../components';
 import { useLockersBySection, usePanorama, useSignedPanoramaUrl } from '../../data/hooks';
 import type { Locker, LockerSection } from '../../lib/refData';
 import { getSupabase } from '../../lib/supabase';
+import { interpolateGrid, type GridCorner, type GridOrder } from '../../lib/lockerGrid';
 import { ConfirmDeleteButton } from './shared';
 import PanoramaViewer, { type PanoPin } from '../locker/PanoramaViewer';
 import '../locker/LockersScreen.css'; // the .pano* / .pano-pin shell styles the viewer needs
 
 const round = (n: number) => Math.round(n * 10) / 10;
+const CORNER_LABELS = ['TL', 'TR', 'BR', 'BL'];
 
 /**
  * Admin "tag in 360°" tool for one locker section. Opens the section's panorama; a tap on the photo
@@ -34,11 +36,18 @@ export default function LockerTagger({
   const [captured, setCaptured] = useState<{ yaw: number; pitch: number } | null>(null);
   const [number, setNumber] = useState('');
   const [error, setError] = useState<string | null>(null);
-  // Quick-tag mode: each photo tap drops a pin at the next number in order and saves it — no typing,
-  // no Save click. The fast way to tag a whole bank (the numbers run in sequence).
-  const [quick, setQuick] = useState(false);
+  // Tagging mode. 'manual' = one at a time; 'quick' = tap in order, auto-advance; 'grid' = tap the 4
+  // corners and interpolate the whole bank.
+  const [mode, setMode] = useState<'manual' | 'quick' | 'grid'>('manual');
+  // Quick-tag: each tap drops a pin at the next number and advances.
   const [nextNum, setNextNum] = useState(section.number_start);
   const [lastQuick, setLastQuick] = useState<number | null>(null);
+  // Grid: the 4 tapped corners (TL, TR, BR, BL) + the bank's dimensions / numbering.
+  const [gCorners, setGCorners] = useState<GridCorner[]>([]);
+  const [gRows, setGRows] = useState('');
+  const [gCols, setGCols] = useState('');
+  const [gStart, setGStart] = useState(String(section.number_start));
+  const [gOrder, setGOrder] = useState<GridOrder>('col');
 
   // Load an existing pin back into the form so it can be moved/retagged (Save upserts the same row).
   // Stable so the pins memo can wire it as each marker's click handler without re-adding hot spots.
@@ -68,9 +77,41 @@ export default function LockerTagger({
     return section.number_end + 1;
   };
 
-  // Existing tagged lockers as pins (tap a marker to edit it), plus the just-clicked point so you can
-  // see what you're saving. The locker being edited shows only as the live "pending" pin (not twice).
+  // Live grid preview: once 4 corners are tapped and rows/cols are valid, interpolate every pin.
+  const gridPins = useMemo(() => {
+    const r = Number(gRows);
+    const c = Number(gCols);
+    const s = Number(gStart);
+    if (gCorners.length !== 4) return null;
+    if (!Number.isInteger(r) || !Number.isInteger(c) || r < 2 || c < 2) return null;
+    if (!Number.isInteger(s)) return null;
+    return interpolateGrid(
+      gCorners as [GridCorner, GridCorner, GridCorner, GridCorner],
+      r,
+      c,
+      s,
+      gOrder,
+    );
+  }, [gCorners, gRows, gCols, gStart, gOrder]);
+
+  // Markers on the photo. Grid mode shows the tapped corners + the interpolated preview; otherwise the
+  // existing tagged lockers (tap a marker to edit) plus the just-clicked "pending" point.
   const pins = useMemo<PanoPin[]>(() => {
+    if (mode === 'grid') {
+      const preview: PanoPin[] = (gridPins ?? []).map((p) => ({
+        id: `gp-${p.number}`,
+        yaw: p.yaw,
+        pitch: p.pitch,
+        label: `#${p.number}`,
+      }));
+      const corners: PanoPin[] = gCorners.map((c, i) => ({
+        id: `corner-${i}`,
+        yaw: c.yaw,
+        pitch: c.pitch,
+        label: CORNER_LABELS[i],
+      }));
+      return [...preview, ...corners];
+    }
     const existing: PanoPin[] = (lockers.data ?? [])
       .filter((l) => l.hotspot_yaw != null && l.hotspot_pitch != null && l.number !== editingNum)
       .map((l) => ({
@@ -89,7 +130,7 @@ export default function LockerTagger({
       });
     }
     return existing;
-  }, [lockers.data, captured, editingNum, startEdit]);
+  }, [mode, gridPins, gCorners, lockers.data, captured, editingNum, startEdit]);
 
   const invalidate = () =>
     void queryClient.invalidateQueries({ queryKey: ['lockers', section.id] });
@@ -135,6 +176,25 @@ export default function LockerTagger({
     },
   });
 
+  const applyGrid = useMutation({
+    mutationFn: async (pins: { number: number; yaw: number; pitch: number }[]) => {
+      const rows = pins.map((p) => ({
+        id: `${section.id}-${p.number}`,
+        section_id: section.id,
+        number: p.number,
+        hotspot_yaw: round(p.yaw),
+        hotspot_pitch: round(p.pitch),
+      }));
+      const { error: err } = await getSupabase().from('lockers').upsert(rows);
+      if (err) throw err;
+    },
+    onSuccess: () => {
+      invalidate();
+      setGCorners([]);
+      setMode('manual');
+    },
+  });
+
   const save = () => {
     const n = Number(number);
     if (!number.trim() || !Number.isInteger(n)) return setError('Enter a locker number.');
@@ -159,9 +219,14 @@ export default function LockerTagger({
     setError(null);
   };
 
-  // A tap on the photo. Quick mode: drop+save the next pin and advance. Manual: just capture the spot.
+  // A tap on the photo, per mode: grid collects up to 4 corners; quick drops+saves the next pin and
+  // advances; manual just captures the spot for the form.
   const handlePick = (pos: { yaw: number; pitch: number }) => {
-    if (!quick) {
+    if (mode === 'grid') {
+      setGCorners((cs) => (cs.length >= 4 ? cs : [...cs, pos]));
+      return;
+    }
+    if (mode !== 'quick') {
       setCaptured(pos);
       return;
     }
@@ -182,7 +247,16 @@ export default function LockerTagger({
     setCaptured(null);
     setNumber('');
     setError(null);
-    setQuick(true);
+    setMode('quick');
+  };
+
+  const startGrid = () => {
+    setGCorners([]);
+    setGStart(String(firstUntagged()));
+    setCaptured(null);
+    setNumber('');
+    setError(null);
+    setMode('grid');
   };
 
   // Undo the pin the last quick tap placed (a mistap) and step the counter back to it.
@@ -238,7 +312,92 @@ export default function LockerTagger({
       />
 
       <div className="locker-tagger" role="group" aria-label="Locker pin tagger">
-        {quick ? (
+        {mode === 'grid' ? (
+          <>
+            <p className="locker-tagger__coords">
+              Grid fill — set the bank size, then tap the <strong>4 corner lockers</strong> in order:
+              top-left, top-right, bottom-right, bottom-left.
+            </p>
+            <div className="locker-tagger__gridform">
+              <label className="locker-tagger__gfield">
+                <span>Rows</span>
+                <input
+                  className="admin-input"
+                  type="number"
+                  inputMode="numeric"
+                  value={gRows}
+                  onChange={(e) => setGRows(e.target.value)}
+                />
+              </label>
+              <label className="locker-tagger__gfield">
+                <span>Columns</span>
+                <input
+                  className="admin-input"
+                  type="number"
+                  inputMode="numeric"
+                  value={gCols}
+                  onChange={(e) => setGCols(e.target.value)}
+                />
+              </label>
+              <label className="locker-tagger__gfield">
+                <span>Start #</span>
+                <input
+                  className="admin-input"
+                  type="number"
+                  inputMode="numeric"
+                  value={gStart}
+                  onChange={(e) => setGStart(e.target.value)}
+                />
+              </label>
+              <label className="locker-tagger__gfield">
+                <span>Numbering</span>
+                <select
+                  className="admin-input"
+                  value={gOrder}
+                  onChange={(e) => setGOrder(e.target.value as GridOrder)}
+                >
+                  <option value="col">Down columns</option>
+                  <option value="row">Across rows</option>
+                </select>
+              </label>
+            </div>
+            <div className="locker-tagger__quickrow">
+              <span className="locker-tagger__next">
+                Corners: <strong>{gCorners.length}/4</strong>
+              </span>
+              <Button
+                variant="secondary"
+                onClick={() => setGCorners([])}
+                disabled={gCorners.length === 0}
+              >
+                Reset corners
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => gridPins && applyGrid.mutate(gridPins)}
+                disabled={!gridPins || applyGrid.isPending}
+              >
+                {applyGrid.isPending
+                  ? 'Placing…'
+                  : gridPins
+                    ? `Place ${gridPins.length} pins`
+                    : 'Place pins'}
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setGCorners([]);
+                  setMode('manual');
+                }}
+              >
+                Manual
+              </Button>
+            </div>
+            {gCorners.length === 4 && !gridPins && (
+              <p className="locker-tagger__coords">Enter rows &amp; columns (each ≥ 2) to preview.</p>
+            )}
+          </>
+        ) : mode === 'quick' ? (
           <>
             <p className="locker-tagger__coords">
               Quick tag — tap each locker <strong>in order</strong>; it saves and advances on its own.
@@ -267,7 +426,7 @@ export default function LockerTagger({
               <Button variant="secondary" onClick={undoLastQuick} disabled={lastQuick == null}>
                 Undo last
               </Button>
-              <Button variant="secondary" onClick={() => setQuick(false)}>
+              <Button variant="secondary" onClick={() => setMode('manual')}>
                 Manual
               </Button>
             </div>
@@ -303,9 +462,14 @@ export default function LockerTagger({
                 </Button>
               )}
             </div>
-            <Button variant="secondary" onClick={startQuick}>
-              ⚡ Quick tag — tap lockers in order
-            </Button>
+            <div className="locker-tagger__modebtns">
+              <Button variant="secondary" onClick={startQuick}>
+                ⚡ Quick tag — tap in order
+              </Button>
+              <Button variant="secondary" onClick={startGrid}>
+                ▦ Grid fill — tap 4 corners
+              </Button>
+            </div>
           </>
         )}
         <Button
@@ -316,14 +480,16 @@ export default function LockerTagger({
           {setDefaultView.isPending ? 'Saving…' : 'Set current view as default'}
         </Button>
 
-        {(error || savePin.isError || setDefaultView.isError) && (
+        {(error || savePin.isError || setDefaultView.isError || applyGrid.isError) && (
           <p className="admin-status admin-status--error" role="alert">
             {error ??
               (savePin.error instanceof Error
                 ? savePin.error.message
-                : setDefaultView.error instanceof Error
-                  ? setDefaultView.error.message
-                  : 'Something went wrong.')}
+                : applyGrid.error instanceof Error
+                  ? applyGrid.error.message
+                  : setDefaultView.error instanceof Error
+                    ? setDefaultView.error.message
+                    : 'Something went wrong.')}
           </p>
         )}
 
