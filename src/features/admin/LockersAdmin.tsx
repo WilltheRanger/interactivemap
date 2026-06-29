@@ -1,4 +1,5 @@
-import { lazy, Suspense, useRef, useState } from 'react';
+import { Suspense, useRef, useState } from 'react';
+import { lazyWithRetry } from '../../lib/lazyWithRetry';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Camera, Check, Map, Pencil, Plus, Upload, X } from 'lucide-react';
 import { Button, Card, Skeleton } from '../../components';
@@ -16,9 +17,9 @@ import { ConfirmDeleteButton, Field, MutationStatus, SectionStates } from './sha
 import { slugify } from './slugify';
 
 // Pannellum + the panorama image are heavy and admin-only, so the visual tagger is code-split.
-const LockerTagger = lazy(() => import('./LockerTagger'));
+const LockerTagger = lazyWithRetry(() => import('./LockerTagger'), 'LockerTagger');
 // The map tagger loads the full campus SVG + illustration — admin-only, so code-split too.
-const LockerMapTagger = lazy(() => import('./LockerMapTagger'));
+const LockerMapTagger = lazyWithRetry(() => import('./LockerMapTagger'), 'LockerMapTagger');
 
 /**
  * Blocks manager: a block ("Block 4") is what a student picks. Each block holds one or more locker

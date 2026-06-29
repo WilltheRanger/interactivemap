@@ -1,4 +1,5 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { lazyWithRetry } from '../../lib/lazyWithRetry';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { motion } from 'framer-motion';
@@ -34,7 +35,7 @@ import './MapScreen.css';
 
 // The 360° viewer (Pannellum + the large image) is code-split — it loads only when a student opens a
 // locker bank's panorama from the map. Shares the chunk with the Lockers screen's viewer.
-const PanoramaViewer = lazy(() => import('../locker/PanoramaViewer'));
+const PanoramaViewer = lazyWithRetry(() => import('../locker/PanoramaViewer'), 'PanoramaViewer');
 
 type MapStatus = 'loading' | 'ready' | 'missing';
 

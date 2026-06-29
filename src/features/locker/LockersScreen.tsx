@@ -1,4 +1,5 @@
-import { lazy, Suspense, useEffect, useRef, useState, type FormEvent } from 'react';
+import { Suspense, useEffect, useRef, useState, type FormEvent } from 'react';
+import { lazyWithRetry } from '../../lib/lazyWithRetry';
 import { useNavigate } from 'react-router-dom';
 import { Compass, MapPin, Pencil, Search } from 'lucide-react';
 import { Button, Card, Skeleton } from '../../components';
@@ -18,7 +19,7 @@ import './LockersScreen.css';
 
 // The 360° viewer (Pannellum + the large panorama image) is code-split: it only downloads when a
 // student actually opens their locker.
-const PanoramaViewer = lazy(() => import('./PanoramaViewer'));
+const PanoramaViewer = lazyWithRetry(() => import('./PanoramaViewer'), 'PanoramaViewer');
 
 /** The single block digit a student types in their BK pin, parsed from the block label ("BK3" → 3). */
 function blockPinDigit(b: LockerBlock): number | null {
