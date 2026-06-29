@@ -52,21 +52,28 @@ const isPlaceholder = (notes: string | null) =>
 /**
  * Sum planned credits per subject area for one pathway. For UC, only UC-approved courses count
  * toward UC subject areas (an a–g course); graduation/brahma_tech count every planned course in
- * the area. A course placed in multiple semesters counts each time (e.g. retakes/year-long halves
- * aren't modeled — one placement = its full credit value).
+ * the area. A year-long (10-credit) course spans both terms of a grade, so it's counted ONCE per
+ * grade — its full credit value — rather than double-counted for Fall and Spring.
  */
 function plannedByArea(
   pathway: Pathway,
-  courseIds: string[],
+  plan: FourYearPlanGrades,
   courseById: Map<string, Course>,
 ): Map<string, number> {
   const totals = new Map<string, number>();
-  for (const id of courseIds) {
-    const course = courseById.get(id);
-    if (!course) continue;
-    if (pathway === 'uc' && !course.satisfies_uc) continue;
-    if (pathway === 'brahma_tech' && !course.satisfies_brahma_tech) continue;
-    totals.set(course.subject_area, (totals.get(course.subject_area) ?? 0) + course.credits);
+  for (const g of GRADES) {
+    const seenThisGrade = new Set<string>();
+    for (const sem of SEMESTERS) {
+      for (const id of plan[g][sem]) {
+        if (seenThisGrade.has(id)) continue; // year-long course in both terms → count once per grade
+        seenThisGrade.add(id);
+        const course = courseById.get(id);
+        if (!course) continue;
+        if (pathway === 'uc' && !course.satisfies_uc) continue;
+        if (pathway === 'brahma_tech' && !course.satisfies_brahma_tech) continue;
+        totals.set(course.subject_area, (totals.get(course.subject_area) ?? 0) + course.credits);
+      }
+    }
   }
   return totals;
 }
@@ -79,7 +86,7 @@ export function summarizePathway(
 ): PathwaySummary {
   const reqs = requirements.filter((r) => r.pathway === pathway);
   const courseById = new Map(courses.map((c) => [c.id, c]));
-  const planned = plannedByArea(pathway, plannedCourseIds(plan), courseById);
+  const planned = plannedByArea(pathway, plan, courseById);
 
   const subjects: SubjectProgress[] = reqs
     .slice()

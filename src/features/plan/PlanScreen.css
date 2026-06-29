@@ -21,8 +21,19 @@
 /* ── Grade selector (the shared Segmented control, centered like a tab bar) ── */
 .plan-year {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
   margin-top: var(--space-4);
+}
+.plan-year__credits {
+  padding: 2px var(--space-3);
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-weak);
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  font-variant-numeric: tabular-nums;
 }
 
 .plan-hint {
@@ -55,9 +66,15 @@
   justify-content: space-between;
 }
 .plan-term__title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
   margin: 0;
   font-size: var(--font-size-md);
   font-weight: var(--font-weight-semibold);
+}
+.plan-term__title svg {
+  color: var(--color-primary);
 }
 .plan-term__credits {
   color: var(--color-text-muted);
@@ -68,6 +85,34 @@
   margin: 0;
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
+}
+
+/* ── Semester sub-groups (Fall / Spring) inside the semester card ── */
+.plan-sems {
+  display: grid;
+  gap: var(--space-4);
+}
+.plan-sem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.plan-sem__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.plan-sem__label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+.plan-sem__credits {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .plan-term__courses {
@@ -253,6 +298,13 @@
   background: var(--color-accent-strong);
 }
 
+.plan-pathway__total {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
 .plan-pathway__note {
   display: flex;
   align-items: center;

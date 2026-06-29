@@ -2,11 +2,13 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   PLAN_STORAGE_KEY,
   addCourseToPlan,
+  addYearCourse,
   clearPlan,
   copyFallToSpring,
   getPlanSnapshot,
   migratePlan,
   removeCourseFromPlan,
+  removeYearCourse,
   setCurrentGrade,
   subscribePlan,
 } from './fourYearPlanStore';
@@ -67,6 +69,21 @@ describe('plan mutations', () => {
     addCourseToPlan(10, 'spring', 'bio');
     expect(getPlanSnapshot().four_year_plan[10].fall).toEqual(['bio']);
     expect(getPlanSnapshot().four_year_plan[10].spring).toEqual(['bio']);
+  });
+
+  it('addYearCourse places a year-long course in both terms (no dups)', () => {
+    addYearCourse(11, 'apush');
+    addYearCourse(11, 'apush'); // dup → ignored in both terms
+    expect(getPlanSnapshot().four_year_plan[11].fall).toEqual(['apush']);
+    expect(getPlanSnapshot().four_year_plan[11].spring).toEqual(['apush']);
+  });
+
+  it('removeYearCourse clears the course from both terms', () => {
+    addYearCourse(11, 'apush');
+    addCourseToPlan(11, 'fall', 'pe'); // a semester course stays put
+    removeYearCourse(11, 'apush');
+    expect(getPlanSnapshot().four_year_plan[11].fall).toEqual(['pe']);
+    expect(getPlanSnapshot().four_year_plan[11].spring).toEqual([]);
   });
 
   it('setCurrentGrade updates the focused year', () => {

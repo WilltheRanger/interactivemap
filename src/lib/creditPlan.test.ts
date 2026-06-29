@@ -76,6 +76,15 @@ describe('summarizePathway — UC', () => {
     expect(s.status).toBe('at_risk');
   });
 
+  it('counts a year-long course once even when placed in both terms', () => {
+    // A 10-credit year course spans Fall + Spring of a grade; it must total 10, not 20.
+    const plan = emptyPlan();
+    plan[9].fall = ['eng1'];
+    plan[9].spring = ['eng1'];
+    const s = summarizePathway('uc', plan, courses, requirements);
+    expect(s.subjects.find((x) => x.subjectArea === 'English')?.planned).toBe(10);
+  });
+
   it('not_on_track when nothing applies', () => {
     const plan = emptyPlan();
     plan[9].fall = ['pe1'];

@@ -117,6 +117,26 @@ export function removeCourseFromPlan(grade: Grade, semester: Semester, courseId:
   persist({ ...current, four_year_plan: grades });
 }
 
+/**
+ * Add a year-long course (10 credits). A year course spans the whole year, so it lands in BOTH Fall
+ * and Spring of the grade; the credit engine counts it once per grade (see creditPlan). Use
+ * addCourseToPlan for single-semester (5-credit) courses instead.
+ */
+export function addYearCourse(grade: Grade, courseId: string): void {
+  const grades = structuredClonePlan(current.four_year_plan);
+  for (const sem of SEMESTERS) {
+    if (!grades[grade][sem].includes(courseId)) grades[grade][sem] = [...grades[grade][sem], courseId];
+  }
+  persist({ ...current, four_year_plan: grades });
+}
+
+/** Remove a year-long course from both terms of the grade. */
+export function removeYearCourse(grade: Grade, courseId: string): void {
+  const grades = structuredClonePlan(current.four_year_plan);
+  for (const sem of SEMESTERS) grades[grade][sem] = grades[grade][sem].filter((id) => id !== courseId);
+  persist({ ...current, four_year_plan: grades });
+}
+
 export function setCurrentGrade(grade: Grade): void {
   persist({ ...current, current_grade: grade });
 }
