@@ -81,8 +81,8 @@ export function StaffDirectory() {
     <section className="links-section">
       <h2 className="links-section__title">Teachers &amp; staff</h2>
       <SearchInput
-        placeholder="Search staff by name, subject, or email…"
-        aria-label="Search staff"
+        placeholder="Search staff…"
+        aria-label="Search staff by name, subject, or email"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
       />

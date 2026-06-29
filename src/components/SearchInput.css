@@ -25,6 +25,17 @@
   font: inherit;
   font-size: var(--font-size-md);
   color: var(--color-text);
+  /* Strip the native search-field chrome (rounded inset box on iOS Safari, the extra magnifier /
+     clear "×" on some browsers) so only our custom pill + icon show. */
+  appearance: none;
+  -webkit-appearance: none;
+}
+.search__input::-webkit-search-cancel-button,
+.search__input::-webkit-search-decoration,
+.search__input::-webkit-search-results-button {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
 }
 .search__input::placeholder {
   color: var(--color-text-muted);
