@@ -572,3 +572,29 @@
   background: none;
   cursor: pointer;
 }
+
+/* ── Locker tagger: quick-tag controls ── */
+.locker-tagger__quickrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.locker-tagger__next {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+  font-variant-numeric: tabular-nums;
+}
+.locker-tagger__next strong {
+  color: var(--color-primary);
+}
+.locker-tagger__startat {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+.locker-tagger__startat .admin-input {
+  width: 6rem;
+}

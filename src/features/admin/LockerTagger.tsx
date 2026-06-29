@@ -34,6 +34,11 @@ export default function LockerTagger({
   const [captured, setCaptured] = useState<{ yaw: number; pitch: number } | null>(null);
   const [number, setNumber] = useState('');
   const [error, setError] = useState<string | null>(null);
+  // Quick-tag mode: each photo tap drops a pin at the next number in order and saves it — no typing,
+  // no Save click. The fast way to tag a whole bank (the numbers run in sequence).
+  const [quick, setQuick] = useState(false);
+  const [nextNum, setNextNum] = useState(section.number_start);
+  const [lastQuick, setLastQuick] = useState<number | null>(null);
 
   // Load an existing pin back into the form so it can be moved/retagged (Save upserts the same row).
   // Stable so the pins memo can wire it as each marker's click handler without re-adding hot spots.
@@ -50,6 +55,18 @@ export default function LockerTagger({
   // The number in the form. When it matches an existing pin, Save updates that pin in place.
   const editingNum = number.trim() && Number.isInteger(Number(number)) ? Number(number) : null;
   const isUpdate = (lockers.data ?? []).some((l) => l.number === editingNum);
+
+  // The lowest number in this section's range that doesn't have a pin yet — where quick-tag resumes.
+  const taggedNumbers = useMemo(
+    () => new Set((lockers.data ?? []).map((l) => l.number)),
+    [lockers.data],
+  );
+  const firstUntagged = () => {
+    for (let n = section.number_start; n <= section.number_end; n += 1) {
+      if (!taggedNumbers.has(n)) return n;
+    }
+    return section.number_end + 1;
+  };
 
   // Existing tagged lockers as pins (tap a marker to edit it), plus the just-clicked point so you can
   // see what you're saving. The locker being edited shows only as the live "pending" pin (not twice).
@@ -78,24 +95,19 @@ export default function LockerTagger({
     void queryClient.invalidateQueries({ queryKey: ['lockers', section.id] });
 
   const savePin = useMutation({
-    mutationFn: async () => {
-      const n = Number(number);
+    mutationFn: async (pin: { number: number; yaw: number; pitch: number }) => {
       const { error: err } = await getSupabase()
         .from('lockers')
         .upsert({
-          id: `${section.id}-${n}`,
+          id: `${section.id}-${pin.number}`,
           section_id: section.id,
-          number: n,
-          hotspot_yaw: captured ? round(captured.yaw) : null,
-          hotspot_pitch: captured ? round(captured.pitch) : null,
+          number: pin.number,
+          hotspot_yaw: round(pin.yaw),
+          hotspot_pitch: round(pin.pitch),
         });
       if (err) throw err;
     },
-    onSuccess: () => {
-      invalidate();
-      setNumber('');
-      setCaptured(null);
-    },
+    onSuccess: invalidate,
   });
 
   const removePin = useMutation({
@@ -130,13 +142,55 @@ export default function LockerTagger({
       return setError(`Must be in ${section.number_start}–${section.number_end}.`);
     if (!captured) return setError('Tap the locker in the photo first.');
     setError(null);
-    savePin.mutate();
+    savePin.mutate(
+      { number: n, yaw: captured.yaw, pitch: captured.pitch },
+      {
+        onSuccess: () => {
+          setNumber('');
+          setCaptured(null);
+        },
+      },
+    );
   };
 
   const clearForm = () => {
     setNumber('');
     setCaptured(null);
     setError(null);
+  };
+
+  // A tap on the photo. Quick mode: drop+save the next pin and advance. Manual: just capture the spot.
+  const handlePick = (pos: { yaw: number; pitch: number }) => {
+    if (!quick) {
+      setCaptured(pos);
+      return;
+    }
+    if (nextNum < section.number_start || nextNum > section.number_end) {
+      setError(`All lockers ${section.number_start}–${section.number_end} are tagged.`);
+      return;
+    }
+    const n = nextNum;
+    setError(null);
+    setLastQuick(n);
+    setNextNum(n + 1);
+    savePin.mutate({ number: n, yaw: pos.yaw, pitch: pos.pitch });
+  };
+
+  const startQuick = () => {
+    setNextNum(firstUntagged());
+    setLastQuick(null);
+    setCaptured(null);
+    setNumber('');
+    setError(null);
+    setQuick(true);
+  };
+
+  // Undo the pin the last quick tap placed (a mistap) and step the counter back to it.
+  const undoLastQuick = () => {
+    if (lastQuick == null) return;
+    removePin.mutate(`${section.id}-${lastQuick}`);
+    setNextNum(lastQuick);
+    setLastQuick(null);
   };
 
   const title = `Tag · ${section.label ?? section.id}`;
@@ -178,41 +232,82 @@ export default function LockerTagger({
         initialPitch={pano.initial_pitch}
         hfov={pano.hfov}
         pins={pins}
-        onPick={setCaptured}
+        onPick={handlePick}
         onReady={(v) => (viewerRef.current = v)}
         onClose={onClose}
       />
 
       <div className="locker-tagger" role="group" aria-label="Locker pin tagger">
-        <p className="locker-tagger__coords">
-          {captured
-            ? `${isUpdate ? `Editing #${editingNum}` : 'Captured'} · yaw ${round(captured.yaw)} · pitch ${round(captured.pitch)}`
-            : isUpdate
-              ? `Editing #${editingNum} — tap the photo to move its pin.`
-              : 'Tap a locker in the photo to capture its position.'}
-        </p>
-        <div className="locker-tagger__form">
-          <input
-            className="admin-input"
-            type="number"
-            inputMode="numeric"
-            placeholder={`Locker # (${section.number_start}–${section.number_end})`}
-            aria-label="Locker number"
-            value={number}
-            onChange={(e) => {
-              setNumber(e.target.value);
-              setError(null);
-            }}
-          />
-          <Button variant="primary" onClick={save} disabled={savePin.isPending || !captured}>
-            {savePin.isPending ? 'Saving…' : isUpdate ? 'Update pin' : 'Save pin'}
-          </Button>
-          {(number.trim() || captured) && (
-            <Button variant="secondary" onClick={clearForm} disabled={savePin.isPending}>
-              Clear
+        {quick ? (
+          <>
+            <p className="locker-tagger__coords">
+              Quick tag — tap each locker <strong>in order</strong>; it saves and advances on its own.
+            </p>
+            <div className="locker-tagger__quickrow">
+              <span className="locker-tagger__next">
+                {nextNum > section.number_end ? (
+                  'All tagged ✓'
+                ) : (
+                  <>
+                    Next: <strong>#{nextNum}</strong>
+                  </>
+                )}
+              </span>
+              <label className="locker-tagger__startat">
+                <span>Start at</span>
+                <input
+                  className="admin-input"
+                  type="number"
+                  inputMode="numeric"
+                  aria-label="Next locker number"
+                  value={nextNum}
+                  onChange={(e) => setNextNum(Number(e.target.value))}
+                />
+              </label>
+              <Button variant="secondary" onClick={undoLastQuick} disabled={lastQuick == null}>
+                Undo last
+              </Button>
+              <Button variant="secondary" onClick={() => setQuick(false)}>
+                Manual
+              </Button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="locker-tagger__coords">
+              {captured
+                ? `${isUpdate ? `Editing #${editingNum}` : 'Captured'} · yaw ${round(captured.yaw)} · pitch ${round(captured.pitch)}`
+                : isUpdate
+                  ? `Editing #${editingNum} — tap the photo to move its pin.`
+                  : 'Tap a locker in the photo to capture its position.'}
+            </p>
+            <div className="locker-tagger__form">
+              <input
+                className="admin-input"
+                type="number"
+                inputMode="numeric"
+                placeholder={`Locker # (${section.number_start}–${section.number_end})`}
+                aria-label="Locker number"
+                value={number}
+                onChange={(e) => {
+                  setNumber(e.target.value);
+                  setError(null);
+                }}
+              />
+              <Button variant="primary" onClick={save} disabled={savePin.isPending || !captured}>
+                {savePin.isPending ? 'Saving…' : isUpdate ? 'Update pin' : 'Save pin'}
+              </Button>
+              {(number.trim() || captured) && (
+                <Button variant="secondary" onClick={clearForm} disabled={savePin.isPending}>
+                  Clear
+                </Button>
+              )}
+            </div>
+            <Button variant="secondary" onClick={startQuick}>
+              ⚡ Quick tag — tap lockers in order
             </Button>
-          )}
-        </div>
+          </>
+        )}
         <Button
           variant="secondary"
           onClick={() => setDefaultView.mutate()}
