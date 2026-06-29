@@ -315,8 +315,8 @@ export default function LockerTagger({
         {mode === 'grid' ? (
           <>
             <p className="locker-tagger__coords">
-              Grid fill — set the bank size, then tap the <strong>4 corner lockers</strong> in order:
-              top-left, top-right, bottom-right, bottom-left.
+              Grid fill — set the bank size, then tap the <strong>4 corner lockers</strong> (any
+              order). Rows = how many lockers tall the bank is.
             </p>
             <div className="locker-tagger__gridform">
               <label className="locker-tagger__gfield">

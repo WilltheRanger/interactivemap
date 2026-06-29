@@ -69,6 +69,19 @@ describe('interpolateGrid', () => {
     expect(byRow.find((p) => p.number === 101)).toMatchObject(trueDirRounded(0, 1));
   });
 
+  it('is independent of the order the 4 corners are tapped', () => {
+    const tl = trueDir(0, 0);
+    const tr = trueDir(0, cols - 1);
+    const br = trueDir(rows - 1, cols - 1);
+    const bl = trueDir(rows - 1, 0);
+    const canonical = interpolateGrid([tl, tr, br, bl], rows, cols, 1, 'row');
+    // Reading order (TL, TR, BL, BR) used to bow-tie; and a fully shuffled order. Both must match.
+    const reading = interpolateGrid([tl, tr, bl, br], rows, cols, 1, 'row');
+    const shuffled = interpolateGrid([br, tl, bl, tr], rows, cols, 1, 'row');
+    expect(reading).toEqual(canonical);
+    expect(shuffled).toEqual(canonical);
+  });
+
   function trueDirRounded(i: number, j: number) {
     const d = trueDir(i, j);
     return { yaw: Math.round(d.yaw * 10) / 10, pitch: Math.round(d.pitch * 10) / 10 };
