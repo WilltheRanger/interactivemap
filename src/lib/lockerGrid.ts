@@ -96,23 +96,11 @@ function applyHomography(m: Homography, u: number, v: number): [number, number] 
 }
 
 /**
- * Identify which of the 4 tapped corners is top-left/-right/bottom-right/-left from their positions,
- * so tap ORDER doesn't matter. Top two = highest pitch; left/right within a pair = lower/higher yaw.
- * Returns them in the canonical TL, TR, BR, BL order the homography expects — tapping them in reading
- * order (TL, TR, BL, BR) would otherwise twist the quad into a bow-tie (reversed bottom row + a
- * collapsed middle).
- */
-function orderCorners(c: GridCorner[]): [GridCorner, GridCorner, GridCorner, GridCorner] {
-  const byPitch = [...c].sort((a, b) => b.pitch - a.pitch);
-  const top = byPitch.slice(0, 2).sort((a, b) => a.yaw - b.yaw); // [TL, TR]
-  const bottom = byPitch.slice(2, 4).sort((a, b) => a.yaw - b.yaw); // [BL, BR]
-  return [top[0], top[1], bottom[1], bottom[0]];
-}
-
-/**
- * Interpolate a `rows`×`cols` bank from its 4 corner-locker centres. The corners may be tapped in ANY
- * order — they're sorted into place by position. Numbers run from `start` in `order`. Needs rows≥2 and
- * cols≥2; works for a wall within roughly a forward hemisphere (a single bank, not one wrapping ~150°).
+ * Interpolate a `rows`×`cols` bank from its 4 corner-locker centres, tapped IN ORDER going clockwise:
+ * top-left, top-right, bottom-right, bottom-left. The first corner (top-left) is where `start` goes, so
+ * tapping the bank's starting corner first controls the numbering. (Tapping out of clockwise order —
+ * e.g. TL, TR, BL, BR — twists the quad into a bow-tie, so the order matters.) Numbers run from `start`
+ * in `order`. Needs rows≥2 and cols≥2; works for a wall within roughly a forward hemisphere.
  */
 export function interpolateGrid(
   corners: [GridCorner, GridCorner, GridCorner, GridCorner],
@@ -121,7 +109,7 @@ export function interpolateGrid(
   start: number,
   order: GridOrder,
 ): GridPin[] {
-  const rays = orderCorners(corners).map((c) => normalize(rayFromYawPitch(c.yaw, c.pitch)));
+  const rays = corners.map((c) => normalize(rayFromYawPitch(c.yaw, c.pitch)));
   // Gnomonic centre: the mean corner direction (the wall is in front of it).
   const center = normalize(rays.reduce<Vec3>((a, r) => [a[0] + r[0], a[1] + r[1], a[2] + r[2]], [0, 0, 0]));
   // Orthonormal screen basis. Right ⟂ world-up & forward; up completes it. Fall back if the wall is

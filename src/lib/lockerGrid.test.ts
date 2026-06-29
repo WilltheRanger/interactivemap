@@ -69,17 +69,17 @@ describe('interpolateGrid', () => {
     expect(byRow.find((p) => p.number === 101)).toMatchObject(trueDirRounded(0, 1));
   });
 
-  it('is independent of the order the 4 corners are tapped', () => {
-    const tl = trueDir(0, 0);
-    const tr = trueDir(0, cols - 1);
-    const br = trueDir(rows - 1, cols - 1);
-    const bl = trueDir(rows - 1, 0);
-    const canonical = interpolateGrid([tl, tr, br, bl], rows, cols, 1, 'row');
-    // Reading order (TL, TR, BL, BR) used to bow-tie; and a fully shuffled order. Both must match.
-    const reading = interpolateGrid([tl, tr, bl, br], rows, cols, 1, 'row');
-    const shuffled = interpolateGrid([br, tl, bl, tr], rows, cols, 1, 'row');
-    expect(reading).toEqual(canonical);
-    expect(shuffled).toEqual(canonical);
+  it('starts numbering at the first (top-left) tapped corner', () => {
+    // The bank numbered from a different corner: feed that corner first as "top-left".
+    const corners: [GridCorner, GridCorner, GridCorner, GridCorner] = [
+      trueDir(0, 0),
+      trueDir(0, cols - 1),
+      trueDir(rows - 1, cols - 1),
+      trueDir(rows - 1, 0),
+    ];
+    const pins = interpolateGrid(corners, rows, cols, 500, 'col');
+    // #500 lands on the first-tapped corner; numbering proceeds from there.
+    expect(pins.find((p) => p.number === 500)).toMatchObject(trueDirRounded(0, 0));
   });
 
   function trueDirRounded(i: number, j: number) {
