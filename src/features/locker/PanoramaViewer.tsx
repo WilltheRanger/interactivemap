@@ -76,7 +76,9 @@ export default function PanoramaViewer({
 }: PanoramaViewerProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<PannellumViewer | null>(null);
-  const addedPinIdsRef = useRef<string[]>([]);
+  // Hotspots currently on the viewer: id → "yaw,pitch", so the sync below can diff and touch only the
+  // ones that changed.
+  const hotspotsRef = useRef<Map<string, string>>(new Map());
   const [status, setStatus] = useState<Status>('loading');
 
   // Latest callbacks kept in refs so the viewer-creation effect doesn't rebuild (and re-download the
@@ -95,6 +97,7 @@ export default function PanoramaViewer({
   useEffect(() => {
     const el = canvasRef.current;
     const pannellum = window.pannellum;
+    const hotspots = hotspotsRef.current; // stable Map; cleared on teardown (captured for the cleanup)
     if (!el || !pannellum) {
       setStatus('error');
       return;
@@ -160,7 +163,7 @@ export default function PanoramaViewer({
       el.removeEventListener('pointerdown', onDown);
       el.removeEventListener('pointerup', onUp);
       viewerRef.current = null;
-      addedPinIdsRef.current = [];
+      hotspots.clear();
       try {
         viewer.destroy();
       } catch {
@@ -169,20 +172,30 @@ export default function PanoramaViewer({
     };
   }, [imageUrl, lockerNumber, initialYaw, initialPitch, hfov, hotspotYaw, hotspotPitch, hasPin]);
 
-  // Tagger: sync the live pin set onto the viewer without rebuilding it (remove the previous set,
-  // add the current one). No-op for the student view, which passes no `pins`.
+  // Tagger: sync the live pin set onto the viewer INCREMENTALLY — only remove hotspots that are gone
+  // or have moved, and only add new/moved ones; leave unchanged pins in place. Removing and re-adding
+  // every hotspot on each change (e.g. deleting one of 100) made Pannellum leave ghost hotspots
+  // scattered across the photo. No-op for the student view, which passes no `pins`.
   useEffect(() => {
     const viewer = viewerRef.current;
     if (!viewer || status !== 'ready' || !pins) return;
-    for (const id of addedPinIdsRef.current) {
-      try {
-        viewer.removeHotSpot(id);
-      } catch {
-        // already gone — ignore
+    const have = hotspotsRef.current;
+    const want = new Map(pins.map((p) => [p.id, `${p.yaw},${p.pitch}`]));
+    // Drop hotspots no longer wanted, or whose position changed (they'll be re-added below).
+    for (const [id, pos] of [...have]) {
+      if (want.get(id) !== pos) {
+        try {
+          viewer.removeHotSpot(id);
+        } catch {
+          // already gone — ignore
+        }
+        have.delete(id);
       }
     }
-    addedPinIdsRef.current = [];
+    // Add anything not already present (new pins, or ones that just moved).
     for (const p of pins) {
+      if (have.has(p.id)) continue;
+      if (!Number.isFinite(p.yaw) || !Number.isFinite(p.pitch)) continue; // never place a garbage pin
       try {
         viewer.addHotSpot({
           id: p.id,
@@ -197,7 +210,7 @@ export default function PanoramaViewer({
           },
           clickHandlerFunc: p.onSelect ? () => p.onSelect?.() : undefined,
         });
-        addedPinIdsRef.current.push(p.id);
+        have.set(p.id, `${p.yaw},${p.pitch}`);
       } catch {
         // ignore a pin that fails to add
       }
