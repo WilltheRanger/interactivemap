@@ -1,15 +1,16 @@
 import { motion } from 'framer-motion';
-import { ChevronRight, ExternalLink, Mail } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 import { Card } from '../../components';
 import { fadeUpItem, staggerContainer } from '../../lib/motion';
-import { LINK_SECTIONS, TEACHER_EMAILS, gmailComposeUrl } from './links.data';
+import { LINK_SECTIONS } from './links.data';
+import { StaffDirectory } from './StaffDirectory';
 import './Links.css';
 
 /**
  * Links: a directory of external school resources (Aeries, Classroom, the school site, …) plus a
- * teacher-email section whose rows open a pre-addressed Gmail compose window. Replaces the old
- * hall-pass Log tab. Every destination is external, so rows are plain anchors that open in a new tab;
- * the content lives in links.data.ts.
+ * searchable teacher/staff section whose rows open a pre-addressed Gmail compose. Replaces the old
+ * hall-pass Log tab. Every destination is external, so tool rows are anchors that open in a new tab;
+ * the content lives in links.data.ts and teacherDirectory.ts.
  */
 export function LinksScreen() {
   return (
@@ -40,8 +41,12 @@ export function LinksScreen() {
                     rel="noopener noreferrer"
                     aria-label={`${item.label} (opens in a new tab)`}
                   >
-                    <span className="link-row__icon" aria-hidden="true">
-                      <Icon size={20} />
+                    <span className="link-row__tile" style={{ backgroundColor: item.tint }}>
+                      {item.logo ? (
+                        <img className="link-row__logo" src={item.logo} alt="" />
+                      ) : (
+                        <Icon size={20} aria-hidden="true" />
+                      )}
                     </span>
                     <span className="link-row__text">
                       <span className="link-row__label">{item.label}</span>
@@ -57,30 +62,9 @@ export function LinksScreen() {
           </motion.section>
         ))}
 
-        <motion.section className="links-section" variants={fadeUpItem}>
-          <h2 className="links-section__title">Teacher emails</h2>
-          <Card className="links-card">
-            {TEACHER_EMAILS.map((teacher) => (
-              <a
-                key={teacher.email}
-                className="link-row"
-                href={gmailComposeUrl(teacher.email)}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`Email ${teacher.name} in Gmail (opens in a new tab)`}
-              >
-                <span className="link-row__icon" aria-hidden="true">
-                  <Mail size={20} />
-                </span>
-                <span className="link-row__text">
-                  <span className="link-row__label">{teacher.name}</span>
-                  <span className="link-row__desc">{teacher.email}</span>
-                </span>
-                <ChevronRight className="link-row__chevron" size={16} aria-hidden="true" />
-              </a>
-            ))}
-          </Card>
-        </motion.section>
+        <motion.div variants={fadeUpItem}>
+          <StaffDirectory />
+        </motion.div>
       </motion.div>
     </section>
   );
