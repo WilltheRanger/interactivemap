@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { NavLink } from 'react-router-dom';
-import { CalendarDays, ClipboardList, MapPin } from 'lucide-react';
+import { CalendarDays, Link as LinkIcon, MapPin } from 'lucide-react';
 import { LockerIcon } from '../components/icons/LockerIcon';
 import { duration, ease, spring } from '../lib/motion';
 import './BottomNav.css';
@@ -11,7 +11,7 @@ const ITEMS = [
   { to: '/map', label: 'Map', icon: <MapPin size={22} aria-hidden="true" /> },
   { to: '/set-classes', label: 'Schedule', icon: <CalendarDays size={22} aria-hidden="true" /> },
   { to: '/lockers', label: 'Lockers', icon: <LockerIcon size={22} /> },
-  { to: '/log', label: 'Log', icon: <ClipboardList size={22} aria-hidden="true" /> },
+  { to: '/links', label: 'Links', icon: <LinkIcon size={22} aria-hidden="true" /> },
 ];
 
 export function BottomNav() {

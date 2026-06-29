@@ -13,7 +13,7 @@ before planning any non-trivial work.
 - Manual schedule entry by the student; the app resolves class location from reference data.
 - Passive schedule view: tap a period → its class + location (no live now/next — see DECISIONS.md #1).
 - Locker finder: the map shows the locker section; click it → a 360° panorama with a pin on the locker.
-- Hall-pass Log: tap Log → pick a reason → scan the teacher's QR → the teacher's Apps Script logs `{time, student, reason}` to their own Google Sheet (zero submit; the app stores no log data; see DECISIONS.md + `plan/phase-12-hall-pass-log.md`).
+- Links directory: a tab of external school resources (Aeries, Google Classroom/Drive, the school site, course catalog, College Board) + a teacher-email section whose rows open a pre-addressed Gmail compose. Replaced the hall-pass Log (the Log/QR feature was retired; `plan/phase-12-hall-pass-log.md` + `docs/hall-pass-teacher-setup.md` + DECISIONS.md #8 are now historical).
 
 ## Out of scope — do NOT build or re-propose
 - Auto-pulling student schedules from the SIS (personal/FERPA-protected, access-gated). Students self-enter.
@@ -27,8 +27,7 @@ before planning any non-trivial work.
   is a display label only.
 - **Data split:** reference data (buildings, rooms, teachers, lockers, panoramas) lives in Supabase.
   Personal data (a student's schedule + their locker number) stays on the device in `localStorage`.
-  Never store student-identifying data server-side. (The hall-pass Log honors this by routing entries
-  to the **teacher's own Google Sheet** — the app never stores them.)
+  Never store student-identifying data server-side.
 - Until real campus data is provided, use clearly-labeled **placeholder** data. Do not invent real
   room numbers, teacher names, or coordinates and present them as real.
 
@@ -79,9 +78,9 @@ read-only via RLS).
 ## Source layout (`src/`)
 - `app/` — root `App` + `router` (the Phase-09 `RequireAuth` seam wraps the routes here).
 - `components/` — reusable UI primitives (Phase 04, from the mockup).
-- `features/{map,find,locker,schedule,log,account}/` — screen logic per feature. Per the mockup the
-  bottom nav is **Map / Find / Lockers / Log**; **Set Classes** (schedule entry) + **Account** live in
-  the header.
+- `features/{map,find,locker,schedule,links,account}/` — screen logic per feature. The bottom nav is
+  **Map / Schedule / Lockers / Links**; **News** + **Set Classes** (schedule entry) + **Account** live
+  in the header. (The old `log` hall-pass feature was replaced by `links`.)
 - `lib/` — non-UI modules (`config`, later `supabase`, `personalStore`, `timeEngine`).
 - `data/` — reference-data hooks + static data (map meta, optional bell schedule).
 - `types/` — shared types (generated DB rows + personal-data shapes).

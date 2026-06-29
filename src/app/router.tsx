@@ -13,7 +13,7 @@ import { MapScreen } from '../features/map/MapScreen';
 import { GeoCalibrate } from '../features/map/GeoCalibrate';
 import { AnnouncementsScreen } from '../features/announcements/AnnouncementsScreen';
 import { LockersScreen } from '../features/locker/LockersScreen';
-import { LogScreen } from '../features/log/LogScreen';
+import { LinksScreen } from '../features/links/LinksScreen';
 import { ScheduleScreen } from '../features/schedule/ScheduleScreen';
 import { BellNotifier } from '../features/schedule/BellNotifier';
 import { AccountScreen } from '../features/account/AccountScreen';
@@ -48,7 +48,9 @@ function AnimatedRoutes({ scrollRef }: { scrollRef: RefObject<HTMLElement | null
             <Route path="/map" element={<MapScreen />} />
             <Route path="/announcements" element={<AnnouncementsScreen />} />
             <Route path="/lockers" element={<LockersScreen />} />
-            <Route path="/log" element={<LogScreen />} />
+            <Route path="/links" element={<LinksScreen />} />
+            {/* Old hall-pass Log path → the directory that replaced it. */}
+            <Route path="/log" element={<Navigate to="/links" replace />} />
             <Route path="/set-classes" element={<ScheduleScreen />} />
             {/* Plan now lives inside Schedule's "4-Year Plan" tab; keep the old path as a deep link. */}
             <Route path="/plan" element={<Navigate to="/set-classes?view=plan" replace />} />
