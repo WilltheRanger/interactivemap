@@ -127,7 +127,6 @@ function PeriodRow({
     const parts = [
       resolved.data?.teacher?.name,
       resolved.data?.room?.label ?? 'Room TBD',
-      resolved.data?.building?.label,
     ].filter(Boolean);
     return parts.join(' · ');
   })();
