@@ -415,7 +415,7 @@ export function PlanBody() {
             <div className="plan-pathways">
               <PathwayCard summary={summaries.graduation} />
               <PathwayCard summary={summaries.uc} />
-              <PathwayCard summary={summaries.brahma_tech} />
+              {/* Brahma Tech hidden for now (requirements not finalized); re-add this card to restore. */}
             </div>
           </>
         )}
