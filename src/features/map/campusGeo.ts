@@ -12,6 +12,14 @@
  *    (`scripts/fit-level.mjs`, mean ≈0.1px). Re-run the fit script if either asset is re-exported.
  * (The standalone fitted-overlay fields — lockerSvgUrl/lockerSvgToImage — are retained on LevelConfig
  *  for the calibration seam but are currently unused.)
+ *
+ * ── RECALIBRATION CHECKLIST (when a level's assets change) ───────────────────────────────────────
+ *  • Re-exported the SVG only (same illustration): re-run `node scripts/fit-level.mjs <level>` and
+ *    paste the new svgToImage. The georef is unaffected (it maps GPS → image pixels, not the SVG).
+ *  • New/re-exported illustration image (new frame, crop, or size): bump imageUrl + imageSize, re-run
+ *    the fit script for svgToImage, AND refit the georef — open /geocal, pick the floor, drop 4–5
+ *    control points, and paste the printed georef here. (MapScreen logs a dev warning if a level's
+ *    loaded image size doesn't match its imageSize, as a nudge.)
  */
 import type { Georef } from './gps/georef';
 

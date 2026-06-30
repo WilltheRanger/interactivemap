@@ -198,6 +198,20 @@ export function MapScreen() {
         setMapInstance(localMap);
 
         L.imageOverlay(config.imageUrl, imageBounds).addTo(localMap);
+        // Dev nudge: a re-exported illustration whose pixel size no longer matches imageSize breaks the
+        // svgToImage fit + georef. Flag it so the owner remembers to recalibrate (see campusGeo.ts).
+        if (import.meta.env.DEV) {
+          const probe = new Image();
+          probe.onload = () => {
+            if (probe.naturalWidth !== W || probe.naturalHeight !== H) {
+              console.warn(
+                `[map] ${level} illustration is ${probe.naturalWidth}×${probe.naturalHeight} but imageSize is ${W}×${H}. ` +
+                  `Update imageSize, re-run scripts/fit-level.mjs for svgToImage, and recalibrate the georef at /geocal.`,
+              );
+            }
+          };
+          probe.src = config.imageUrl;
+        }
         svg.removeAttribute('width');
         svg.removeAttribute('height');
         svg.classList.add('campus-svg');
