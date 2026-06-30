@@ -38,6 +38,13 @@
   height: 0;
   display: none;
   transform: translate(-50%, -50%) rotate(var(--gps-heading, 0deg));
+  /* Glide to each new heading (the angle is unwrapped in JS so this always takes the short way). */
+  transition: transform 0.18s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .gps-dot__heading {
+    transition: none;
+  }
 }
 .gps-dot-icon.has-heading .gps-dot__heading {
   display: block;

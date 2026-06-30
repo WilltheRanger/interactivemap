@@ -8,11 +8,21 @@ type DeviceOrientationCtor = typeof DeviceOrientationEvent & {
 };
 
 export interface DeviceHeading {
-  /** Compass heading in degrees clockwise from true north, or null when unavailable. */
+  /** Smoothed compass heading in degrees clockwise from true north, or null when unavailable. */
   heading: number | null;
   /** Begin listening (must be called from a user gesture — iOS prompts for permission). */
   enable: () => void;
   stop: () => void;
+}
+
+// Circular low-pass on the (noisy) compass, and a small dead-band so we don't re-render on every
+// micro-wiggle. The facing cone also CSS-transitions, so the two together make it glide.
+const HEADING_ALPHA = 0.2;
+const HEADING_EPSILON_DEG = 0.75;
+
+/** Shortest signed angle from a to b, in degrees (−180…180]. */
+function angleDelta(a: number, b: number): number {
+  return ((b - a + 540) % 360) - 180;
 }
 
 /**
@@ -23,16 +33,32 @@ export interface DeviceHeading {
 export function useDeviceHeading(): DeviceHeading {
   const [heading, setHeading] = useState<number | null>(null);
   const eventNameRef = useRef<string | null>(null);
+  const smoothedRef = useRef<number | null>(null);
+  const emittedRef = useRef<number | null>(null);
 
   const onOrientation = useCallback((event: Event) => {
     const e = event as OrientationEventIOS;
-    let h: number | null = null;
+    let raw: number | null = null;
     if (typeof e.webkitCompassHeading === 'number' && !Number.isNaN(e.webkitCompassHeading)) {
-      h = e.webkitCompassHeading; // iOS: already a true compass heading
+      raw = e.webkitCompassHeading; // iOS: already a true compass heading
     } else if (e.absolute && typeof e.alpha === 'number') {
-      h = 360 - e.alpha; // Android absolute → compass heading
+      raw = 360 - e.alpha; // Android absolute → compass heading
     }
-    if (h != null && !Number.isNaN(h)) setHeading(((h % 360) + 360) % 360);
+    if (raw == null || Number.isNaN(raw)) return;
+    raw = ((raw % 360) + 360) % 360;
+
+    // Ease toward the new reading along the shortest arc.
+    const prev = smoothedRef.current;
+    const next =
+      prev == null ? raw : (((prev + HEADING_ALPHA * angleDelta(prev, raw)) % 360) + 360) % 360;
+    smoothedRef.current = next;
+
+    // Only re-render when the smoothed heading has actually moved a hair.
+    const emitted = emittedRef.current;
+    if (emitted == null || Math.abs(angleDelta(emitted, next)) > HEADING_EPSILON_DEG) {
+      emittedRef.current = next;
+      setHeading(next);
+    }
   }, []);
 
   const stop = useCallback(() => {
@@ -40,6 +66,8 @@ export function useDeviceHeading(): DeviceHeading {
       window.removeEventListener(eventNameRef.current, onOrientation);
       eventNameRef.current = null;
     }
+    smoothedRef.current = null;
+    emittedRef.current = null;
     setHeading(null);
   }, [onOrientation]);
 

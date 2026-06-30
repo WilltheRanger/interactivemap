@@ -53,6 +53,7 @@ export function MapGps({ map, imageSize, georef }: MapGpsProps) {
   const shownRadiusRef = useRef(0);
   const rafRef = useRef<number | null>(null);
   const lastTsRef = useRef(0);
+  const lastRotRef = useRef(0); // continuous (unwrapped) cone rotation, so the CSS tween stays short
 
   // The rAF tween lives in a ref so it can re-schedule itself (a plain self-referencing useCallback
   // isn't allowed). Reads only refs, so it's set up once.
@@ -127,7 +128,7 @@ export function MapGps({ map, imageSize, georef }: MapGpsProps) {
     // Recreate if the level (map instance) changed under us.
     if (markerRef.current && markerMapRef.current !== map) teardown();
 
-    const { latitude, longitude, accuracy } = position.coords;
+    const { latitude, longitude, accuracy } = position;
     const { latlng } = gpsToMapPoint(latitude, longitude, imageSize, georef);
     const target = L.latLng(latlng[0], latlng[1]);
     const radius = accuracyToMapRadius(latitude, longitude, accuracy, georef);
@@ -165,15 +166,17 @@ export function MapGps({ map, imageSize, georef }: MapGpsProps) {
     }
   }, [map, status, position, imageSize, georef, startLoop, teardown]);
 
-  // Rotate the facing cone to the compass heading (mapped into this rotated map's frame).
+  // Rotate the facing cone to the compass heading (mapped into this rotated map's frame). The heading
+  // is already smoothed (useDeviceHeading); we unwrap the rotation to a continuous angle so the CSS
+  // transition takes the short way around at the 0°/360° seam instead of spinning all the way back.
   useEffect(() => {
     const el = markerRef.current?.getElement();
     if (!el) return;
     if (heading != null && status === 'active' && position) {
-      el.style.setProperty(
-        '--gps-heading',
-        `${headingToMapRotation(position.coords.latitude, heading, georef)}deg`,
-      );
+      const target = headingToMapRotation(position.latitude, heading, georef);
+      const delta = ((target - lastRotRef.current + 540) % 360) - 180;
+      lastRotRef.current += delta;
+      el.style.setProperty('--gps-heading', `${lastRotRef.current}deg`);
       el.classList.add('has-heading');
     } else {
       el.classList.remove('has-heading');
@@ -184,7 +187,7 @@ export function MapGps({ map, imageSize, georef }: MapGpsProps) {
 
   const offCampus =
     status === 'active' && position
-      ? !gpsToMapPoint(position.coords.latitude, position.coords.longitude, imageSize, georef).onMap
+      ? !gpsToMapPoint(position.latitude, position.longitude, imageSize, georef).onMap
       : false;
 
   const toggle = () => {
