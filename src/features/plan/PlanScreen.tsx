@@ -12,12 +12,7 @@ import {
   removeYearCourse,
   setCurrentGrade,
 } from '../../lib/fourYearPlanStore';
-import {
-  filledSemesterCount,
-  summarizeAllPathways,
-  TOTAL_SEMESTERS,
-  type PathwaySummary,
-} from '../../lib/creditPlan';
+import { summarizeAllPathways, type PathwaySummary } from '../../lib/creditPlan';
 import type { Course } from '../../lib/refData';
 import { GRADES, type Grade, type Semester } from '../../types/fourYearPlan';
 import { fadeUpItem, staggerContainer } from '../../lib/motion';
@@ -296,9 +291,6 @@ export function PlanBody() {
   const gradeCredits = sumCredits([...yearIds, ...fallOnly, ...springOnly], courseById);
   const yearEmpty = placed.size === 0;
 
-  const filled = filledSemesterCount(plan.four_year_plan);
-  const isEmpty = filled === 0;
-
   return (
     <>
       <p className="plan-disclaimer" role="note">
@@ -420,12 +412,6 @@ export function PlanBody() {
             </motion.div>
 
             <h2 className="plan-section-title">Progress</h2>
-            {filled < TOTAL_SEMESTERS && !isEmpty && (
-              <p className="plan-incomplete" role="status">
-                <AlertTriangle size={14} aria-hidden="true" /> {filled} of {TOTAL_SEMESTERS}{' '}
-                semesters planned — fill the rest for a complete picture.
-              </p>
-            )}
             <div className="plan-pathways">
               <PathwayCard summary={summaries.graduation} />
               <PathwayCard summary={summaries.uc} />

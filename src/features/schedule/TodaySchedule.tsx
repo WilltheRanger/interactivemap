@@ -163,12 +163,16 @@ export function TodaySchedule({ preview }: { preview?: PreviewMode }) {
                 {t.period.startPrint}&ndash;{t.period.endPrint}
               </span>
               <span className="bell-row__remaining">
-                {t.active && t.secondsRemaining != null && (
-                  <>
-                    <Timer size={13} aria-hidden="true" />
-                    {formatRemaining(t.secondsRemaining)}
-                  </>
-                )}
+                {/* Skip the headline period's countdown — the In-session banner above already shows it.
+                    A second overlapping active period (e.g. 6 / 6A) still shows its own. */}
+                {t.active &&
+                  t.secondsRemaining != null &&
+                  t.period.key !== headline?.period.key && (
+                    <>
+                      <Timer size={13} aria-hidden="true" />
+                      {formatRemaining(t.secondsRemaining)}
+                    </>
+                  )}
               </span>
             </li>
           );
