@@ -1,8 +1,8 @@
 -- Real teacher/room reference data — replaces the placeholder buildings/rooms/teachers.
 -- Generated from 202526_Teacher_Rooms.xlsx (teacher → room roster).
--- Rooms whose id matches a campus SVG shape are tappable on the map; others (e.g. 1101) are
--- schedule-only. Rooms with an unknown teacher in the roster ('Teacher A'…) are created with a
--- null teacher_id. PE coaches have no room. Idempotent (upserts).
+-- Room ids that match a campus SVG shape are tappable on the map; others (e.g. 1101) are
+-- schedule-only. Rooms with an unknown teacher in the sheet are created with a null teacher;
+-- PE coaches have no room. Idempotent (upserts).
 
 -- Real teacher/room reference data (from 202526_Teacher_Rooms.xlsx).
 
@@ -115,10 +115,6 @@ insert into teachers (id, name, home_room_id) values
   ('ms-dizon', 'Ms. Dizon', null),
   ('mr-jarvis', 'Mr. Jarvis', null),
   ('ms-santos', 'Ms. Santos', null),
-  ('coach-berruecos', 'Coach Berruecos', null),
-  ('coach-reitz', 'Coach Reitz', null),
-  ('coach-shibley', 'Coach Shibley', null),
-  ('coach-garcia', 'Coach Garcia', null),
   ('coach-berruecos', 'Coach Berruecos', null),
   ('coach-reitz', 'Coach Reitz', null),
   ('coach-shibley', 'Coach Shibley', null),
