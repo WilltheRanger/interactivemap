@@ -11,7 +11,6 @@ import {
   useLockerSections,
   usePanorama,
   useRooms,
-  useRoomWithTeacher,
   useSignedPanoramaUrl,
   useTeachers,
 } from '../../data/hooks';
@@ -450,14 +449,11 @@ export function MapScreen() {
     return () => clearTimeout(t);
   }, [status, searchParams, lockerSections.data, level]);
 
-  // Resolve a tapped room to its teacher (rooms.id == the SVG shape id). Returns null where the
-  // room isn't in the directory yet — the card just omits the teacher line, never errors.
-  const roomLookup = useRoomWithTeacher(selected?.lookupId ?? null);
-  const teacherName = roomLookup.data?.teacher?.name ?? null;
-
-  // Teacher search index: shape id (lowercased) → teacher name, so the search bar finds a room by the
-  // teacher who's in it (rooms.id == the SVG shape id; teachers join on rooms.teacher_id). Doubles as
-  // the "who's here" label shown under each matching result.
+  // Teacher directory index: shape id (lowercased) → teacher name, loaded once with the map (rooms.id
+  // == the SVG shape id; teachers join on rooms.teacher_id). Powers both the search (find a room by the
+  // teacher who's in it, with a "who's here" label per result) AND the selected room's teacher line.
+  // Reading the card's teacher from this shared, already-loaded index — instead of a fresh per-tap
+  // fetch — means the name is present on the card's first render, with no location→teacher flash.
   const allRooms = useRooms();
   const allTeachers = useTeachers();
   const teacherByRoomId = useMemo(() => {
@@ -469,6 +465,15 @@ export function MapScreen() {
     }
     return byRoom;
   }, [allRooms.data, allTeachers.data]);
+
+  // The selected room's teacher, resolved from the index above (null where the room has no teacher or
+  // isn't in the directory yet — the card just omits the teacher line, never errors).
+  const teacherName = selected?.lookupId
+    ? (teacherByRoomId.get(selected.lookupId.toLowerCase()) ?? null)
+    : null;
+  // Until the directory has loaded we can't yet tell whether a room has a teacher, so hold the location
+  // sub-line rather than show it and then hide it once the teacher resolves.
+  const teacherDirLoaded = allRooms.data != null && allTeachers.data != null;
 
   // Resolve a tapped locker bank → its section (the range that owns this map shape) → range + block
   // label + 360° panorama. Built from the section list's `map_shape_ids` (assigned via the admin "Tag
@@ -508,6 +513,10 @@ export function MapScreen() {
       ? (lockerBlockLabel ?? (lockerSection ? '' : 'Not assigned to a range yet'))
       : selected.building
     : '';
+  // Show the location sub-line only when it won't be replaced by a teacher: lockers always show it;
+  // rooms show it once the directory has loaded and there's no teacher — so it never flashes in and
+  // then gets hidden as the teacher line takes over.
+  const showDetailSub = !!detailSub && (isLockerSel || (teacherDirLoaded && !teacherName));
 
   // "School is live" status: the in-session period (with a countdown) and, if the student has a
   // class then, its room (rooms.id == a map shape id) matched against the index to find its level.
@@ -655,7 +664,7 @@ export function MapScreen() {
             <p className="map-screen__detail-title">{detailTitle}</p>
             {/* When a room has a teacher, the teacher line stands in for the location — drop the
                 building sub-line (e.g. "200s Building") so the card isn't redundant. */}
-            {detailSub && !teacherName && <p className="map-screen__detail-sub">{detailSub}</p>}
+            {showDetailSub && <p className="map-screen__detail-sub">{detailSub}</p>}
             {teacherName && (
               <p className="map-screen__detail-teacher">
                 <User size={14} aria-hidden="true" />
