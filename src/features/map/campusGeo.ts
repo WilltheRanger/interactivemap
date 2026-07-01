@@ -77,15 +77,14 @@ export const CAMPUS_LEVELS: Record<CampusLevel, LevelConfig> = {
     imageSize: { w: 3472, h: 2064 },
     svgToImage: { ax: 16, sx: 2, ay: 40, sy: 2.0002 }, // fitted, mean ~0.02px (fit-level.mjs)
     lockerGroupId: 'Lower Lockers',
-    // Georef recomposed for the v4 art (the v3 georef pushed through the v3→v4 pixel transform).
-    // Approximate (~5–10 m); recapture /geocal control points on the v4 art for a precise refit if needed.
+    // Georef fitted from 6 /geocal control points on the v4 art (least-squares, mean ~21px ≈ 1.8 m).
     georef: {
-      a: -793645.9055944692,
-      b: -132227.32601498556,
-      c: -89027306.2330776,
-      d: -277170.8558696537,
-      e: 1071857.7125925056,
-      f: -69084971.99161986,
+      a: -802319.3363432336,
+      b: -219913.97139861982,
+      c: -87069499.17689833,
+      d: -198484.99655521635,
+      e: 1081393.5539818422,
+      f: -60136745.30814244,
     },
   },
 };
