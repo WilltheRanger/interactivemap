@@ -10,8 +10,10 @@ import {
   useLockerBlocks,
   useLockerSections,
   usePanorama,
+  useRooms,
   useRoomWithTeacher,
   useSignedPanoramaUrl,
+  useTeachers,
 } from '../../data/hooks';
 import type { LockerSection } from '../../lib/refData';
 import { useCurrentPeriod, type CurrentPeriod } from '../../data/useCurrentPeriod';
@@ -453,6 +455,21 @@ export function MapScreen() {
   const roomLookup = useRoomWithTeacher(selected?.lookupId ?? null);
   const teacherName = roomLookup.data?.teacher?.name ?? null;
 
+  // Teacher search index: shape id (lowercased) → teacher name, so the search bar finds a room by the
+  // teacher who's in it (rooms.id == the SVG shape id; teachers join on rooms.teacher_id). Doubles as
+  // the "who's here" label shown under each matching result.
+  const allRooms = useRooms();
+  const allTeachers = useTeachers();
+  const teacherByRoomId = useMemo(() => {
+    const nameById = new Map((allTeachers.data ?? []).map((t) => [t.id, t.name]));
+    const byRoom = new Map<string, string>();
+    for (const room of allRooms.data ?? []) {
+      const name = room.teacher_id ? nameById.get(room.teacher_id) : undefined;
+      if (name) byRoom.set(room.id.toLowerCase(), name);
+    }
+    return byRoom;
+  }, [allRooms.data, allTeachers.data]);
+
   // Resolve a tapped locker bank → its section (the range that owns this map shape) → range + block
   // label + 360° panorama. Built from the section list's `map_shape_ids` (assigned via the admin "Tag
   // lockers on map" tool). An untagged shape resolves to nothing — card shows a plain fallback, no 360.
@@ -531,7 +548,8 @@ export function MapScreen() {
           (room) =>
             room.id.toLowerCase().includes(q) ||
             roomTitle(room.id).toLowerCase().includes(q) ||
-            (BUILDING_LABELS[room.buildingId] ?? '').toLowerCase().includes(q),
+            (BUILDING_LABELS[room.buildingId] ?? '').toLowerCase().includes(q) ||
+            (teacherByRoomId.get(room.id.toLowerCase()) ?? '').toLowerCase().includes(q),
         )
         .slice(0, MAX_SEARCH_RESULTS)
     : [];
@@ -559,6 +577,8 @@ export function MapScreen() {
                   <p className="map-screen__results-note">No rooms match “{query.trim()}”.</p>
                 )}
                 {results.map((room) => {
+                  // A room's teacher, when known, replaces the location sub-line (matches the detail card).
+                  const teacher = teacherByRoomId.get(room.id.toLowerCase());
                   const building =
                     room.buildingId !== room.id
                       ? (BUILDING_LABELS[room.buildingId] ?? room.buildingId)
@@ -575,7 +595,7 @@ export function MapScreen() {
                     >
                       <span className="map-screen__result-title">{roomTitle(room.id)}</span>
                       <span className="map-screen__result-sub">
-                        {building ? `${building} · ${where}` : where}
+                        {teacher ? teacher : building ? `${building} · ${where}` : where}
                       </span>
                     </button>
                   );
@@ -633,7 +653,9 @@ export function MapScreen() {
         >
           <div className="map-screen__detail-text">
             <p className="map-screen__detail-title">{detailTitle}</p>
-            {detailSub && <p className="map-screen__detail-sub">{detailSub}</p>}
+            {/* When a room has a teacher, the teacher line stands in for the location — drop the
+                building sub-line (e.g. "200s Building") so the card isn't redundant. */}
+            {detailSub && !teacherName && <p className="map-screen__detail-sub">{detailSub}</p>}
             {teacherName && (
               <p className="map-screen__detail-teacher">
                 <User size={14} aria-hidden="true" />
