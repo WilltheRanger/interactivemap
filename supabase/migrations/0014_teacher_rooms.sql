@@ -328,11 +328,13 @@ update teachers set home_room_id = '910' where id = 'ms-dizon';
 update teachers set home_room_id = '912' where id = 'mr-jarvis';
 update teachers set home_room_id = '1101' where id = 'ms-santos';
 
--- Remove the old placeholder buildings/rooms/teachers.
+-- Remove the old placeholder buildings/rooms/teachers (detach references first to satisfy FKs).
+create temp table _ph on commit drop as
+  select id from teachers where home_room_id in (select id from rooms where building_id in ('bldg-a','bldg-b','bldg-c'))
+  union select teacher_id from rooms where building_id in ('bldg-a','bldg-b','bldg-c') and teacher_id is not null;
+update master_schedule set teacher_id = null where teacher_id in (select id from _ph);
 update master_schedule set room_id = null where room_id in (select id from rooms where building_id in ('bldg-a','bldg-b','bldg-c'));
+update teachers set home_room_id = null where home_room_id in (select id from rooms where building_id in ('bldg-a','bldg-b','bldg-c'));
 delete from rooms where building_id in ('bldg-a','bldg-b','bldg-c');
 delete from buildings where id in ('bldg-a','bldg-b','bldg-c');
-delete from teachers where name ilike 'placeholder%'
-  and id not in (select teacher_id from rooms where teacher_id is not null)
-  and id not in (select teacher_id from master_schedule where teacher_id is not null);
-
+delete from teachers where id in (select id from _ph);
