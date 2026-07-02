@@ -1,19 +1,14 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  useBuildings,
-  useCoursesForPeriod,
-  useRoomsByBuilding,
-  useSectionsForCourse,
-  useTeachers,
-} from '../../data/hooks';
-import { sectionToEntry } from '../../lib/schedule';
+import { useCallback, useRef, useState } from 'react';
+import { useBuildings, useCourses, useRoomsByBuilding, useTeachers } from '../../data/hooks';
 import type { Period } from '../../data/periods';
 import type { ScheduleEntry } from '../../types/personal';
 import { OptionList } from './OptionList';
 
-type Mode = 'course' | 'section' | 'teacher' | 'room';
+type Mode = 'course' | 'teacher' | 'room';
 
 interface PeriodEditorProps {
+  /** Which period this editor edits. Kept for the caller's API (and future per-period logic); the
+   *  two-step class→teacher flow itself no longer filters by period. */
   period: Period;
   onSave: (entry: ScheduleEntry) => void;
   onCancel: () => void;
@@ -21,26 +16,24 @@ interface PeriodEditorProps {
 
 const MODE_TITLE: Record<Mode, string> = {
   course: 'Pick your class',
-  section: 'Which teacher do you have?',
   teacher: 'Pick your teacher',
   room: 'Pick the room',
 };
 
 /**
- * Inline editor for one period (06.2–06.3). Master-schedule flow: pick a course (filtered to this
- * period) → a single-section course saves immediately; a multi-section course forces a teacher
- * choice (the join key — never course+period). Fallbacks: pick a teacher or a room directly when
- * the class isn't in the master schedule.
+ * Inline editor for one period (06.2–06.3). Two-step flow: **pick your class** (from the course
+ * catalog, a display-only label) → **pick your teacher for that period** (the join key — a teacher
+ * resolves to their home room; never class+period). "Pick by room" is the fallback for a class that
+ * resolves by room rather than a teacher (PE, a teacher with no home room, an unlisted teacher).
  */
-export function PeriodEditor({ period, onSave, onCancel }: PeriodEditorProps) {
+export function PeriodEditor({ onSave, onCancel }: PeriodEditorProps) {
   const [mode, setMode] = useState<Mode>('course');
-  const [course, setCourse] = useState<string | null>(null);
   const [buildingId, setBuildingId] = useState<string | null>(null);
+  // The chosen class name — a display-only label, pre-filled from the picked course and editable.
   const [classLabel, setClassLabel] = useState('');
   const savedRef = useRef(false);
 
-  const courses = useCoursesForPeriod(period.id);
-  const sections = useSectionsForCourse(course, period.id);
+  const courses = useCourses();
   const teachers = useTeachers();
   const buildings = useBuildings();
   const rooms = useRoomsByBuilding(buildingId);
@@ -54,19 +47,17 @@ export function PeriodEditor({ period, onSave, onCancel }: PeriodEditorProps) {
     [onSave],
   );
 
-  // A single-section course auto-selects its teacher — no extra tap (06.3).
-  useEffect(() => {
-    if (mode === 'section' && sections.data?.length === 1) {
-      save(sectionToEntry(sections.data[0]));
-    }
-  }, [mode, sections.data, save]);
-
   const back = () => {
     if (mode === 'room' && buildingId != null) {
       setBuildingId(null);
       return;
     }
-    setCourse(null);
+    if (mode === 'room') {
+      setMode('teacher');
+      return;
+    }
+    // teacher → course; drop the label so re-picking a class re-seeds it.
+    setClassLabel('');
     setMode('course');
   };
 
@@ -91,68 +82,62 @@ export function PeriodEditor({ period, onSave, onCancel }: PeriodEditorProps) {
       {mode === 'course' && (
         <>
           <OptionList
-            options={(courses.data ?? []).map((c) => ({ id: c, label: c }))}
+            options={(courses.data ?? []).map((c) => ({ id: c.name, label: c.name }))}
             loading={courses.isPending}
             error={courses.isError}
-            emptyText="No classes are listed for this period yet — pick your teacher or room below."
+            emptyText="No classes are listed yet — pick your teacher below."
             filterPlaceholder="Type to filter classes…"
-            onPick={(c) => {
-              setCourse(c);
-              setMode('section');
+            onPick={(name) => {
+              setClassLabel(name);
+              setMode('teacher');
             }}
           />
           <p className="sched-editor__alt">
-            Not listed?{' '}
-            <button type="button" className="sched-textbtn" onClick={() => setMode('teacher')}>
-              Pick by teacher
-            </button>{' '}
-            ·{' '}
-            <button type="button" className="sched-textbtn" onClick={() => setMode('room')}>
-              Pick by room
+            Class not listed?{' '}
+            <button
+              type="button"
+              className="sched-textbtn"
+              onClick={() => {
+                setClassLabel('');
+                setMode('teacher');
+              }}
+            >
+              Pick your teacher anyway
             </button>
           </p>
         </>
       )}
 
-      {mode === 'section' && (
-        <OptionList
-          options={(sections.data ?? []).map((s) => ({
-            id: s.id,
-            label: s.teacher?.name ?? s.room?.label ?? 'Unknown teacher',
-            sub: s.room?.label ?? undefined,
-          }))}
-          loading={sections.isPending}
-          error={sections.isError}
-          emptyText="No sections found for this class — go back and pick by teacher or room."
-          onPick={(id) => {
-            const picked = sections.data?.find((s) => s.id === id);
-            if (picked) save(sectionToEntry(picked));
-          }}
-        />
-      )}
-
       {(mode === 'teacher' || mode === 'room') && (
         <label className="sched-labelfield">
-          <span className="sched-labelfield__caption">Class name (optional, just a label)</span>
+          <span className="sched-labelfield__caption">Your class (label only)</span>
           <input
             type="text"
             className="sched-input"
             value={classLabel}
             onChange={(e) => setClassLabel(e.target.value)}
-            placeholder="e.g. Algebra 1"
+            placeholder="e.g. Chemistry Pre-AP"
           />
         </label>
       )}
 
       {mode === 'teacher' && (
-        <OptionList
-          options={(teachers.data ?? []).map((t) => ({ id: t.id, label: t.name }))}
-          loading={teachers.isPending}
-          error={teachers.isError}
-          emptyText="No teachers found."
-          filterPlaceholder="Type to filter teachers…"
-          onPick={(id) => save({ kind: 'teacher', teacher_id: id, class_label: classLabel.trim() })}
-        />
+        <>
+          <OptionList
+            options={(teachers.data ?? []).map((t) => ({ id: t.id, label: t.name }))}
+            loading={teachers.isPending}
+            error={teachers.isError}
+            emptyText="No teachers found."
+            filterPlaceholder="Type to filter teachers…"
+            onPick={(id) => save({ kind: 'teacher', teacher_id: id, class_label: classLabel.trim() })}
+          />
+          <p className="sched-editor__alt">
+            Don&rsquo;t see your teacher?{' '}
+            <button type="button" className="sched-textbtn" onClick={() => setMode('room')}>
+              Pick by room instead
+            </button>
+          </p>
+        </>
       )}
 
       {mode === 'room' &&
