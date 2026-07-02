@@ -6,6 +6,7 @@ import { Segmented, type SegmentedOption } from '../account/Segmented';
 import { useLockerBlocks, useLockerSections } from '../../data/hooks';
 import type { LockerSection } from '../../lib/refData';
 import { getSupabase } from '../../lib/supabase';
+import { errorMessage } from './errorMessage';
 import { CAMPUS_LEVELS, LEVEL_ORDER, isInLockerGroup, type CampusLevel } from '../map/campusGeo';
 
 const LEVEL_OPTIONS: SegmentedOption<CampusLevel>[] = LEVEL_ORDER.map((l) => ({
@@ -266,7 +267,7 @@ export default function LockerMapTagger({ onClose }: { onClose: () => void }) {
 
       {save.isError && (
         <p className="admin-status admin-status--error" role="alert">
-          Couldn’t save: {save.error instanceof Error ? save.error.message : 'unknown error'}
+          Couldn’t save: {errorMessage(save.error)}
         </p>
       )}
     </div>

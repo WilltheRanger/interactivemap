@@ -14,6 +14,7 @@ import { uploadPanoramaToStorage } from '../../lib/panoramaUpload';
 import type { LockerSection } from '../../lib/refData';
 import { getSupabase } from '../../lib/supabase';
 import { ConfirmDeleteButton, Field, MutationStatus, SectionStates } from './shared';
+import { errorMessage } from './errorMessage';
 import { slugify } from './slugify';
 
 // Pannellum + the panorama image are heavy and admin-only, so the visual tagger is code-split.
@@ -109,7 +110,7 @@ function BlocksManager() {
       </form>
       {add.isError && (
         <p className="admin-status admin-status--error" role="alert">
-          Couldn’t add block: {add.error instanceof Error ? add.error.message : 'unknown error'}
+          Couldn’t add block: {errorMessage(add.error)}
         </p>
       )}
 
@@ -308,7 +309,16 @@ function SectionForm({
         ? supabase.from('locker_sections').update(row).eq('id', editing.id)
         : supabase.from('locker_sections').insert(row);
       const { error } = await query;
-      if (error) throw error;
+      if (error) {
+        // A new section's id is derived from its label (or block+start), so re-using a label that
+        // already exists collides on the primary key. Turn Postgres's 23505 into a plain-language fix.
+        if (!editing && error.code === '23505') {
+          throw new Error(
+            `A locker section “${id}” already exists — give this one a different label, or edit the existing section instead of adding a new one.`,
+          );
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['lockerSections'] });
@@ -716,8 +726,7 @@ export function LockersAdmin() {
         )}
         {remove.isError && (
           <p className="admin-status admin-status--error" role="alert">
-            Couldn&rsquo;t delete:{' '}
-            {remove.error instanceof Error ? remove.error.message : 'unknown error'}
+            Couldn&rsquo;t delete: {errorMessage(remove.error)}
           </p>
         )}
       </SectionStates>

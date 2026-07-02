@@ -2,6 +2,7 @@
 import { useState, type ReactNode } from 'react';
 import { Trash2 } from 'lucide-react';
 import { Button, Skeleton } from '../../components';
+import { errorMessage } from './errorMessage';
 
 /** Loading / error / content wrapper — every admin section's three states in one place. */
 export function SectionStates({
@@ -91,7 +92,7 @@ export function MutationStatus({ error, saved }: { error: unknown; saved: boolea
   if (error) {
     return (
       <p className="admin-status admin-status--error" role="alert">
-        Couldn&rsquo;t save: {error instanceof Error ? error.message : 'unknown error'}
+        Couldn&rsquo;t save: {errorMessage(error)}
       </p>
     );
   }
