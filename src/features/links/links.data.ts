@@ -163,8 +163,3 @@ export const FALLBACK_LINKS: LinkRow[] = [
     created_at: '',
   },
 ];
-
-/** Gmail compose deep link to a recipient — opens a new, pre-addressed Gmail message. */
-export function gmailComposeUrl(email: string): string {
-  return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}`;
-}

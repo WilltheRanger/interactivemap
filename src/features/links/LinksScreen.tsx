@@ -5,7 +5,6 @@ import { useLinks } from '../../data/hooks';
 import type { LinkRow } from '../../lib/refData';
 import { fadeUpItem, staggerContainer } from '../../lib/motion';
 import { FALLBACK_LINKS, iconFor } from './links.data';
-import { StaffDirectory } from './StaffDirectory';
 import './Links.css';
 
 /** Group rows into sections, ordered by each section's lowest sort_order (rows already sorted). */
@@ -27,9 +26,10 @@ function groupBySection(rows: LinkRow[]): { section: string; items: LinkRow[] }[
 }
 
 /**
- * Links: a directory of external school resources (admin-managed in Supabase, with a static fallback)
- * plus a searchable teacher/staff section whose rows open a pre-addressed Gmail compose. Replaces the
- * old hall-pass Log tab. Tool rows are anchors that open in a new tab.
+ * Links: a directory of external school resources (admin-managed in Supabase, with a static fallback).
+ * Replaces the old hall-pass Log tab. Tool rows are anchors that open in a new tab. (A searchable
+ * teacher-email/staff directory used to live here but was removed — IT flagged publishing staff email
+ * addresses in the app as unsafe.)
  */
 export function LinksScreen() {
   const links = useLinks();
@@ -45,7 +45,7 @@ export function LinksScreen() {
       <h1 id="links-title" className="screen__title">
         Links
       </h1>
-      <p className="screen__sub">School tools, resources, and teacher contacts.</p>
+      <p className="screen__sub">School tools and resources.</p>
 
       <motion.div
         className="screen__body"
@@ -91,10 +91,6 @@ export function LinksScreen() {
             </motion.section>
           ))
         )}
-
-        <motion.div variants={fadeUpItem}>
-          <StaffDirectory />
-        </motion.div>
       </motion.div>
     </section>
   );

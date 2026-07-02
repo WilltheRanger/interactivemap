@@ -13,7 +13,7 @@ before planning any non-trivial work.
 - Manual schedule entry by the student; the app resolves class location from reference data.
 - Passive schedule view: tap a period → its class + location (no live now/next — see DECISIONS.md #1).
 - Locker finder: the map shows the locker section; click it → a 360° panorama with a pin on the locker.
-- Links directory: a tab of external school resources (Aeries, Google Classroom/Drive, the school site, course catalog, College Board) + a teacher-email section whose rows open a pre-addressed Gmail compose. Replaced the hall-pass Log (the Log/QR feature was retired; `plan/phase-12-hall-pass-log.md` + `docs/hall-pass-teacher-setup.md` + DECISIONS.md #8 are now historical).
+- Links directory: a tab of external school resources (Aeries, Google Classroom/Drive, the school site, course catalog, College Board). Replaced the hall-pass Log (the Log/QR feature was retired; `plan/phase-12-hall-pass-log.md` + `docs/hall-pass-teacher-setup.md` + DECISIONS.md #8 are now historical). NOTE: an earlier searchable teacher-email/staff directory (Gmail-compose rows) was **removed** — IT flagged publishing staff email addresses in the app as unsafe; do not re-add it.
 
 ## Out of scope — do NOT build or re-propose
 - Auto-pulling student schedules from the SIS (personal/FERPA-protected, access-gated). Students self-enter.
